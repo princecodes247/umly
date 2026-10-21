@@ -1,4 +1,4 @@
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
+import { HeadContent, Scripts, createRootRoute, useRouterState } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import Footer from '../components/Footer'
@@ -35,9 +35,20 @@ export const Route = createRootRoute({
     ],
   }),
   shellComponent: RootDocument,
+  notFoundComponent: () => (
+    <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-4">
+      <div className="text-4xl">🔍</div>
+      <h1 className="text-lg font-bold text-[var(--text-primary)]">Page Not Found</h1>
+      <p className="text-xs text-[var(--text-secondary)]">The requested puzzle level could not be found.</p>
+      <a href="/" className="notion-btn notion-btn-primary">Back to Puzzles</a>
+    </div>
+  ),
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+  const routerState = useRouterState()
+  const isPlayPage = routerState.location.pathname.startsWith('/play')
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -46,8 +57,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body className="font-sans antialiased text-[var(--text-primary)] bg-[var(--bg-primary)] [overflow-wrap:anywhere] selection:bg-[var(--selection-bg)] min-h-screen flex flex-col">
         <Header />
-        {children}
-        <Footer />
+        <div className="flex-1 flex flex-col min-h-0 w-full">
+          {children}
+        </div>
+        {!isPlayPage && <Footer />}
         <TanStackDevtools
           config={{
             position: 'bottom-right',

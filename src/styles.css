@@ -160,6 +160,7 @@
 html,
 body,
 #app {
+  height: 100%;
   min-height: 100%;
 }
 
@@ -406,6 +407,13 @@ pre code {
 }
 
 /* React Flow Notion Overrides */
+.react-flow {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  position: relative !important;
+}
+
 .react-flow__background {
   background-color: var(--bg-secondary) !important;
 }

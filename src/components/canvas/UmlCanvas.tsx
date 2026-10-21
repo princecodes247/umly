@@ -140,7 +140,10 @@ export const UmlCanvas: React.FC<UmlCanvasProps> = ({
   }, [setEdges])
 
   return (
-    <div className="w-full h-full relative overflow-hidden bg-[var(--bg-secondary)] rounded-[6px] border border-[var(--border-subtle)]">
+    <div
+      className="w-full h-full relative overflow-hidden bg-[var(--bg-secondary)] rounded-[6px] border border-[var(--border-subtle)]"
+      style={{ width: '100%', height: '100%', minHeight: '360px' }}
+    >
       <UmlMarkers />
       <ReactFlow
         nodes={nodes}
@@ -155,7 +158,7 @@ export const UmlCanvas: React.FC<UmlCanvasProps> = ({
         minZoom={0.4}
         maxZoom={1.8}
         deleteKeyCode={['Backspace', 'Delete']}
-        proOptions={{ hideAttribution: true }}
+        style={{ width: '100%', height: '100%', minHeight: '360px' }}
       >
         <Background
           variant={BackgroundVariant.Dots}

@@ -34,7 +34,7 @@ export const Route = createFileRoute('/play/$levelId')({
   component: PlayLevelPage,
 })
 
-export default function PlayLevelPage() {
+function PlayLevelPage() {
   const { level } = Route.useLoaderData()
   const navigate = useNavigate()
 
@@ -151,7 +151,7 @@ export default function PlayLevelPage() {
   }
 
   return (
-    <div className="flex-1 flex flex-col h-[calc(100vh-2.75rem)] max-h-[calc(100vh-2.75rem)] overflow-hidden p-2 sm:p-3 gap-2 bg-[var(--bg-primary)]">
+    <div className="flex-1 flex flex-col h-full w-full min-h-0 overflow-hidden p-2 sm:p-3 gap-2 bg-[var(--bg-primary)]">
       {/* Top Workspace Toolbar */}
       <header className="flex items-center justify-between px-3 py-1.5 bg-[var(--bg-primary)] border border-[var(--border-subtle)] rounded-[6px] shadow-xs shrink-0 select-none">
         {/* Left: Back Link & Level Indicator */}
@@ -216,9 +216,9 @@ export default function PlayLevelPage() {
       </div>
 
       {/* Main Workspace: Left Scenario Sidebar + Right Whiteboard Canvas */}
-      <div className="flex-1 flex flex-col md:flex-row gap-2 min-h-0 overflow-hidden">
+      <div className="flex-1 flex flex-col md:flex-row gap-2 min-h-0 overflow-hidden h-full">
         {/* Scenario Drawer / Sidebar */}
-        <div className="w-full md:w-80 lg:w-96 shrink-0 h-48 md:h-full flex flex-col">
+        <div className="w-full md:w-80 lg:w-96 shrink-0 h-48 md:h-full flex flex-col min-h-0">
           <ScenarioPanel
             level={level}
             hintsUsedCount={hintsUsed}
@@ -228,7 +228,7 @@ export default function PlayLevelPage() {
         </div>
 
         {/* Notion Whiteboard Canvas */}
-        <div className="flex-1 h-full min-h-[300px] relative">
+        <div className="flex-1 w-full h-full min-h-[400px] md:min-h-0 relative flex flex-col">
           <UmlCanvas
             initialNodes={defaultNodes}
             initialEdges={defaultEdges}
