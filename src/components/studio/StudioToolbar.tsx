@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react'
+import { Link } from '@tanstack/react-router'
 import {
   User,
   CircleDot,
@@ -16,6 +17,8 @@ import {
   FileCode,
   Image as ImageIcon,
   Sparkles,
+  ArrowLeft,
+  Plus,
 } from 'lucide-react'
 import type { UmlRelationshipType } from '../../types/game'
 import { DIAGRAM_TEMPLATES } from '../../data/templates'
@@ -40,6 +43,7 @@ interface StudioToolbarProps {
   onExportSvg: () => void
   onExportJson: () => void
   onImportJson: (file: File) => void
+  onNewDiagram?: () => void
   isSaved?: boolean
 }
 
@@ -60,6 +64,7 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
   onExportSvg,
   onExportJson,
   onImportJson,
+  onNewDiagram,
   isSaved = true,
 }) => {
   const [showActorMenu, setShowActorMenu] = useState(false)
@@ -112,8 +117,31 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
     <div className="flex flex-col gap-2 shrink-0 select-none">
       {/* Top Ribbon */}
       <div className="flex items-center justify-between gap-2 px-3 py-1.5 bg-[var(--bg-primary)] border border-[var(--border-subtle)] rounded-[6px] shadow-xs">
-        {/* Left: Diagram Title & Save Status */}
+        {/* Left: Back Link, Title & Save Status */}
         <div className="flex items-center gap-2 min-w-0">
+          <Link
+            to="/"
+            className="flex items-center gap-1 px-1.5 py-1 rounded-[4px] text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] transition-colors shrink-0"
+            title="Return to Home Dashboard"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">Dashboard</span>
+          </Link>
+
+          <div className="h-3.5 w-px bg-[var(--border-subtle)] shrink-0" />
+
+          {onNewDiagram && (
+            <button
+              type="button"
+              onClick={onNewDiagram}
+              className="flex items-center gap-1 px-2 py-1 rounded-[4px] text-xs font-medium bg-[var(--selection-bg)] text-[var(--primary-btn)] hover:opacity-90 transition-opacity shrink-0"
+              title="Create another diagram draft"
+            >
+              <Plus className="w-3 h-3" />
+              <span className="hidden sm:inline">New</span>
+            </button>
+          )}
+
           {isEditingTitle ? (
             <input
               type="text"

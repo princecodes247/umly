@@ -48,7 +48,7 @@ export const Route = createRootRoute({
 function RootDocument({ children }: { children: React.ReactNode }) {
   const routerState = useRouterState()
   const isPlayPage = routerState.location.pathname.startsWith('/play')
-  const isStudioPage = routerState.location.pathname === '/'
+  const isStudioPage = routerState.location.pathname.startsWith('/studio')
 
   return (
     <html lang="en" suppressHydrationWarning>

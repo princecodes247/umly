@@ -1,15 +1,25 @@
 import { useState, useEffect } from 'react'
-import { Link, useRouterState } from '@tanstack/react-router'
-import { Star, BookOpen, ChevronRight, PenTool, Puzzle } from 'lucide-react'
+import { Link, useRouterState, useNavigate } from '@tanstack/react-router'
+import {
+  Star,
+  BookOpen,
+  ChevronRight,
+  PenTool,
+  Puzzle,
+  Plus,
+} from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
 import { getStoredProgress } from '../lib/storage'
 import { UmlCheatsheetModal } from './game/UmlCheatsheetModal'
+import { NewDiagramModal } from './studio/NewDiagramModal'
 import { LEVELS } from '../data/levels'
 
 export default function Header() {
   const [totalStars, setTotalStars] = useState(0)
   const [showCheatsheet, setShowCheatsheet] = useState(false)
+  const [showNewModal, setShowNewModal] = useState(false)
   const routerState = useRouterState()
+  const navigate = useNavigate()
 
   useEffect(() => {
     const updateStars = () => {
@@ -26,9 +36,9 @@ export default function Header() {
     return () => window.removeEventListener('storage', updateStars)
   }, [])
 
-  // Check route status
   const pathname = routerState.location.pathname
-  const isStudio = pathname === '/'
+  const isHome = pathname === '/'
+  const isStudio = pathname.startsWith('/studio')
   const isPuzzles = pathname.startsWith('/puzzles')
   const matchPlay = pathname.match(/\/play\/([^/]+)/)
   const currentLevelId = matchPlay ? matchPlay[1] : null
@@ -37,6 +47,10 @@ export default function Header() {
     : null
 
   const totalPossibleStars = LEVELS.length * 3
+
+  const handleCreated = (draftId: string) => {
+    navigate({ to: '/studio/$diagramId', params: { diagramId: draftId } })
+  }
 
   return (
     <>
@@ -60,6 +74,17 @@ export default function Header() {
             <div className="flex items-center gap-1">
               <Link
                 to="/"
+                className={`px-2 py-1 rounded-[4px] text-xs font-medium transition-colors ${
+                  isHome
+                    ? 'bg-[var(--hover-bg-strong)] text-[var(--text-primary)] font-semibold'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)]'
+                }`}
+              >
+                Home
+              </Link>
+
+              <Link
+                to="/studio"
                 className={`flex items-center gap-1.5 px-2 py-1 rounded-[4px] text-xs font-medium transition-colors ${
                   isStudio
                     ? 'bg-[var(--hover-bg-strong)] text-[var(--text-primary)] font-semibold'
@@ -68,9 +93,6 @@ export default function Header() {
               >
                 <PenTool className="w-3.5 h-3.5" />
                 <span>Studio</span>
-                <span className="hidden sm:inline-block text-[9px] uppercase px-1 py-0 rounded bg-[var(--selection-bg)] text-[var(--primary-btn)] font-semibold">
-                  Free Draw
-                </span>
               </Link>
 
               <Link
@@ -98,6 +120,16 @@ export default function Header() {
 
           {/* Right Action Bar */}
           <div className="flex items-center gap-1 sm:gap-2">
+            {/* Quick Create Diagram Button */}
+            <button
+              type="button"
+              onClick={() => setShowNewModal(true)}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-[4px] text-xs font-medium bg-[var(--text-primary)] text-[var(--bg-primary)] hover:opacity-90 transition-opacity"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">New Diagram</span>
+            </button>
+
             {/* Notation Guide Button */}
             <button
               type="button"
@@ -127,6 +159,14 @@ export default function Header() {
         </div>
       </header>
 
+      {/* New Diagram Modal */}
+      <NewDiagramModal
+        isOpen={showNewModal}
+        onClose={() => setShowNewModal(false)}
+        onCreated={handleCreated}
+      />
+
+      {/* UML Cheatsheet Modal */}
       <UmlCheatsheetModal
         isOpen={showCheatsheet}
         onClose={() => setShowCheatsheet(false)}

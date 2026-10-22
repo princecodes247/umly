@@ -38,8 +38,13 @@ import {
   exportDiagramAsSvg,
   exportDiagramAsJson,
   parseDiagramJson,
-  type DiagramProject,
 } from '../../lib/exportDiagram'
+import {
+  getDiagramDraft,
+  saveDiagramDraft,
+  getLastActiveDiagramId,
+  type DiagramDraft,
+} from '../../lib/diagramStorage'
 import type {
   UmlRelationshipType,
   UmlNodeData,
@@ -57,26 +62,35 @@ const edgeTypes: EdgeTypes = {
   umlEdge: UmlEdge,
 }
 
-const STORAGE_KEY = 'umly_studio_state_v1'
-
 interface HistorySnapshot {
   nodes: Node[]
   edges: Edge[]
 }
 
-function StudioCanvasInner() {
+interface StudioCanvasProps {
+  diagramId?: string
+  onOpenNewDiagram?: () => void
+}
+
+function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
   const reactFlowInstance = useReactFlow()
   const canvasRef = useRef<HTMLDivElement>(null)
 
-  // Initial template (default to ATM Banking diagram)
+  // Resolve active diagram draft ID
+  const activeDraftId = diagramId || getLastActiveDiagramId()
+  const initialDraft = getDiagramDraft(activeDraftId)
+
+  // Initial fallback to ATM Banking diagram if draft not found
   const defaultTemplate = DIAGRAM_TEMPLATES[1]
 
-  const [title, setTitle] = useState<string>('ATM Banking System')
+  const [title, setTitle] = useState<string>(
+    initialDraft?.title || defaultTemplate.name
+  )
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>(
-    defaultTemplate.nodes
+    initialDraft?.nodes || defaultTemplate.nodes
   )
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(
-    defaultTemplate.edges
+    initialDraft?.edges || defaultTemplate.edges
   )
 
   const [activeRelationshipType, setActiveRelationshipType] =
@@ -90,54 +104,55 @@ function StudioCanvasInner() {
 
   // Undo / Redo History
   const [history, setHistory] = useState<HistorySnapshot[]>([
-    { nodes: defaultTemplate.nodes, edges: defaultTemplate.edges },
+    {
+      nodes: initialDraft?.nodes || defaultTemplate.nodes,
+      edges: initialDraft?.edges || defaultTemplate.edges,
+    },
   ])
   const [historyIndex, setHistoryIndex] = useState(0)
   const isInternalUpdate = useRef(false)
 
-  // Restore from localStorage on initial mount
+  // When diagramId changes (e.g. switching drafts), load new draft
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      if (stored) {
-        const parsed = JSON.parse(stored) as DiagramProject
-        if (Array.isArray(parsed.nodes) && Array.isArray(parsed.edges)) {
-          setTitle(parsed.title || 'My Diagram')
-          setNodes(parsed.nodes)
-          setEdges(parsed.edges)
-          setHistory([{ nodes: parsed.nodes, edges: parsed.edges }])
-          setHistoryIndex(0)
-          setTimeout(() => {
-            reactFlowInstance.fitView({ padding: 0.2 })
-          }, 50)
-        }
-      }
-    } catch (err) {
-      console.warn('Could not restore diagram from storage', err)
+    const draft = getDiagramDraft(activeDraftId)
+    if (draft) {
+      setTitle(draft.title)
+      setNodes(draft.nodes)
+      setEdges(draft.edges)
+      setHistory([{ nodes: draft.nodes, edges: draft.edges }])
+      setHistoryIndex(0)
+      setSelectedNode(null)
+      setSelectedEdge(null)
+      setTimeout(() => {
+        reactFlowInstance.fitView({ padding: 0.2 })
+      }, 50)
     }
-  }, [setNodes, setEdges, reactFlowInstance])
+  }, [activeDraftId, setNodes, setEdges, reactFlowInstance])
 
-  // Auto-save to localStorage
+  // Auto-save to diagram draft storage
   useEffect(() => {
     setIsSaved(false)
     const timeout = setTimeout(() => {
       try {
-        const project: DiagramProject = {
+        const existing = getDiagramDraft(activeDraftId)
+        const updatedDraft: DiagramDraft = {
+          id: activeDraftId,
           title,
-          version: '1.0',
+          type: existing?.type || 'use_case',
+          createdAt: existing?.createdAt || new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           nodes,
           edges,
         }
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(project))
+        saveDiagramDraft(updatedDraft)
         setIsSaved(true)
       } catch (err) {
-        console.warn('Failed to save to localStorage', err)
+        console.warn('Failed to save diagram draft', err)
       }
-    }, 600)
+    }, 500)
 
     return () => clearTimeout(timeout)
-  }, [title, nodes, edges])
+  }, [activeDraftId, title, nodes, edges])
 
   // Record history snapshot helper
   const pushHistory = useCallback(
@@ -180,10 +195,9 @@ function StudioCanvasInner() {
     }
   }, [historyIndex, history, setNodes, setEdges])
 
-  // Keyboard shortcuts (Cmd/Ctrl + Z, Cmd/Ctrl + Y, Delete)
+  // Keyboard shortcuts (Cmd/Ctrl + Z, Cmd/Ctrl + Y)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if user is typing in an input or textarea
       if (
         e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLTextAreaElement
@@ -330,7 +344,6 @@ function StudioCanvasInner() {
       const id = `${type}-${Date.now()}`
       const viewport = reactFlowInstance.getViewport()
 
-      // Calculate approximate center position
       const centerX = (-viewport.x + 350) / viewport.zoom
       const centerY = (-viewport.y + 250) / viewport.zoom
 
@@ -638,6 +651,7 @@ function StudioCanvasInner() {
         onExportSvg={handleExportSvg}
         onExportJson={handleExportJson}
         onImportJson={handleImportJson}
+        onNewDiagram={onOpenNewDiagram}
         isSaved={isSaved}
       />
 
@@ -706,10 +720,10 @@ function StudioCanvasInner() {
   )
 }
 
-export function StudioCanvas() {
+export function StudioCanvas({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
   return (
     <ReactFlowProvider>
-      <StudioCanvasInner />
+      <StudioCanvasInner diagramId={diagramId} onOpenNewDiagram={onOpenNewDiagram} />
     </ReactFlowProvider>
   )
 }

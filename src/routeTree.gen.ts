@@ -13,6 +13,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as PuzzlesRouteImport } from './routes/puzzles'
 import { Route as PlayLevelIdRouteImport } from './routes/play.$levelId'
+import { Route as StudioIndexRouteImport } from './routes/studio.index'
+import { Route as StudioDiagramIdRouteImport } from './routes/studio.$diagramId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,18 +36,32 @@ const PlayLevelIdRoute = PlayLevelIdRouteImport.update({
   path: '/play/$levelId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StudioIndexRoute = StudioIndexRouteImport.update({
+  id: '/studio/',
+  path: '/studio/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudioDiagramIdRoute = StudioDiagramIdRouteImport.update({
+  id: '/studio/$diagramId',
+  path: '/studio/$diagramId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/puzzles': typeof PuzzlesRoute
   '/play/$levelId': typeof PlayLevelIdRoute
+  '/studio/$diagramId': typeof StudioDiagramIdRoute
+  '/studio/': typeof StudioIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/puzzles': typeof PuzzlesRoute
   '/play/$levelId': typeof PlayLevelIdRoute
+  '/studio/$diagramId': typeof StudioDiagramIdRoute
+  '/studio': typeof StudioIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +69,34 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/puzzles': typeof PuzzlesRoute
   '/play/$levelId': typeof PlayLevelIdRoute
+  '/studio/$diagramId': typeof StudioDiagramIdRoute
+  '/studio/': typeof StudioIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/puzzles' | '/play/$levelId'
+  fullPaths:
+    | '/'
+    | '/about'
+    | '/puzzles'
+    | '/play/$levelId'
+    | '/studio/$diagramId'
+    | '/studio/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/puzzles' | '/play/$levelId'
-  id: '__root__' | '/' | '/about' | '/puzzles' | '/play/$levelId'
+  to:
+    | '/'
+    | '/about'
+    | '/puzzles'
+    | '/play/$levelId'
+    | '/studio/$diagramId'
+    | '/studio'
+  id:
+    | '__root__'
+    | '/'
+    | '/about'
+    | '/puzzles'
+    | '/play/$levelId'
+    | '/studio/$diagramId'
+    | '/studio/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +104,8 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   PuzzlesRoute: typeof PuzzlesRoute
   PlayLevelIdRoute: typeof PlayLevelIdRoute
+  StudioDiagramIdRoute: typeof StudioDiagramIdRoute
+  StudioIndexRoute: typeof StudioIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,6 +138,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlayLevelIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/studio/': {
+      id: '/studio/'
+      path: '/studio'
+      fullPath: '/studio/'
+      preLoaderRoute: typeof StudioIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/studio/$diagramId': {
+      id: '/studio/$diagramId'
+      path: '/studio/$diagramId'
+      fullPath: '/studio/$diagramId'
+      preLoaderRoute: typeof StudioDiagramIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -107,6 +160,8 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   PuzzlesRoute: PuzzlesRoute,
   PlayLevelIdRoute: PlayLevelIdRoute,
+  StudioDiagramIdRoute: StudioDiagramIdRoute,
+  StudioIndexRoute: StudioIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
