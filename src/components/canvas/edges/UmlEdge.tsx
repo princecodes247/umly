@@ -5,7 +5,7 @@ import {
   getBezierPath,
   type EdgeProps,
 } from '@xyflow/react'
-import { Trash2, RotateCw } from 'lucide-react'
+import { Trash2, RotateCw, ArrowLeftRight } from 'lucide-react'
 import type { UmlEdgeData, UmlRelationshipType } from '../../../types/game'
 
 interface UmlEdgeProps extends EdgeProps {
@@ -35,6 +35,7 @@ export const UmlEdge = memo(
 
     const relationshipType: UmlRelationshipType =
       data?.relationshipType || 'association'
+    const condition = data?.condition
 
     // Determine styles based on UML relationship
     let strokeDasharray = 'none'
@@ -52,7 +53,7 @@ export const UmlEdge = memo(
       case 'extend':
         strokeDasharray = '5,4'
         markerEnd = 'url(#uml-arrowhead)'
-        labelText = '«extend»'
+        labelText = condition ? `«extend» (${condition})` : '«extend»'
         badgeClass = 'notion-tag notion-tag-yellow font-mono text-[10px] shadow-xs'
         break
       case 'generalization':
@@ -64,7 +65,8 @@ export const UmlEdge = memo(
       default:
         strokeDasharray = 'none'
         markerEnd = ''
-        labelText = ''
+        labelText = data?.label || ''
+        badgeClass = 'notion-tag notion-tag-gray font-mono text-[10px] shadow-xs'
         break
     }
 
@@ -86,7 +88,7 @@ export const UmlEdge = memo(
           path={edgePath}
           markerEnd={markerEnd}
           style={{
-            strokeWidth: selected ? 2 : 1.5,
+            strokeWidth: selected ? 2.5 : 1.75,
             strokeDasharray,
             stroke: strokeColor,
           }}
@@ -102,13 +104,9 @@ export const UmlEdge = memo(
             }}
             className="group flex items-center gap-1 select-none"
           >
-            {labelText && (
-              <span className={badgeClass}>
-                {labelText}
-              </span>
-            )}
+            {labelText && <span className={badgeClass}>{labelText}</span>}
 
-            {/* Quick delete / swap button shown on hover or when edge is selected */}
+            {/* Quick delete / swap / flip button shown on hover or when edge is selected */}
             <div
               className={`flex items-center gap-0.5 bg-[var(--bg-primary)] border border-[var(--border-default)] rounded-[4px] p-0.5 shadow-xs transition-opacity duration-150 ${
                 selected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
@@ -116,7 +114,7 @@ export const UmlEdge = memo(
             >
               <button
                 type="button"
-                title="Cycle relationship type"
+                title="Cycle relationship type (Association, Include, Extend, Generalization)"
                 onClick={(e) => {
                   e.stopPropagation()
                   const event = new CustomEvent('cycle-edge-type', {
@@ -128,6 +126,22 @@ export const UmlEdge = memo(
               >
                 <RotateCw className="w-3 h-3" />
               </button>
+
+              <button
+                type="button"
+                title="Flip connection direction (swap source & target)"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  const event = new CustomEvent('flip-edge-direction', {
+                    detail: { edgeId: id },
+                  })
+                  window.dispatchEvent(event)
+                }}
+                className="p-1 rounded-[3px] hover:bg-[var(--hover-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+              >
+                <ArrowLeftRight className="w-3 h-3" />
+              </button>
+
               <button
                 type="button"
                 title="Delete connection"

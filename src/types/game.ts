@@ -4,7 +4,7 @@ export type LevelType = 'build' | 'fix' | 'classify'
 
 export interface UmlNodeData {
   label: string
-  nodeType: 'actor' | 'useCase' | 'boundary'
+  nodeType: 'actor' | 'useCase' | 'boundary' | 'note'
   actorType?: 'primary' | 'secondary' | 'system'
   boundaryTitle?: string
   width?: number
@@ -17,6 +17,7 @@ export interface UmlNodeData {
 export interface UmlEdgeData {
   relationshipType: UmlRelationshipType
   label?: string
+  condition?: string
   [key: string]: unknown
 }
 

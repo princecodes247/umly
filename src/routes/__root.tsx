@@ -48,6 +48,7 @@ export const Route = createRootRoute({
 function RootDocument({ children }: { children: React.ReactNode }) {
   const routerState = useRouterState()
   const isPlayPage = routerState.location.pathname.startsWith('/play')
+  const isStudioPage = routerState.location.pathname === '/'
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -60,7 +61,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <div className="flex-1 flex flex-col min-h-0 w-full">
           {children}
         </div>
-        {!isPlayPage && <Footer />}
+        {!isPlayPage && !isStudioPage && <Footer />}
         <TanStackDevtools
           config={{
             position: 'bottom-right',

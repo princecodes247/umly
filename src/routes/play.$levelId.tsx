@@ -147,7 +147,7 @@ function PlayLevelPage() {
   }
 
   const handleLevelSelect = () => {
-    navigate({ to: '/' })
+    navigate({ to: '/puzzles' })
   }
 
   return (
@@ -157,7 +157,7 @@ function PlayLevelPage() {
         {/* Left: Back Link & Level Indicator */}
         <div className="flex items-center gap-2">
           <Link
-            to="/"
+            to="/puzzles"
             className="flex items-center gap-1 px-2 py-1 rounded-[4px] text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />

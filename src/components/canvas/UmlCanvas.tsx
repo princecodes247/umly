@@ -19,6 +19,7 @@ import '@xyflow/react/dist/style.css'
 import { ActorNode } from './nodes/ActorNode'
 import { UseCaseNode } from './nodes/UseCaseNode'
 import { BoundaryNode } from './nodes/BoundaryNode'
+import { NoteNode } from './nodes/NoteNode'
 import { UmlEdge } from './edges/UmlEdge'
 import { UmlMarkers } from './UmlMarkers'
 import type { UmlRelationshipType } from '../../types/game'
@@ -27,6 +28,7 @@ const nodeTypes: NodeTypes = {
   actor: ActorNode,
   useCase: UseCaseNode,
   boundary: BoundaryNode,
+  note: NoteNode,
 }
 
 const edgeTypes: EdgeTypes = {
@@ -63,7 +65,7 @@ export const UmlCanvas: React.FC<UmlCanvasProps> = ({
   // Handle new connection created by user dragging between handles
   const onConnect = useCallback(
     (params: Connection) => {
-      // Prevent duplicate edges between the exact same pair
+      // Prevent duplicate edges between the exact same pair in same direction
       const exists = edges.some(
         (e) =>
           (e.source === params.source && e.target === params.target) ||
@@ -91,7 +93,7 @@ export const UmlCanvas: React.FC<UmlCanvasProps> = ({
     [edges, activeRelationshipType, setEdges]
   )
 
-  // Listen to custom events from edge UI buttons (cycle type, delete)
+  // Listen to custom events from edge UI buttons (cycle type, flip direction, delete)
   useEffect(() => {
     const handleCycle = (e: Event) => {
       const customEvent = e as CustomEvent<{ edgeId: string }>
@@ -108,7 +110,8 @@ export const UmlCanvas: React.FC<UmlCanvasProps> = ({
       setEdges((eds) =>
         eds.map((edge) => {
           if (edge.id !== edgeId) return edge
-          const currentType = (edge.data?.relationshipType as UmlRelationshipType) || 'association'
+          const currentType =
+            (edge.data?.relationshipType as UmlRelationshipType) || 'association'
           const nextIndex = (order.indexOf(currentType) + 1) % order.length
           const nextType = order[nextIndex]
 
@@ -123,6 +126,25 @@ export const UmlCanvas: React.FC<UmlCanvasProps> = ({
       )
     }
 
+    const handleFlip = (e: Event) => {
+      const customEvent = e as CustomEvent<{ edgeId: string }>
+      const edgeId = customEvent.detail?.edgeId
+      if (!edgeId) return
+
+      setEdges((eds) =>
+        eds.map((edge) => {
+          if (edge.id !== edgeId) return edge
+          return {
+            ...edge,
+            source: edge.target,
+            target: edge.source,
+            sourceHandle: edge.targetHandle,
+            targetHandle: edge.sourceHandle,
+          }
+        })
+      )
+    }
+
     const handleDelete = (e: Event) => {
       const customEvent = e as CustomEvent<{ edgeId: string }>
       const edgeId = customEvent.detail?.edgeId
@@ -131,10 +153,12 @@ export const UmlCanvas: React.FC<UmlCanvasProps> = ({
     }
 
     window.addEventListener('cycle-edge-type', handleCycle)
+    window.addEventListener('flip-edge-direction', handleFlip)
     window.addEventListener('delete-edge', handleDelete)
 
     return () => {
       window.removeEventListener('cycle-edge-type', handleCycle)
+      window.removeEventListener('flip-edge-direction', handleFlip)
       window.removeEventListener('delete-edge', handleDelete)
     }
   }, [setEdges])
