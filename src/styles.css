@@ -442,3 +442,54 @@ pre code {
   border-radius: 4px !important;
   background-color: var(--bg-primary) !important;
 }
+
+/* React Flow Z-Index & Boundary Layering */
+.react-flow__node-boundary {
+  z-index: 1 !important;
+  pointer-events: none !important;
+}
+
+.react-flow__node-boundary.selected {
+  z-index: 2 !important;
+}
+
+.react-flow__node-boundary .boundary-interactive {
+  pointer-events: auto !important;
+}
+
+.react-flow__node-boundary .react-flow__resize-control {
+  pointer-events: auto !important;
+}
+
+.react-flow__node-actor,
+.react-flow__node-useCase,
+.react-flow__node-note {
+  z-index: 10 !important;
+  pointer-events: auto !important;
+}
+
+.react-flow__node-actor.selected,
+.react-flow__node-useCase.selected,
+.react-flow__node-note.selected {
+  z-index: 25 !important;
+}
+
+/* Multi-selection marquee styling */
+.react-flow__selection {
+  background: var(--selection-bg) !important;
+  border: 1px solid var(--primary-btn) !important;
+  border-radius: 2px !important;
+}
+
+/* Node toolbars and edge action tooltips: always above all nodes */
+.react-flow__node-toolbar {
+  z-index: 99999 !important;
+  pointer-events: auto !important;
+}
+
+.react-flow__edgelabel-renderer,
+.react-flow__edge-toolbar,
+.react-flow__viewport-portal {
+  z-index: 99999 !important;
+  pointer-events: none !important;
+}

@@ -1,5 +1,11 @@
 import { memo, useState, useRef, useEffect } from 'react'
-import { Handle, Position, useReactFlow, type NodeProps } from '@xyflow/react'
+import {
+  Handle,
+  Position,
+  NodeToolbar,
+  useReactFlow,
+  type NodeProps,
+} from '@xyflow/react'
 import { Trash2, Edit2 } from 'lucide-react'
 import type { UmlNodeData } from '../../../types/game'
 
@@ -86,9 +92,14 @@ export const NoteNode = memo(({ id, data, selected }: NodeProps) => {
         className="!w-2 !h-2 !bg-[#cb912f] opacity-40 group-hover:opacity-100"
       />
 
-      {/* Actions */}
+      {/* NodeToolbar: Always rendered in top layer with z-[99999] */}
       {selected && !isLocked && (
-        <div className="absolute -top-7 right-0 flex items-center gap-0.5 bg-[var(--bg-primary)] border border-[var(--border-default)] px-1 py-0.5 rounded-[3px] shadow-xs z-50 text-xs">
+        <NodeToolbar
+          isVisible={selected && !isLocked}
+          position={Position.Top}
+          offset={8}
+          className="flex items-center gap-1 bg-[var(--bg-primary)] border border-[var(--border-default)] px-1.5 py-0.5 rounded-[4px] shadow-lg z-[99999] text-xs"
+        >
           <button
             type="button"
             title="Edit note"
@@ -96,19 +107,19 @@ export const NoteNode = memo(({ id, data, selected }: NodeProps) => {
               e.stopPropagation()
               setIsEditing(true)
             }}
-            className="p-0.5 rounded-[2px] hover:bg-[var(--hover-bg)] text-[var(--text-secondary)]"
+            className="p-1 rounded-[3px] hover:bg-[var(--hover-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
           >
-            <Edit2 className="w-2.5 h-2.5" />
+            <Edit2 className="w-3 h-3" />
           </button>
           <button
             type="button"
             title="Delete note"
             onClick={handleDelete}
-            className="p-0.5 rounded-[2px] hover:bg-[var(--notion-red-bg)] text-[var(--text-secondary)] hover:text-[var(--notion-red-text)]"
+            className="p-1 rounded-[3px] hover:bg-[var(--notion-red-bg)] text-[var(--text-secondary)] hover:text-[var(--notion-red-text)]"
           >
-            <Trash2 className="w-2.5 h-2.5" />
+            <Trash2 className="w-3 h-3" />
           </button>
-        </div>
+        </NodeToolbar>
       )}
 
       {/* Content */}
@@ -131,4 +142,3 @@ export const NoteNode = memo(({ id, data, selected }: NodeProps) => {
 })
 
 NoteNode.displayName = 'NoteNode'
-

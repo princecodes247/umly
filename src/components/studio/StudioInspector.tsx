@@ -12,6 +12,8 @@ import {
   ChevronRight,
   ChevronLeft,
   BookCheck,
+  Layers,
+  XCircle,
 } from 'lucide-react'
 import type {
   UmlNodeData,
@@ -21,12 +23,17 @@ import type {
 interface StudioInspectorProps {
   selectedNode: Node | null
   selectedEdge: Edge | null
+  selectedNodes?: Node[]
+  selectedEdges?: Edge[]
   onUpdateNodeData: (id: string, data: Partial<UmlNodeData>) => void
   onUpdateEdgeData: (id: string, data: Partial<UmlEdgeData>) => void
   onDeleteNode: (id: string) => void
   onDeleteEdge: (id: string) => void
   onDuplicateNode: (id: string) => void
   onFlipEdgeDirection: (id: string) => void
+  onDeleteSelected?: () => void
+  onDuplicateSelected?: () => void
+  onDeselectAll?: () => void
   allNodes: Node[]
   allEdges: Edge[]
   isOpen: boolean
@@ -36,12 +43,17 @@ interface StudioInspectorProps {
 export const StudioInspector: React.FC<StudioInspectorProps> = ({
   selectedNode,
   selectedEdge,
+  selectedNodes = [],
+  selectedEdges: _selectedEdges = [],
   onUpdateNodeData,
   onUpdateEdgeData,
   onDeleteNode,
   onDeleteEdge,
   onDuplicateNode,
   onFlipEdgeDirection,
+  onDeleteSelected,
+  onDuplicateSelected,
+  onDeselectAll,
   allNodes,
   allEdges,
   isOpen,
@@ -60,6 +72,8 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
     )
   }
 
+  const isMultiSelection = selectedNodes.length > 1
+
   // Node stats
   const actorsCount = allNodes.filter((n) => n.type === 'actor').length
   const useCasesCount = allNodes.filter((n) => n.type === 'useCase').length
@@ -74,11 +88,13 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-[var(--border-subtle)] shrink-0">
         <span className="font-semibold text-xs text-[var(--text-primary)]">
-          {selectedNode
-            ? 'Node Properties'
-            : selectedEdge
-              ? 'Relationship Properties'
-              : 'Diagram Overview'}
+          {isMultiSelection
+            ? 'Multiple Elements Selected'
+            : selectedNode
+              ? 'Node Properties'
+              : selectedEdge
+                ? 'Relationship Properties'
+                : 'Diagram Overview'}
         </span>
         <button
           type="button"
@@ -91,8 +107,53 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
       </div>
 
       <div className="p-4 space-y-4 flex-1 overflow-y-auto">
-        {/* CASE 1: NODE SELECTED */}
-        {selectedNode && nodeData ? (
+        {/* CASE 0: MULTIPLE ELEMENTS SELECTED */}
+        {isMultiSelection ? (
+          <div className="space-y-4">
+            <div className="p-3 rounded-[6px] bg-[var(--selection-bg)] border border-[var(--primary-btn)]/30 space-y-2">
+              <div className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-[var(--primary-btn)]" />
+                <span className="font-semibold text-xs text-[var(--primary-btn)]">
+                  {selectedNodes.length} Elements Selected
+                </span>
+              </div>
+              <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed">
+                You can move, duplicate, or delete all selected items together.
+                Hold <kbd className="px-1 py-0.5 rounded bg-[var(--bg-primary)] border border-[var(--border-subtle)] font-mono text-[10px]">Shift</kbd> or <kbd className="px-1 py-0.5 rounded bg-[var(--bg-primary)] border border-[var(--border-subtle)] font-mono text-[10px]">Cmd</kbd> to add or remove elements.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={onDuplicateSelected}
+                className="w-full notion-btn flex items-center justify-center gap-1.5 py-2"
+              >
+                <Copy className="w-3.5 h-3.5" />
+                <span>Duplicate Selected ({selectedNodes.length})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={onDeleteSelected}
+                className="w-full notion-btn text-[var(--notion-red-text)] hover:bg-[var(--notion-red-bg)] flex items-center justify-center gap-1.5 py-2"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete Selected ({selectedNodes.length})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={onDeselectAll}
+                className="w-full notion-btn notion-btn-ghost flex items-center justify-center gap-1.5 py-1.5 text-[var(--text-secondary)]"
+              >
+                <XCircle className="w-3.5 h-3.5" />
+                <span>Deselect All</span>
+              </button>
+            </div>
+          </div>
+        ) : selectedNode && nodeData ? (
+          /* CASE 1: SINGLE NODE SELECTED */
           <div className="space-y-4">
             {/* Node Type Pill */}
             <div className="flex items-center gap-2">
@@ -234,6 +295,9 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                     />
                   </div>
                 </div>
+                <p className="text-[10px] text-[var(--text-tertiary)] leading-tight">
+                  Moving this boundary automatically moves all elements placed inside it.
+                </p>
               </div>
             )}
 
@@ -464,40 +528,76 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
               </div>
             </div>
 
+            {/* Keyboard Shortcuts Cheatsheet */}
+            <div className="space-y-2 pt-2 border-t border-[var(--border-subtle)]">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] font-mono">
+                Keyboard Shortcuts
+              </span>
+              <div className="space-y-1 text-[11px] text-[var(--text-secondary)]">
+                <div className="flex items-center justify-between py-0.5">
+                  <span>Copy element(s)</span>
+                  <kbd className="px-1.5 py-0.5 rounded bg-[var(--bg-secondary)] border border-[var(--border-subtle)] font-mono text-[10px]">
+                    ⌘C / Ctrl+C
+                  </kbd>
+                </div>
+                <div className="flex items-center justify-between py-0.5">
+                  <span>Paste element(s)</span>
+                  <kbd className="px-1.5 py-0.5 rounded bg-[var(--bg-secondary)] border border-[var(--border-subtle)] font-mono text-[10px]">
+                    ⌘V / Ctrl+V
+                  </kbd>
+                </div>
+                <div className="flex items-center justify-between py-0.5">
+                  <span>Undo / Redo</span>
+                  <kbd className="px-1.5 py-0.5 rounded bg-[var(--bg-secondary)] border border-[var(--border-subtle)] font-mono text-[10px]">
+                    ⌘Z / ⌘⇧Z
+                  </kbd>
+                </div>
+                <div className="flex items-center justify-between py-0.5">
+                  <span>Select all</span>
+                  <kbd className="px-1.5 py-0.5 rounded bg-[var(--bg-secondary)] border border-[var(--border-subtle)] font-mono text-[10px]">
+                    ⌘A / Ctrl+A
+                  </kbd>
+                </div>
+                <div className="flex items-center justify-between py-0.5">
+                  <span>Multi-select</span>
+                  <kbd className="px-1.5 py-0.5 rounded bg-[var(--bg-secondary)] border border-[var(--border-subtle)] font-mono text-[10px]">
+                    Shift + Drag / Click
+                  </kbd>
+                </div>
+                <div className="flex items-center justify-between py-0.5">
+                  <span>Delete selected</span>
+                  <kbd className="px-1.5 py-0.5 rounded bg-[var(--bg-secondary)] border border-[var(--border-subtle)] font-mono text-[10px]">
+                    Delete / ⌫
+                  </kbd>
+                </div>
+              </div>
+            </div>
+
             {/* UML 2.5 Quick Rules Card */}
             <div className="space-y-2 pt-2 border-t border-[var(--border-subtle)]">
               <div className="flex items-center gap-1 text-[var(--text-primary)] font-semibold text-xs">
                 <BookCheck className="w-3.5 h-3.5 text-[#448361] dark:text-[#529e72]" />
-                <span>UML Modeling Best Practices</span>
+                <span>UML Modeling Rules</span>
               </div>
               <ul className="space-y-1.5 text-[11px] text-[var(--text-secondary)] leading-relaxed list-disc list-inside">
                 <li>
-                  <strong>Actors</strong> represent roles outside the system
-                  (users or external APIs).
+                  <strong>Actors</strong> sit outside the system boundary.
                 </li>
                 <li>
-                  <strong>Use Cases</strong> represent goals achieved by the
-                  system and live inside the boundary.
+                  <strong>Use Cases</strong> live inside the boundary.
                 </li>
                 <li>
-                  Never connect two actors directly with an association
-                  (use generalization for inheritance).
+                  Moving a boundary automatically moves all elements enclosed in it.
                 </li>
                 <li>
                   <code className="text-[10px]">«include»</code> arrows point to
-                  mandatory sub-tasks.
+                  mandatory inclusions.
                 </li>
                 <li>
                   <code className="text-[10px]">«extend»</code> arrows point
                   back to the base usecase.
                 </li>
               </ul>
-            </div>
-
-            {/* Quick Tips */}
-            <div className="p-2.5 rounded-[4px] bg-[var(--hover-bg)] text-[11px] text-[var(--text-tertiary)] leading-relaxed space-y-1">
-              <p>💡 <strong>Tip:</strong> Double-click any element to rename it in place.</p>
-              <p>💡 <strong>Tip:</strong> Drag from handles to connect elements.</p>
             </div>
           </div>
         )}

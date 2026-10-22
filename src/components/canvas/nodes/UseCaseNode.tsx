@@ -1,11 +1,17 @@
 import { memo, useState, useRef, useEffect } from 'react'
-import { Handle, Position, useReactFlow, type NodeProps } from '@xyflow/react'
+import {
+  Handle,
+  Position,
+  NodeToolbar,
+  useReactFlow,
+  type NodeProps,
+} from '@xyflow/react'
 import { Trash2, Copy, Edit2 } from 'lucide-react'
 import type { UmlNodeData } from '../../../types/game'
 
 export const UseCaseNode = memo(({ id, data, selected }: NodeProps) => {
   const nodeData = data as unknown as UmlNodeData
-  const { updateNodeData, deleteElements, getNode, addNodes } = useReactFlow()
+  const { updateNodeData, deleteElements } = useReactFlow()
   const isLocked = Boolean(nodeData.isLocked)
 
   const [isEditing, setIsEditing] = useState(false)
@@ -41,23 +47,10 @@ export const UseCaseNode = memo(({ id, data, selected }: NodeProps) => {
 
   const handleDuplicate = (e: React.MouseEvent) => {
     e.stopPropagation()
-    const current = getNode(id)
-    if (!current) return
-    const newId = `uc-${Date.now()}`
-    addNodes({
-      ...current,
-      id: newId,
-      position: {
-        x: current.position.x + 30,
-        y: current.position.y + 30,
-      },
-      selected: true,
-      data: {
-        ...current.data,
-        label: `${nodeData.label} (Copy)`,
-        isLocked: false,
-      },
+    const event = new CustomEvent('duplicate-node', {
+      detail: { nodeId: id },
     })
+    window.dispatchEvent(event)
   }
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -81,9 +74,14 @@ export const UseCaseNode = memo(({ id, data, selected }: NodeProps) => {
         if (!isLocked) setIsEditing(true)
       }}
     >
-      {/* Floating Action Pill when selected (only in free mode or unlocked) */}
+      {/* NodeToolbar: Always rendered in top layer with z-[99999] so other elements cannot overlap it */}
       {selected && !isLocked && (
-        <div className="absolute -top-9 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-[var(--bg-primary)] border border-[var(--border-default)] px-1.5 py-0.5 rounded-[4px] shadow-sm z-50 text-xs">
+        <NodeToolbar
+          isVisible={selected && !isLocked}
+          position={Position.Top}
+          offset={8}
+          className="flex items-center gap-1 bg-[var(--bg-primary)] border border-[var(--border-default)] px-1.5 py-0.5 rounded-[4px] shadow-lg z-[99999] text-xs"
+        >
           <button
             type="button"
             title="Edit Use Case Name"
@@ -111,7 +109,7 @@ export const UseCaseNode = memo(({ id, data, selected }: NodeProps) => {
           >
             <Trash2 className="w-3 h-3" />
           </button>
-        </div>
+        </NodeToolbar>
       )}
 
       {/* Handles on all 4 sides with both source & target support */}

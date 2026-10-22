@@ -15,12 +15,14 @@ import {
   useReactFlow,
   ReactFlowProvider,
   BackgroundVariant,
+  SelectionMode,
   type Connection,
   type Edge,
   type Node,
   type NodeTypes,
   type EdgeTypes,
   type OnSelectionChangeParams,
+  type OnNodeDrag,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 
@@ -31,6 +33,7 @@ import { NoteNode } from '../canvas/nodes/NoteNode'
 import { UmlEdge } from '../canvas/edges/UmlEdge'
 import { UmlMarkers } from '../canvas/UmlMarkers'
 import { StudioToolbar } from './StudioToolbar'
+import { StudioBottomDock } from './StudioBottomDock'
 import { StudioInspector } from './StudioInspector'
 import { DIAGRAM_TEMPLATES } from '../../data/templates'
 import {
@@ -80,7 +83,6 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
   const activeDraftId = diagramId || getLastActiveDiagramId()
   const initialDraft = getDiagramDraft(activeDraftId)
 
-  // Initial fallback to ATM Banking diagram if draft not found
   const defaultTemplate = DIAGRAM_TEMPLATES[1]
 
   const [title, setTitle] = useState<string>(
@@ -96,21 +98,144 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
   const [activeRelationshipType, setActiveRelationshipType] =
     useState<UmlRelationshipType>('association')
 
-  // Selection
-  const [selectedNode, setSelectedNode] = useState<Node | null>(null)
-  const [selectedEdge, setSelectedEdge] = useState<Edge | null>(null)
+  // Selection states
+  const [selectedNodes, setSelectedNodes] = useState<Node[]>([])
+  const [selectedEdges, setSelectedEdges] = useState<Edge[]>([])
   const [isInspectorOpen, setIsInspectorOpen] = useState(true)
   const [isSaved, setIsSaved] = useState(true)
 
-  // Undo / Redo History
-  const [history, setHistory] = useState<HistorySnapshot[]>([
-    {
-      nodes: initialDraft?.nodes || defaultTemplate.nodes,
-      edges: initialDraft?.edges || defaultTemplate.edges,
-    },
-  ])
-  const [historyIndex, setHistoryIndex] = useState(0)
-  const isInternalUpdate = useRef(false)
+  // Robust Undo / Redo history refs
+  const pastRef = useRef<HistorySnapshot[]>([])
+  const futureRef = useRef<HistorySnapshot[]>([])
+  const [canUndo, setCanUndo] = useState(false)
+  const [canRedo, setCanRedo] = useState(false)
+
+  // Clipboard for Cmd+C and Cmd+V
+  const clipboardRef = useRef<{ nodes: Node[]; edges: Edge[] } | null>(null)
+
+  // Helper: push snapshot of current state before a mutation
+  const pushSnapshot = useCallback(() => {
+    pastRef.current.push({
+      nodes: JSON.parse(JSON.stringify(nodes)),
+      edges: JSON.parse(JSON.stringify(edges)),
+    })
+    if (pastRef.current.length > 50) {
+      pastRef.current.shift()
+    }
+    futureRef.current = []
+    setCanUndo(true)
+    setCanRedo(false)
+  }, [nodes, edges])
+
+  // Undo execution
+  const handleUndo = useCallback(() => {
+    if (pastRef.current.length === 0) return
+
+    const previous = pastRef.current.pop()
+    if (!previous) return
+
+    futureRef.current.unshift({
+      nodes: JSON.parse(JSON.stringify(nodes)),
+      edges: JSON.parse(JSON.stringify(edges)),
+    })
+
+    setNodes(previous.nodes)
+    setEdges(previous.edges)
+    setCanUndo(pastRef.current.length > 0)
+    setCanRedo(true)
+  }, [nodes, edges, setNodes, setEdges])
+
+  // Redo execution
+  const handleRedo = useCallback(() => {
+    if (futureRef.current.length === 0) return
+
+    const next = futureRef.current.shift()
+    if (!next) return
+
+    pastRef.current.push({
+      nodes: JSON.parse(JSON.stringify(nodes)),
+      edges: JSON.parse(JSON.stringify(edges)),
+    })
+
+    setNodes(next.nodes)
+    setEdges(next.edges)
+    setCanUndo(true)
+    setCanRedo(futureRef.current.length > 0)
+  }, [nodes, edges, setNodes, setEdges])
+
+  // Copy handler
+  const handleCopy = useCallback(() => {
+    const selNodes = nodes.filter((n) => n.selected)
+    if (selNodes.length === 0) return
+
+    const selNodeIds = new Set(selNodes.map((n) => n.id))
+    const selEdges = edges.filter(
+      (e) => selNodeIds.has(e.source) && selNodeIds.has(e.target)
+    )
+
+    clipboardRef.current = {
+      nodes: JSON.parse(JSON.stringify(selNodes)),
+      edges: JSON.parse(JSON.stringify(selEdges)),
+    }
+  }, [nodes, edges])
+
+  // Paste handler
+  const handlePaste = useCallback(() => {
+    if (!clipboardRef.current || clipboardRef.current.nodes.length === 0) return
+
+    pushSnapshot()
+
+    const idMap = new Map<string, string>()
+    const newNodes: Node[] = []
+    const timestamp = Date.now()
+
+    clipboardRef.current.nodes.forEach((node, idx) => {
+      const newId = `${node.type}-${timestamp}-${idx}`
+      idMap.set(node.id, newId)
+      newNodes.push({
+        ...node,
+        id: newId,
+        position: {
+          x: node.position.x + 35,
+          y: node.position.y + 35,
+        },
+        selected: true,
+        data: {
+          ...node.data,
+        },
+      })
+    })
+
+    const newEdges: Edge[] = []
+    clipboardRef.current.edges.forEach((edge, idx) => {
+      const newSource = idMap.get(edge.source)
+      const newTarget = idMap.get(edge.target)
+      if (newSource && newTarget) {
+        newEdges.push({
+          ...edge,
+          id: `edge-${timestamp}-${idx}`,
+          source: newSource,
+          target: newTarget,
+          selected: true,
+        })
+      }
+    })
+
+    // Advance clipboard positions so consecutive pastes tile
+    clipboardRef.current.nodes.forEach((n) => {
+      n.position.x += 35
+      n.position.y += 35
+    })
+
+    setNodes((nds) => [
+      ...nds.map((n) => ({ ...n, selected: false })),
+      ...newNodes,
+    ])
+    setEdges((eds) => [
+      ...eds.map((e) => ({ ...e, selected: false })),
+      ...newEdges,
+    ])
+  }, [pushSnapshot, setNodes, setEdges])
 
   // When diagramId changes (e.g. switching drafts), load new draft
   useEffect(() => {
@@ -119,10 +244,12 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
       setTitle(draft.title)
       setNodes(draft.nodes)
       setEdges(draft.edges)
-      setHistory([{ nodes: draft.nodes, edges: draft.edges }])
-      setHistoryIndex(0)
-      setSelectedNode(null)
-      setSelectedEdge(null)
+      pastRef.current = []
+      futureRef.current = []
+      setCanUndo(false)
+      setCanRedo(false)
+      setSelectedNodes([])
+      setSelectedEdges([])
       setTimeout(() => {
         reactFlowInstance.fitView({ padding: 0.2 })
       }, 50)
@@ -154,48 +281,92 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
     return () => clearTimeout(timeout)
   }, [activeDraftId, title, nodes, edges])
 
-  // Record history snapshot helper
-  const pushHistory = useCallback(
-    (newNodes: Node[], newEdges: Edge[]) => {
-      if (isInternalUpdate.current) return
-      setHistory((prev) => {
-        const sliced = prev.slice(0, historyIndex + 1)
-        return [...sliced, { nodes: newNodes, edges: newEdges }].slice(-30) // keep last 30 states
-      })
-      setHistoryIndex((prev) => Math.min(prev + 1, 29))
+  // System Boundary Contained Children Drag Logic
+  const draggingBoundaryChildrenRef = useRef<{
+    boundaryId: string
+    childInitialPositions: Map<string, { x: number; y: number }>
+    boundaryStartPos: { x: number; y: number }
+  } | null>(null)
+
+  const onNodeDragStart: OnNodeDrag<Node> = useCallback(
+    (_event, node) => {
+      if (node.type === 'boundary') {
+        const bWidth = (node.data?.width as number) || 440
+        const bHeight = (node.data?.height as number) || 380
+        const bx1 = node.position.x
+        const by1 = node.position.y
+        const bx2 = bx1 + bWidth
+        const by2 = by1 + bHeight
+
+        const childMap = new Map<string, { x: number; y: number }>()
+
+        nodes.forEach((n) => {
+          if (n.id === node.id || n.type === 'boundary') return
+          // Approximate center point of node
+          const nw = n.measured?.width ?? 120
+          const nh = n.measured?.height ?? 60
+          const cx = n.position.x + nw / 2
+          const cy = n.position.y + nh / 2
+
+          // If node center is inside boundary bounds, it moves with the boundary
+          if (cx >= bx1 && cx <= bx2 && cy >= by1 && cy <= by2) {
+            childMap.set(n.id, { x: n.position.x, y: n.position.y })
+          }
+        })
+
+        draggingBoundaryChildrenRef.current = {
+          boundaryId: node.id,
+          childInitialPositions: childMap,
+          boundaryStartPos: { x: node.position.x, y: node.position.y },
+        }
+      } else {
+        draggingBoundaryChildrenRef.current = null
+      }
     },
-    [historyIndex]
+    [nodes]
   )
 
-  const handleUndo = useCallback(() => {
-    if (historyIndex > 0) {
-      const targetIndex = historyIndex - 1
-      const snapshot = history[targetIndex]
-      isInternalUpdate.current = true
-      setNodes(snapshot.nodes)
-      setEdges(snapshot.edges)
-      setHistoryIndex(targetIndex)
-      setTimeout(() => {
-        isInternalUpdate.current = false
-      }, 50)
-    }
-  }, [historyIndex, history, setNodes, setEdges])
+  const onNodeDrag: OnNodeDrag<Node> = useCallback(
+    (_event, node) => {
+      if (
+        node.type === 'boundary' &&
+        draggingBoundaryChildrenRef.current &&
+        draggingBoundaryChildrenRef.current.boundaryId === node.id
+      ) {
+        const { boundaryStartPos, childInitialPositions } =
+          draggingBoundaryChildrenRef.current
+        const dx = node.position.x - boundaryStartPos.x
+        const dy = node.position.y - boundaryStartPos.y
 
-  const handleRedo = useCallback(() => {
-    if (historyIndex < history.length - 1) {
-      const targetIndex = historyIndex + 1
-      const snapshot = history[targetIndex]
-      isInternalUpdate.current = true
-      setNodes(snapshot.nodes)
-      setEdges(snapshot.edges)
-      setHistoryIndex(targetIndex)
-      setTimeout(() => {
-        isInternalUpdate.current = false
-      }, 50)
-    }
-  }, [historyIndex, history, setNodes, setEdges])
+        setNodes((nds) =>
+          nds.map((n) => {
+            const init = childInitialPositions.get(n.id)
+            if (init) {
+              return {
+                ...n,
+                position: {
+                  x: Math.round(init.x + dx),
+                  y: Math.round(init.y + dy),
+                },
+              }
+            }
+            return n
+          })
+        )
+      }
+    },
+    [setNodes]
+  )
 
-  // Keyboard shortcuts (Cmd/Ctrl + Z, Cmd/Ctrl + Y)
+  const onNodeDragStop: OnNodeDrag<Node> = useCallback(
+    (_event, _node) => {
+      draggingBoundaryChildrenRef.current = null
+      pushSnapshot()
+    },
+    [pushSnapshot]
+  )
+
+  // Keyboard shortcuts (Cmd/Ctrl + Z, Y, C, V, A, Escape)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
@@ -205,6 +376,7 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
         return
       }
 
+      // Cmd/Ctrl + Z
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
         e.preventDefault()
         if (e.shiftKey) {
@@ -212,19 +384,43 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
         } else {
           handleUndo()
         }
-      } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'y') {
+      }
+      // Cmd/Ctrl + Y
+      else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'y') {
         e.preventDefault()
         handleRedo()
+      }
+      // Cmd/Ctrl + C
+      else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'c') {
+        e.preventDefault()
+        handleCopy()
+      }
+      // Cmd/Ctrl + V
+      else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'v') {
+        e.preventDefault()
+        handlePaste()
+      }
+      // Cmd/Ctrl + A
+      else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a') {
+        e.preventDefault()
+        setNodes((nds) => nds.map((n) => ({ ...n, selected: true })))
+        setEdges((eds) => eds.map((e) => ({ ...e, selected: true })))
+      }
+      // Escape
+      else if (e.key === 'Escape') {
+        setNodes((nds) => nds.map((n) => ({ ...n, selected: false })))
+        setEdges((eds) => eds.map((e) => ({ ...e, selected: false })))
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleUndo, handleRedo])
+  }, [handleUndo, handleRedo, handleCopy, handlePaste, setNodes, setEdges])
 
   // Handle Connections
   const onConnect = useCallback(
     (params: Connection) => {
+      pushSnapshot()
       const newEdge: Edge = {
         id: `edge-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
         source: params.source,
@@ -237,31 +433,99 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
         },
       }
 
-      setEdges((eds) => {
-        const next = addEdge(newEdge, eds)
-        pushHistory(nodes, next)
-        return next
-      })
+      setEdges((eds) => addEdge(newEdge, eds))
     },
-    [activeRelationshipType, nodes, pushHistory, setEdges]
+    [activeRelationshipType, pushSnapshot, setEdges]
   )
 
   // Selection change
   const onSelectionChange = useCallback(
     ({ nodes: selNodes, edges: selEdges }: OnSelectionChangeParams) => {
-      setSelectedNode(selNodes.length === 1 ? selNodes[0] : null)
-      setSelectedEdge(selEdges.length === 1 ? selEdges[0] : null)
+      setSelectedNodes(selNodes)
+      setSelectedEdges(selEdges)
     },
     []
   )
 
-  // Custom events from edge UI buttons
+  // Duplicate node: deselects all other elements, selects ONLY clone
+  const handleDuplicateNode = useCallback(
+    (id: string) => {
+      const target = nodes.find((n) => n.id === id)
+      if (!target) return
+
+      pushSnapshot()
+      const newId = `${target.type}-${Date.now()}`
+      const duplicated: Node = {
+        ...target,
+        id: newId,
+        position: {
+          x: target.position.x + 35,
+          y: target.position.y + 35,
+        },
+        selected: true,
+        data: {
+          ...target.data,
+          label: `${(target.data as unknown as UmlNodeData).label || ''} Copy`,
+        },
+      }
+
+      setNodes((nds) => [
+        ...nds.map((n) => ({ ...n, selected: false })),
+        duplicated,
+      ])
+      setEdges((eds) => eds.map((e) => ({ ...e, selected: false })))
+    },
+    [nodes, pushSnapshot, setNodes, setEdges]
+  )
+
+  // Duplicate all selected elements
+  const handleDuplicateSelected = useCallback(() => {
+    handleCopy()
+    handlePaste()
+  }, [handleCopy, handlePaste])
+
+  // Delete all selected elements
+  const handleDeleteSelected = useCallback(() => {
+    if (selectedNodes.length === 0 && selectedEdges.length === 0) return
+
+    pushSnapshot()
+    const selNodeIds = new Set(selectedNodes.map((n) => n.id))
+    const selEdgeIds = new Set(selectedEdges.map((e) => e.id))
+
+    setNodes((nds) => nds.filter((n) => !selNodeIds.has(n.id)))
+    setEdges((eds) =>
+      eds.filter(
+        (e) =>
+          !selEdgeIds.has(e.id) &&
+          !selNodeIds.has(e.source) &&
+          !selNodeIds.has(e.target)
+      )
+    )
+    setSelectedNodes([])
+    setSelectedEdges([])
+  }, [selectedNodes, selectedEdges, pushSnapshot, setNodes, setEdges])
+
+  const handleDeselectAll = useCallback(() => {
+    setNodes((nds) => nds.map((n) => ({ ...n, selected: false })))
+    setEdges((eds) => eds.map((e) => ({ ...e, selected: false })))
+    setSelectedNodes([])
+    setSelectedEdges([])
+  }, [setNodes, setEdges])
+
+  // Custom events from node & edge UI buttons
   useEffect(() => {
+    const handleDuplicateEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<{ nodeId: string }>
+      const nodeId = customEvent.detail?.nodeId
+      if (nodeId) handleDuplicateNode(nodeId)
+    }
+
     const handleCycle = (e: Event) => {
       const customEvent = e as CustomEvent<{ edgeId: string }>
       const edgeId = customEvent.detail?.edgeId
       if (!edgeId) return
 
+      pushSnapshot()
       const order: UmlRelationshipType[] = [
         'association',
         'include',
@@ -269,8 +533,8 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
         'generalization',
       ]
 
-      setEdges((eds) => {
-        const next = eds.map((edge) => {
+      setEdges((eds) =>
+        eds.map((edge) => {
           if (edge.id !== edgeId) return edge
           const currentType =
             (edge.data?.relationshipType as UmlRelationshipType) ||
@@ -286,9 +550,7 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
             },
           }
         })
-        pushHistory(nodes, next)
-        return next
-      })
+      )
     }
 
     const handleFlip = (e: Event) => {
@@ -296,8 +558,9 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
       const edgeId = customEvent.detail?.edgeId
       if (!edgeId) return
 
-      setEdges((eds) => {
-        const next = eds.map((edge) => {
+      pushSnapshot()
+      setEdges((eds) =>
+        eds.map((edge) => {
           if (edge.id !== edgeId) return edge
           return {
             ...edge,
@@ -307,9 +570,7 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
             targetHandle: edge.sourceHandle,
           }
         })
-        pushHistory(nodes, next)
-        return next
-      })
+      )
     }
 
     const handleDelete = (e: Event) => {
@@ -317,23 +578,22 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
       const edgeId = customEvent.detail?.edgeId
       if (!edgeId) return
 
-      setEdges((eds) => {
-        const next = eds.filter((edge) => edge.id !== edgeId)
-        pushHistory(nodes, next)
-        return next
-      })
+      pushSnapshot()
+      setEdges((eds) => eds.filter((edge) => edge.id !== edgeId))
     }
 
+    window.addEventListener('duplicate-node', handleDuplicateEvent)
     window.addEventListener('cycle-edge-type', handleCycle)
     window.addEventListener('flip-edge-direction', handleFlip)
     window.addEventListener('delete-edge', handleDelete)
 
     return () => {
+      window.removeEventListener('duplicate-node', handleDuplicateEvent)
       window.removeEventListener('cycle-edge-type', handleCycle)
       window.removeEventListener('flip-edge-direction', handleFlip)
       window.removeEventListener('delete-edge', handleDelete)
     }
-  }, [nodes, pushHistory, setEdges])
+  }, [handleDuplicateNode, pushSnapshot, setEdges])
 
   // Add Node handler
   const handleAddNode = useCallback(
@@ -341,6 +601,7 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
       type: 'actor' | 'useCase' | 'boundary' | 'note',
       options?: { actorType?: 'primary' | 'secondary' | 'system' }
     ) => {
+      pushSnapshot()
       const id = `${type}-${Date.now()}`
       const viewport = reactFlowInstance.getViewport()
 
@@ -393,87 +654,47 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
           x: Math.round(centerX + (Math.random() * 40 - 20)),
           y: Math.round(centerY + (Math.random() * 40 - 20)),
         },
-        data: initialData as unknown as Record<string, unknown>,
-        zIndex: type === 'boundary' ? -1 : 1,
-      }
-
-      setNodes((nds) => {
-        const next = [...nds, newNode]
-        pushHistory(next, edges)
-        return next
-      })
-    },
-    [reactFlowInstance, pushHistory, edges, setNodes]
-  )
-
-  // Node duplication
-  const handleDuplicateNode = useCallback(
-    (id: string) => {
-      const target = nodes.find((n) => n.id === id)
-      if (!target) return
-
-      const newId = `${target.type}-${Date.now()}`
-      const duplicated: Node = {
-        ...target,
-        id: newId,
-        position: {
-          x: target.position.x + 40,
-          y: target.position.y + 40,
-        },
         selected: true,
-        data: {
-          ...target.data,
-          label: `${(target.data as unknown as UmlNodeData).label} Copy`,
-        },
+        data: initialData as unknown as Record<string, unknown>,
+        zIndex: type === 'boundary' ? 1 : 10,
       }
 
-      setNodes((nds) => {
-        const next: Node[] = [
-          ...nds.map((n) => ({ ...n, selected: false })),
-          duplicated,
-        ]
-        pushHistory(next, edges)
-        return next
-      })
+      // Deselect existing, select newly added node
+      setNodes((nds) => [
+        ...nds.map((n) => ({ ...n, selected: false })),
+        newNode,
+      ])
     },
-    [nodes, edges, pushHistory, setNodes]
+    [reactFlowInstance, pushSnapshot, setNodes]
   )
 
   // Node deletion
   const handleDeleteNode = useCallback(
     (id: string) => {
-      setNodes((nds) => {
-        const next = nds.filter((n) => n.id !== id)
-        setEdges((eds) => {
-          const nextEdges = eds.filter((e) => e.source !== id && e.target !== id)
-          pushHistory(next, nextEdges)
-          return nextEdges
-        })
-        return next
-      })
-      if (selectedNode?.id === id) setSelectedNode(null)
+      pushSnapshot()
+      setNodes((nds) => nds.filter((n) => n.id !== id))
+      setEdges((eds) => eds.filter((e) => e.source !== id && e.target !== id))
+      setSelectedNodes((prev) => prev.filter((n) => n.id !== id))
     },
-    [selectedNode, pushHistory, setNodes, setEdges]
+    [pushSnapshot, setNodes, setEdges]
   )
 
   // Edge deletion
   const handleDeleteEdge = useCallback(
     (id: string) => {
-      setEdges((eds) => {
-        const next = eds.filter((e) => e.id !== id)
-        pushHistory(nodes, next)
-        return next
-      })
-      if (selectedEdge?.id === id) setSelectedEdge(null)
+      pushSnapshot()
+      setEdges((eds) => eds.filter((e) => e.id !== id))
+      setSelectedEdges((prev) => prev.filter((e) => e.id !== id))
     },
-    [selectedEdge, nodes, pushHistory, setEdges]
+    [pushSnapshot, setEdges]
   )
 
   // Flip edge
   const handleFlipEdge = useCallback(
     (id: string) => {
-      setEdges((eds) => {
-        const next = eds.map((edge) => {
+      pushSnapshot()
+      setEdges((eds) =>
+        eds.map((edge) => {
           if (edge.id !== id) return edge
           return {
             ...edge,
@@ -483,16 +704,15 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
             targetHandle: edge.sourceHandle,
           }
         })
-        pushHistory(nodes, next)
-        return next
-      })
+      )
     },
-    [nodes, pushHistory, setEdges]
+    [pushSnapshot, setEdges]
   )
 
   // Update node data from Inspector
   const handleUpdateNodeData = useCallback(
     (id: string, partial: Partial<UmlNodeData>) => {
+      pushSnapshot()
       reactFlowInstance.updateNodeData(id, partial)
       setNodes((nds) =>
         nds.map((n) => {
@@ -507,14 +727,15 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
         })
       )
     },
-    [reactFlowInstance, setNodes]
+    [pushSnapshot, reactFlowInstance, setNodes]
   )
 
   // Update edge data from Inspector
   const handleUpdateEdgeData = useCallback(
     (id: string, partial: Partial<UmlEdgeData>) => {
-      setEdges((eds) => {
-        const next = eds.map((e) => {
+      pushSnapshot()
+      setEdges((eds) =>
+        eds.map((e) => {
           if (e.id !== id) return e
           return {
             ...e,
@@ -524,11 +745,9 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
             },
           }
         })
-        pushHistory(nodes, next)
-        return next
-      })
+      )
     },
-    [nodes, pushHistory, setEdges]
+    [pushSnapshot, setEdges]
   )
 
   // Template loader
@@ -546,34 +765,32 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
         return
       }
 
+      pushSnapshot()
       setTitle(template.name)
       setNodes(template.nodes)
       setEdges(template.edges)
-      setHistory([{ nodes: template.nodes, edges: template.edges }])
-      setHistoryIndex(0)
-      setSelectedNode(null)
-      setSelectedEdge(null)
+      setSelectedNodes([])
+      setSelectedEdges([])
 
       setTimeout(() => {
         reactFlowInstance.fitView({ padding: 0.2 })
       }, 50)
     },
-    [nodes.length, reactFlowInstance, setNodes, setEdges]
+    [nodes.length, pushSnapshot, reactFlowInstance, setNodes, setEdges]
   )
 
   // Clear Canvas
   const handleClearCanvas = useCallback(() => {
     if (nodes.length === 0) return
     if (window.confirm('Clear all nodes and connections from the diagram?')) {
+      pushSnapshot()
       setTitle('Untitled Diagram')
       setNodes([])
       setEdges([])
-      setHistory([{ nodes: [], edges: [] }])
-      setHistoryIndex(0)
-      setSelectedNode(null)
-      setSelectedEdge(null)
+      setSelectedNodes([])
+      setSelectedEdges([])
     }
-  }, [nodes.length, setNodes, setEdges])
+  }, [nodes.length, pushSnapshot, setNodes, setEdges])
 
   // Fit View
   const handleFitView = useCallback(() => {
@@ -614,11 +831,10 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
         const text = e.target?.result as string
         const parsed = parseDiagramJson(text)
         if (parsed) {
+          pushSnapshot()
           setTitle(parsed.title || 'Imported Diagram')
           setNodes(parsed.nodes)
           setEdges(parsed.edges)
-          setHistory([{ nodes: parsed.nodes, edges: parsed.edges }])
-          setHistoryIndex(0)
           setTimeout(() => {
             reactFlowInstance.fitView({ padding: 0.2 })
           }, 50)
@@ -628,7 +844,7 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
       }
       reader.readAsText(file)
     },
-    [reactFlowInstance, setNodes, setEdges]
+    [pushSnapshot, reactFlowInstance, setNodes, setEdges]
   )
 
   return (
@@ -637,13 +853,10 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
       <StudioToolbar
         title={title}
         onTitleChange={setTitle}
-        activeRelationshipType={activeRelationshipType}
-        onRelationshipTypeChange={setActiveRelationshipType}
-        onAddNode={handleAddNode}
         onUndo={handleUndo}
         onRedo={handleRedo}
-        canUndo={historyIndex > 0}
-        canRedo={historyIndex < history.length - 1}
+        canUndo={canUndo}
+        canRedo={canRedo}
         onFitView={handleFitView}
         onClearCanvas={handleClearCanvas}
         onLoadTemplate={handleLoadTemplate}
@@ -670,8 +883,14 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
             edgeTypes={edgeTypes}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
+            onNodeDragStart={onNodeDragStart}
+            onNodeDrag={onNodeDrag}
+            onNodeDragStop={onNodeDragStop}
             onConnect={onConnect}
             onSelectionChange={onSelectionChange}
+            selectionMode={SelectionMode.Partial}
+            multiSelectionKeyCode={['Meta', 'Control', 'Shift']}
+            selectionKeyCode="Shift"
             fitView
             fitViewOptions={{ padding: 0.2 }}
             minZoom={0.3}
@@ -698,18 +917,33 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
               className="!bottom-4 !right-4 !bg-[var(--bg-primary)] !border-[var(--border-default)] !rounded-[4px] !shadow-sm overflow-hidden"
             />
           </ReactFlow>
+
+          {/* Unified Floating Bottom Dock with Popovers */}
+          <StudioBottomDock
+            activeRelationshipType={activeRelationshipType}
+            onRelationshipTypeChange={setActiveRelationshipType}
+            onAddNode={handleAddNode}
+            onFitView={handleFitView}
+            onZoomIn={() => reactFlowInstance.zoomIn({ duration: 300 })}
+            onZoomOut={() => reactFlowInstance.zoomOut({ duration: 300 })}
+          />
         </div>
 
         {/* Right Properties Inspector */}
         <StudioInspector
-          selectedNode={selectedNode}
-          selectedEdge={selectedEdge}
+          selectedNode={selectedNodes.length === 1 ? selectedNodes[0] : null}
+          selectedEdge={selectedEdges.length === 1 ? selectedEdges[0] : null}
+          selectedNodes={selectedNodes}
+          selectedEdges={selectedEdges}
           onUpdateNodeData={handleUpdateNodeData}
           onUpdateEdgeData={handleUpdateEdgeData}
           onDeleteNode={handleDeleteNode}
           onDeleteEdge={handleDeleteEdge}
           onDuplicateNode={handleDuplicateNode}
           onFlipEdgeDirection={handleFlipEdge}
+          onDeleteSelected={handleDeleteSelected}
+          onDuplicateSelected={handleDuplicateSelected}
+          onDeselectAll={handleDeselectAll}
           allNodes={nodes}
           allEdges={edges}
           isOpen={isInspectorOpen}

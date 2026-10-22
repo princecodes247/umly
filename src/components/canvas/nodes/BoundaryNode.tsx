@@ -1,5 +1,11 @@
 import { memo, useState, useRef, useEffect } from 'react'
-import { NodeResizer, useReactFlow, type NodeProps } from '@xyflow/react'
+import {
+  NodeResizer,
+  NodeToolbar,
+  Position,
+  useReactFlow,
+  type NodeProps,
+} from '@xyflow/react'
 import { Trash2, Edit2 } from 'lucide-react'
 import type { UmlNodeData } from '../../../types/game'
 
@@ -51,7 +57,7 @@ export const BoundaryNode = memo(({ id, data, selected }: NodeProps) => {
 
   return (
     <div
-      className={`relative rounded-[6px] border-2 border-dashed transition-all select-none ${
+      className={`relative rounded-[6px] border-2 border-dashed transition-all select-none pointer-events-none ${
         selected
           ? 'border-[var(--primary-btn)] bg-[var(--hover-bg)]'
           : 'border-[var(--border-strong)] bg-transparent'
@@ -63,14 +69,55 @@ export const BoundaryNode = memo(({ id, data, selected }: NodeProps) => {
         minHeight: 150,
       }}
     >
+      {/* NodeToolbar for Boundary when selected: always rendered on top with z-[99999] */}
+      {selected && !isLocked && (
+        <NodeToolbar
+          isVisible={selected && !isLocked}
+          position={Position.Top}
+          offset={8}
+          className="flex items-center gap-1 bg-[var(--bg-primary)] border border-[var(--border-default)] px-2 py-1 rounded-[4px] shadow-lg z-[99999] text-xs pointer-events-auto"
+        >
+          <button
+            type="button"
+            title="Edit boundary title"
+            onClick={(e) => {
+              e.stopPropagation()
+              setIsEditing(true)
+            }}
+            className="flex items-center gap-1 px-1.5 py-0.5 rounded-[3px] hover:bg-[var(--hover-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+          >
+            <Edit2 className="w-3 h-3" />
+            <span>Rename</span>
+          </button>
+          <div className="h-3 w-px bg-[var(--border-subtle)]" />
+          <button
+            type="button"
+            title="Delete boundary"
+            onClick={handleDelete}
+            className="p-1 rounded-[3px] hover:bg-[var(--notion-red-bg)] text-[var(--text-secondary)] hover:text-[var(--notion-red-text)]"
+          >
+            <Trash2 className="w-3 h-3" />
+          </button>
+        </NodeToolbar>
+      )}
+
+      {/* Interactive perimeter strip so dragging/clicking the boundary edges moves it */}
+      <div
+        className="boundary-interactive absolute inset-0 rounded-[6px] pointer-events-auto"
+        style={{
+          clipPath:
+            'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 14px, 14px 14px, 14px calc(100% - 14px), calc(100% - 14px) calc(100% - 14px), calc(100% - 14px) 14px, 0% 14px)',
+        }}
+      />
+
       {/* NodeResizer for free resizing */}
       {!isLocked && (
         <NodeResizer
           isVisible={selected}
           minWidth={200}
           minHeight={150}
-          lineClassName="!border-[var(--primary-btn)]"
-          handleClassName="!w-3 !h-3 !bg-[var(--bg-primary)] !border-2 !border-[var(--primary-btn)] !rounded-[2px]"
+          lineClassName="!border-[var(--primary-btn)] pointer-events-auto"
+          handleClassName="!w-3 !h-3 !bg-[var(--bg-primary)] !border-2 !border-[var(--primary-btn)] !rounded-[2px] pointer-events-auto"
           onResize={(_, params) => {
             updateNodeData(id, {
               width: Math.round(params.width),
@@ -80,8 +127,8 @@ export const BoundaryNode = memo(({ id, data, selected }: NodeProps) => {
         />
       )}
 
-      {/* Boundary Title Tag & Controls */}
-      <div className="absolute top-2.5 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] bg-[var(--bg-primary)] border border-[var(--border-default)] shadow-xs text-xs pointer-events-auto">
+      {/* Boundary Title Tag */}
+      <div className="boundary-interactive absolute top-2.5 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] bg-[var(--bg-primary)] border border-[var(--border-default)] shadow-xs text-xs pointer-events-auto z-10">
         <span className="w-2 h-2 rounded-full bg-[var(--notion-blue-text)]" />
 
         {isEditing ? (
@@ -106,33 +153,9 @@ export const BoundaryNode = memo(({ id, data, selected }: NodeProps) => {
             {titleValue}
           </span>
         )}
-
-        {selected && !isLocked && (
-          <div className="flex items-center gap-0.5 ml-1 border-l border-[var(--border-subtle)] pl-1">
-            <button
-              type="button"
-              title="Edit boundary title"
-              onClick={(e) => {
-                e.stopPropagation()
-                setIsEditing(true)
-              }}
-              className="p-0.5 rounded-[2px] hover:bg-[var(--hover-bg)] text-[var(--text-secondary)]"
-            >
-              <Edit2 className="w-2.5 h-2.5" />
-            </button>
-            <button
-              type="button"
-              title="Delete boundary"
-              onClick={handleDelete}
-              className="p-0.5 rounded-[2px] hover:bg-[var(--notion-red-bg)] text-[var(--text-secondary)] hover:text-[var(--notion-red-text)]"
-            >
-              <Trash2 className="w-2.5 h-2.5" />
-            </button>
-          </div>
-        )}
       </div>
 
-      <div className="absolute bottom-2 right-2.5 text-[9px] text-[var(--text-tertiary)] uppercase tracking-wider font-mono pointer-events-none">
+      <div className="boundary-interactive absolute bottom-2 right-2.5 text-[9px] text-[var(--text-tertiary)] uppercase tracking-wider font-mono pointer-events-auto">
         System Boundary
       </div>
     </div>
