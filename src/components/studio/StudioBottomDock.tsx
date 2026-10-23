@@ -39,12 +39,26 @@ export const StudioBottomDock: React.FC<StudioBottomDockProps> = ({
   const [showAddPopover, setShowAddPopover] = useState(false)
   const [showConnectorPopover, setShowConnectorPopover] = useState(false)
   const dockRef = useRef<HTMLDivElement>(null)
+  const addMenuRef = useRef<HTMLDivElement>(null)
+  const connectorMenuRef = useRef<HTMLDivElement>(null)
 
-  // Close popovers when clicking outside or pressing Escape
+  // Close popovers when clicking anywhere outside them (capture phase so React Flow pane/nodes cannot swallow the event) or pressing Escape
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (dockRef.current && !dockRef.current.contains(e.target as Node)) {
+    const handleOutsideEvent = (e: MouseEvent | PointerEvent | TouchEvent) => {
+      const target = e.target as Node | null
+      if (!target) return
+
+      if (
+        addMenuRef.current &&
+        !addMenuRef.current.contains(target)
+      ) {
         setShowAddPopover(false)
+      }
+
+      if (
+        connectorMenuRef.current &&
+        !connectorMenuRef.current.contains(target)
+      ) {
         setShowConnectorPopover(false)
       }
     }
@@ -56,10 +70,12 @@ export const StudioBottomDock: React.FC<StudioBottomDockProps> = ({
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('pointerdown', handleOutsideEvent, true)
+    document.addEventListener('mousedown', handleOutsideEvent, true)
     window.addEventListener('keydown', handleKeyDown)
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('pointerdown', handleOutsideEvent, true)
+      document.removeEventListener('mousedown', handleOutsideEvent, true)
       window.removeEventListener('keydown', handleKeyDown)
     }
   }, [])
@@ -180,10 +196,10 @@ export const StudioBottomDock: React.FC<StudioBottomDockProps> = ({
       initial={{ y: 24, opacity: 0, scale: 0.94 }}
       animate={{ y: 0, opacity: 1, scale: 1 }}
       transition={{ type: 'spring', stiffness: 420, damping: 28 }}
-      className="absolute bottom-5 left-1/2 -translate-x-1/2 z-30 select-none flex items-center gap-1.5 p-1.5 rounded-[12px] bg-[var(--bg-primary)]/95 backdrop-blur-md border border-[var(--border-default)] shadow-2xl text-xs font-sans whitespace-nowrap"
+      className="studio-bottom-dock absolute bottom-5 left-1/2 -translate-x-1/2 z-30 select-none flex items-center gap-1.5 p-1.5 rounded-[12px] bg-[var(--bg-primary)]/95 backdrop-blur-md border border-[var(--border-default)] shadow-2xl text-xs font-sans whitespace-nowrap"
     >
       {/* SECTION 1: SINGLE ICON BUTTON FOR ELEMENT CREATION + POPOVER */}
-      <div className="relative">
+      <div ref={addMenuRef} className="relative">
         <motion.button
           type="button"
           whileHover={{ scale: 1.06 }}
@@ -276,7 +292,7 @@ export const StudioBottomDock: React.FC<StudioBottomDockProps> = ({
       <div className="h-5 w-px bg-[var(--border-default)] mx-0.5 shrink-0" />
 
       {/* SECTION 2: ACTIVE CONNECTOR TOOL POPOVER */}
-      <div className="relative">
+      <div ref={connectorMenuRef} className="relative">
         <motion.button
           type="button"
           whileHover={{ scale: 1.02 }}

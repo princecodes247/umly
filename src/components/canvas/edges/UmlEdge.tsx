@@ -10,6 +10,7 @@ import {
 } from '@xyflow/react'
 import { motion, AnimatePresence } from 'motion/react'
 import { Trash2, RotateCw, ArrowLeftRight } from 'lucide-react'
+import { getAllowedRelationshipTypes } from '../../../lib/umlValidation'
 import type { UmlEdgeData, UmlRelationshipType } from '../../../types/game'
 
 interface UmlEdgeProps extends EdgeProps {
@@ -54,6 +55,8 @@ function parseCubicBezier(
 export const UmlEdge = memo(
   ({
     id,
+    source,
+    target,
     sourceX,
     sourceY,
     targetX,
@@ -90,7 +93,7 @@ export const UmlEdge = memo(
     const handleMouseLeave = () => {
       hoverTimeoutRef.current = setTimeout(() => {
         setIsHovered(false)
-      }, 160)
+      }, 150)
     }
 
     useEffect(() => {
@@ -101,6 +104,21 @@ export const UmlEdge = memo(
       }
     }, [])
 
+    const sourceNode = useMemo(
+      () => nodes.find((n) => n.id === source),
+      [nodes, source]
+    )
+    const targetNode = useMemo(
+      () => nodes.find((n) => n.id === target),
+      [nodes, target]
+    )
+
+    const allowedTypes = useMemo(
+      () => getAllowedRelationshipTypes(sourceNode?.type, targetNode?.type),
+      [sourceNode?.type, targetNode?.type]
+    )
+    const canCycleType = allowedTypes.length > 1
+
     const relationshipType: UmlRelationshipType =
       data?.relationshipType || 'association'
     const condition = data?.condition
@@ -108,44 +126,36 @@ export const UmlEdge = memo(
     // Determine styles based on UML relationship
     let strokeDasharray = 'none'
     let markerEnd = ''
-    let labelText = ''
-    let shortTypeBadge = ''
-    let pillTintBg = 'var(--bg-secondary)'
-    let pillTextColor = 'var(--text-primary)'
+    let stereotypeText = ''
+    let subText = ''
+    let textColor = 'var(--text-secondary)'
 
     switch (relationshipType) {
       case 'include':
         strokeDasharray = '5,4'
         markerEnd = 'url(#uml-arrowhead)'
-        labelText = '«include»'
-        shortTypeBadge = '«include»'
-        pillTintBg = 'var(--notion-blue-bg)'
-        pillTextColor = 'var(--notion-blue-text)'
+        stereotypeText = '«include»'
+        textColor = 'var(--notion-blue-text)'
         break
       case 'extend':
         strokeDasharray = '5,4'
         markerEnd = 'url(#uml-arrowhead)'
-        labelText = condition ? `«extend» (${condition})` : '«extend»'
-        shortTypeBadge = labelText
-        pillTintBg = 'var(--notion-yellow-bg)'
-        pillTextColor = 'var(--notion-yellow-text)'
+        stereotypeText = '«extend»'
+        subText = condition ? `[${condition}]` : ''
+        textColor = 'var(--notion-yellow-text)'
         break
       case 'generalization':
         strokeDasharray = 'none'
         markerEnd = 'url(#uml-generalization)'
-        labelText = ''
-        shortTypeBadge = 'Generalization'
-        pillTintBg = 'var(--notion-green-bg)'
-        pillTextColor = 'var(--notion-green-text)'
+        stereotypeText = ''
+        textColor = 'var(--notion-green-text)'
         break
       case 'association':
       default:
         strokeDasharray = 'none'
         markerEnd = ''
-        labelText = data?.label || ''
-        shortTypeBadge = data?.label || 'Association'
-        pillTintBg = 'var(--bg-secondary)'
-        pillTextColor = 'var(--text-secondary)'
+        stereotypeText = data?.label || ''
+        textColor = 'var(--text-secondary)'
         break
     }
 
@@ -160,8 +170,7 @@ export const UmlEdge = memo(
             : 'var(--text-secondary)'
 
     // Strictly curve-mounted placement:
-    // Evaluate exact points B(t) on the cubic Bezier path so the badge NEVER detaches from its line,
-    // while sliding along the curve if a node or an earlier edge's midpoint overlaps t=0.5.
+    // Evaluate exact points B(t) on the cubic Bezier path so the label sits cleanly on the line.
     const { resolvedX, resolvedY } = useMemo(() => {
       const bez = parseCubicBezier(
         edgePath,
@@ -209,7 +218,6 @@ export const UmlEdge = memo(
         }
       })
 
-      // Also check midpoints of earlier edges in the list so crossing edges stagger along their own curves
       const myIndex = edges.findIndex((e) => e.id === id)
       const earlierEdgeMidpoints: Array<{ x: number; y: number }> = []
       if (myIndex > 0) {
@@ -231,8 +239,8 @@ export const UmlEdge = memo(
         }
       }
 
-      const halfW = 46
-      const halfH = 14
+      const halfW = 34
+      const halfH = 11
 
       const collidesWithNode = (px: number, py: number) =>
         nodeRects.some(
@@ -245,15 +253,13 @@ export const UmlEdge = memo(
 
       const collidesWithOtherEdge = (px: number, py: number) =>
         earlierEdgeMidpoints.some(
-          (m) => Math.abs(px - m.x) < 76 && Math.abs(py - m.y) < 26
+          (m) => Math.abs(px - m.x) < 62 && Math.abs(py - m.y) < 20
         )
 
-      // Candidate t values strictly ON the curve (never off-curve!)
       const tCandidates = [
         0.5, 0.38, 0.62, 0.3, 0.7, 0.24, 0.76, 0.44, 0.56,
       ]
 
-      // First pass: avoids both nodes and other edge midpoints
       for (const t of tCandidates) {
         const pt = pointAt(t)
         if (!collidesWithNode(pt.x, pt.y) && !collidesWithOtherEdge(pt.x, pt.y)) {
@@ -261,7 +267,6 @@ export const UmlEdge = memo(
         }
       }
 
-      // Second pass: avoids nodes (stays strictly on curve)
       for (const t of tCandidates) {
         const pt = pointAt(t)
         if (!collidesWithNode(pt.x, pt.y)) {
@@ -269,7 +274,6 @@ export const UmlEdge = memo(
         }
       }
 
-      // Fallback: point on the curve furthest from node centers
       let bestPt = { x: labelX, y: labelY }
       let bestDist = -1
       for (const t of tCandidates) {
@@ -301,6 +305,7 @@ export const UmlEdge = memo(
     ])
 
     const showActions = Boolean(selected || isHovered)
+    const hasVisibleLabel = Boolean(stereotypeText)
 
     const selectThisEdge = (e: React.MouseEvent) => {
       e.stopPropagation()
@@ -321,8 +326,8 @@ export const UmlEdge = memo(
             d={edgePath}
             fill="none"
             stroke={strokeColor}
-            strokeWidth={9}
-            strokeOpacity={0.16}
+            strokeWidth={7}
+            strokeOpacity={0.14}
             strokeLinecap="round"
             className="pointer-events-none transition-opacity duration-150"
           />
@@ -334,7 +339,7 @@ export const UmlEdge = memo(
           path={edgePath}
           markerEnd={markerEnd}
           style={{
-            strokeWidth: selected ? 2.5 : isHovered ? 2.2 : 1.75,
+            strokeWidth: selected ? 2.25 : isHovered ? 2 : 1.65,
             strokeDasharray,
             stroke: strokeColor,
           }}
@@ -351,8 +356,8 @@ export const UmlEdge = memo(
           onMouseLeave={handleMouseLeave}
         />
 
-        {/* Inline curve-anchored badge & floating action popover above it */}
-        {(labelText || showActions) && (
+        {/* Clean, minimal inline stereotype label & floating action popover */}
+        {(hasVisibleLabel || showActions) && (
           <EdgeLabelRenderer>
             <div
               style={{
@@ -368,36 +373,42 @@ export const UmlEdge = memo(
               onMouseDown={(e) => e.stopPropagation()}
               onClick={selectThisEdge}
             >
-              {/* Floating Quick Actions Popover — centered directly ABOVE the badge so the badge never shifts off the line */}
+              {/* Floating Quick Actions Popover */}
               <AnimatePresence>
                 {showActions && (
                   <motion.div
-                    initial={{ opacity: 0, y: 5, scale: 0.92 }}
+                    initial={{ opacity: 0, y: 4, scale: 0.92 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 4, scale: 0.94 }}
-                    transition={{ type: 'spring', stiffness: 500, damping: 28 }}
+                    exit={{ opacity: 0, y: 3, scale: 0.94 }}
+                    transition={{ type: 'spring', stiffness: 520, damping: 28 }}
                     style={{ transformOrigin: 'bottom center' }}
-                    className="nodrag nopan absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 flex items-center gap-0.5 bg-[var(--bg-primary)] border border-[var(--border-default)] rounded-[6px] p-0.5 shadow-lg z-20"
+                    className={`nodrag nopan ${
+                      hasVisibleLabel
+                        ? 'absolute bottom-full mb-1 left-1/2 -translate-x-1/2'
+                        : 'relative'
+                    } flex items-center gap-0.5 bg-[var(--bg-primary)] border border-[var(--border-default)] rounded-[6px] p-0.5 shadow-md z-20`}
                     onPointerDown={(e) => e.stopPropagation()}
                     onMouseDown={(e) => e.stopPropagation()}
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <button
-                      type="button"
-                      title="Cycle relationship type (Association, Include, Extend, Generalization)"
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onMouseDown={(e) => e.stopPropagation()}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        const event = new CustomEvent('cycle-edge-type', {
-                          detail: { edgeId: id },
-                        })
-                        window.dispatchEvent(event)
-                      }}
-                      className="p-1 rounded-[4px] hover:bg-[var(--hover-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
-                    >
-                      <RotateCw className="w-3.5 h-3.5" />
-                    </button>
+                    {canCycleType && (
+                      <button
+                        type="button"
+                        title="Cycle valid relationship type («include», «extend», Generalization)"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          const event = new CustomEvent('cycle-edge-type', {
+                            detail: { edgeId: id },
+                          })
+                          window.dispatchEvent(event)
+                        }}
+                        className="p-1 rounded-[4px] hover:bg-[var(--hover-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+                      >
+                        <RotateCw className="w-3 h-3" />
+                      </button>
+                    )}
 
                     <button
                       type="button"
@@ -413,7 +424,7 @@ export const UmlEdge = memo(
                       }}
                       className="p-1 rounded-[4px] hover:bg-[var(--hover-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
                     >
-                      <ArrowLeftRight className="w-3.5 h-3.5" />
+                      <ArrowLeftRight className="w-3 h-3" />
                     </button>
 
                     <button
@@ -430,40 +441,35 @@ export const UmlEdge = memo(
                       }}
                       className="p-1 rounded-[4px] hover:bg-[var(--notion-red-bg)] text-[var(--text-secondary)] hover:text-[var(--notion-red-text)] transition-colors cursor-pointer"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-3 h-3" />
                     </button>
                   </motion.div>
                 )}
               </AnimatePresence>
 
-              {/* Inline Curve-Anchored Relationship Pill — masks the stroke behind it with solid bg + matching border + splice dots */}
-              <div
-                style={{
-                  borderColor: strokeColor,
-                }}
-                className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[var(--bg-primary)] border-[1.5px] shadow-xs cursor-pointer transition-shadow whitespace-nowrap ${
-                  showActions ? 'ring-2 ring-[var(--primary-btn)]/25 shadow-sm' : ''
-                }`}
-                title="Click to select relationship"
-              >
-                <span
-                  className="w-1.5 h-1.5 rounded-full shrink-0"
-                  style={{ backgroundColor: strokeColor }}
-                />
-                <span
+              {/* Minimal, lightweight inline label — just a tight canvas knockout behind the text */}
+              {hasVisibleLabel && (
+                <div
                   style={{
-                    backgroundColor: pillTintBg,
-                    color: selected ? 'var(--primary-btn)' : pillTextColor,
+                    color: selected ? 'var(--primary-btn)' : textColor,
                   }}
-                  className="px-1.5 py-0.2 rounded-full font-mono text-[10px] font-semibold leading-tight tracking-tight"
+                  className={`flex flex-col items-center justify-center px-1.5 py-[1px] rounded-[3px] bg-[var(--bg-secondary)] font-mono text-[10px] font-medium leading-tight tracking-tight cursor-pointer transition-colors whitespace-nowrap ${
+                    selected
+                      ? 'ring-1 ring-[var(--primary-btn)]/50'
+                      : isHovered
+                        ? 'ring-1 ring-[var(--border-default)]'
+                        : ''
+                  }`}
+                  title="Click to select relationship"
                 >
-                  {labelText || shortTypeBadge}
-                </span>
-                <span
-                  className="w-1.5 h-1.5 rounded-full shrink-0"
-                  style={{ backgroundColor: strokeColor }}
-                />
-              </div>
+                  <span>{stereotypeText}</span>
+                  {subText && (
+                    <span className="text-[8.5px] opacity-75 font-normal leading-none mt-0.5">
+                      {subText}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </EdgeLabelRenderer>
         )}

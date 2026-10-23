@@ -9,32 +9,133 @@ export interface DiagramProject {
   edges: Edge[]
 }
 
-export async function exportDiagramAsPng(
-  canvasElement: HTMLElement,
-  fileName = 'use-case-diagram.png'
-): Promise<void> {
+const THEME_CSS_VARS = [
+  '--bg-primary',
+  '--bg-secondary',
+  '--bg-tertiary',
+  '--bg-sidebar',
+  '--bg-modal',
+  '--text-primary',
+  '--text-secondary',
+  '--text-tertiary',
+  '--border-subtle',
+  '--border-default',
+  '--border-strong',
+  '--hover-bg',
+  '--hover-bg-strong',
+  '--active-bg',
+  '--selection-bg',
+  '--notion-default-bg',
+  '--notion-default-text',
+  '--notion-gray-bg',
+  '--notion-gray-text',
+  '--notion-brown-bg',
+  '--notion-brown-text',
+  '--notion-orange-bg',
+  '--notion-orange-text',
+  '--notion-yellow-bg',
+  '--notion-yellow-text',
+  '--notion-green-bg',
+  '--notion-green-text',
+  '--notion-blue-bg',
+  '--notion-blue-text',
+  '--notion-purple-bg',
+  '--notion-purple-text',
+  '--notion-pink-bg',
+  '--notion-pink-text',
+  '--notion-red-bg',
+  '--notion-red-text',
+  '--primary-btn',
+  '--primary-btn-hover',
+  '--primary-btn-text',
+]
+
+function prepareCanvasForExport(canvasElement: HTMLElement) {
+  const rootStyle = getComputedStyle(document.documentElement)
+  const previousInlineVars = new Map<string, string>()
+
+  for (const varName of THEME_CSS_VARS) {
+    previousInlineVars.set(
+      varName,
+      canvasElement.style.getPropertyValue(varName)
+    )
+    const resolved = rootStyle.getPropertyValue(varName).trim()
+    if (resolved) {
+      canvasElement.style.setProperty(varName, resolved)
+    }
+  }
+
+  const bgPrimary = rootStyle.getPropertyValue('--bg-primary').trim()
+  const bgSecondary = rootStyle.getPropertyValue('--bg-secondary').trim()
+  const isDark =
+    document.documentElement.getAttribute('data-theme') === 'dark' ||
+    document.documentElement.classList.contains('dark') ||
+    (document.documentElement.getAttribute('data-theme') !== 'light' &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches)
+
+  const backgroundColor =
+    bgSecondary || bgPrimary || (isDark ? '#191919' : '#ffffff')
+
+  const prevBg = canvasElement.style.backgroundColor
+  const prevColor = canvasElement.style.color
+  canvasElement.style.backgroundColor = backgroundColor
+  canvasElement.style.color =
+    rootStyle.getPropertyValue('--text-primary').trim() ||
+    (isDark ? '#e6e6e6' : '#37352f')
+
   // Hide UI overlays during export
-  const controls = canvasElement.querySelectorAll('.react-flow__controls, .react-flow__minimap, .react-flow__panel')
+  const controls = canvasElement.querySelectorAll(
+    '.react-flow__controls, .react-flow__minimap, .react-flow__panel, .react-flow__node-toolbar, .studio-bottom-dock'
+  )
   controls.forEach((el) => {
     ;(el as HTMLElement).style.display = 'none'
   })
 
+  const restore = () => {
+    for (const [varName, prevVal] of previousInlineVars.entries()) {
+      if (prevVal) {
+        canvasElement.style.setProperty(varName, prevVal)
+      } else {
+        canvasElement.style.removeProperty(varName)
+      }
+    }
+    canvasElement.style.backgroundColor = prevBg
+    canvasElement.style.color = prevColor
+    controls.forEach((el) => {
+      ;(el as HTMLElement).style.display = ''
+    })
+  }
+
+  return { backgroundColor, restore }
+}
+
+function shouldIncludeExportNode(node: Node | HTMLElement): boolean {
+  if (node instanceof HTMLElement) {
+    if (
+      node.classList.contains('react-flow__controls') ||
+      node.classList.contains('react-flow__minimap') ||
+      node.classList.contains('react-flow__panel') ||
+      node.classList.contains('react-flow__node-toolbar') ||
+      node.classList.contains('studio-bottom-dock')
+    ) {
+      return false
+    }
+  }
+  return true
+}
+
+export async function exportDiagramAsPng(
+  canvasElement: HTMLElement,
+  fileName = 'use-case-diagram.png'
+): Promise<void> {
+  const { backgroundColor, restore } = prepareCanvasForExport(canvasElement)
+
   try {
     const dataUrl = await toPng(canvasElement, {
-      quality: 0.95,
+      quality: 0.98,
       pixelRatio: 2,
-      backgroundColor: '#ffffff',
-      filter: (node) => {
-        // Exclude minimap or controls if any
-        if (
-          node instanceof HTMLElement &&
-          (node.classList.contains('react-flow__controls') ||
-            node.classList.contains('react-flow__minimap'))
-        ) {
-          return false
-        }
-        return true
-      },
+      backgroundColor,
+      filter: (node) => shouldIncludeExportNode(node as HTMLElement),
     })
 
     const link = document.createElement('a')
@@ -42,10 +143,7 @@ export async function exportDiagramAsPng(
     link.href = dataUrl
     link.click()
   } finally {
-    // Restore UI overlays
-    controls.forEach((el) => {
-      ;(el as HTMLElement).style.display = ''
-    })
+    restore()
   }
 }
 
@@ -53,24 +151,12 @@ export async function exportDiagramAsSvg(
   canvasElement: HTMLElement,
   fileName = 'use-case-diagram.svg'
 ): Promise<void> {
-  const controls = canvasElement.querySelectorAll('.react-flow__controls, .react-flow__minimap')
-  controls.forEach((el) => {
-    ;(el as HTMLElement).style.display = 'none'
-  })
+  const { backgroundColor, restore } = prepareCanvasForExport(canvasElement)
 
   try {
     const dataUrl = await toSvg(canvasElement, {
-      backgroundColor: '#ffffff',
-      filter: (node) => {
-        if (
-          node instanceof HTMLElement &&
-          (node.classList.contains('react-flow__controls') ||
-            node.classList.contains('react-flow__minimap'))
-        ) {
-          return false
-        }
-        return true
-      },
+      backgroundColor,
+      filter: (node) => shouldIncludeExportNode(node as HTMLElement),
     })
 
     const link = document.createElement('a')
@@ -78,9 +164,7 @@ export async function exportDiagramAsSvg(
     link.href = dataUrl
     link.click()
   } finally {
-    controls.forEach((el) => {
-      ;(el as HTMLElement).style.display = ''
-    })
+    restore()
   }
 }
 
@@ -110,4 +194,3 @@ export function parseDiagramJson(jsonString: string): DiagramProject | null {
     return null
   }
 }
-

@@ -14,7 +14,17 @@ import {
   BookCheck,
   Layers,
   XCircle,
+  AlignCenterHorizontal,
+  AlignCenterVertical,
+  AlignStartVertical,
+  AlignEndVertical,
+  AlignStartHorizontal,
+  AlignEndHorizontal,
+  AlignHorizontalSpaceBetween,
+  AlignVerticalSpaceBetween,
 } from 'lucide-react'
+import type { AlignmentMode } from './StudioCanvas'
+import { getAllowedRelationshipTypes } from '../../lib/umlValidation'
 import type {
   UmlNodeData,
   UmlEdgeData,
@@ -34,6 +44,7 @@ interface StudioInspectorProps {
   onDeleteSelected?: () => void
   onDuplicateSelected?: () => void
   onDeselectAll?: () => void
+  onAlignSelected?: (mode: AlignmentMode) => void
   allNodes: Node[]
   allEdges: Edge[]
   isOpen: boolean
@@ -54,6 +65,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
   onDeleteSelected,
   onDuplicateSelected,
   onDeselectAll,
+  onAlignSelected,
   allNodes,
   allEdges,
   isOpen,
@@ -118,10 +130,121 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                 </span>
               </div>
               <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed">
-                You can move, duplicate, or delete all selected items together.
-                Hold <kbd className="px-1 py-0.5 rounded bg-[var(--bg-primary)] border border-[var(--border-subtle)] font-mono text-[10px]">Shift</kbd> or <kbd className="px-1 py-0.5 rounded bg-[var(--bg-primary)] border border-[var(--border-subtle)] font-mono text-[10px]">Cmd</kbd> to add or remove elements.
+                Align, distribute, duplicate, or delete selected items together.
+                Hold{' '}
+                <kbd className="px-1 py-0.5 rounded bg-[var(--bg-primary)] border border-[var(--border-subtle)] font-mono text-[10px]">
+                  Shift
+                </kbd>{' '}
+                while dragging any element to snap and align with other elements.
               </p>
             </div>
+
+            {/* Alignment & Distribution Controls */}
+            {onAlignSelected && (
+              <div className="space-y-2.5 pt-1 border-t border-[var(--border-subtle)]">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] font-mono block">
+                  Align Selected Elements
+                </span>
+
+                {/* Primary 1-Click Horizontal / Vertical Alignment */}
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => onAlignSelected('horizontal-row')}
+                    title="Align elements horizontally along a shared row center"
+                    className="notion-btn flex items-center justify-center gap-1.5 py-2 text-xs font-medium"
+                  >
+                    <AlignCenterHorizontal className="w-3.5 h-3.5 text-[var(--primary-btn)]" />
+                    <span>Align Horizontally</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => onAlignSelected('vertical-column')}
+                    title="Align elements vertically along a shared column center"
+                    className="notion-btn flex items-center justify-center gap-1.5 py-2 text-xs font-medium"
+                  >
+                    <AlignCenterVertical className="w-3.5 h-3.5 text-[var(--primary-btn)]" />
+                    <span>Align Vertically</span>
+                  </button>
+                </div>
+
+                {/* Granular Edge & Center Alignment Bar */}
+                <div className="grid grid-cols-6 gap-1 p-1 rounded-[6px] bg-[var(--bg-secondary)] border border-[var(--border-subtle)]">
+                  <button
+                    type="button"
+                    onClick={() => onAlignSelected('align-left')}
+                    title="Align Left Edges"
+                    className="p-1.5 rounded-[4px] hover:bg-[var(--hover-bg-strong)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center justify-center transition-colors cursor-pointer"
+                  >
+                    <AlignStartVertical className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onAlignSelected('align-center-x')}
+                    title="Align Horizontal Centers (Column)"
+                    className="p-1.5 rounded-[4px] hover:bg-[var(--hover-bg-strong)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center justify-center transition-colors cursor-pointer"
+                  >
+                    <AlignCenterVertical className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onAlignSelected('align-right')}
+                    title="Align Right Edges"
+                    className="p-1.5 rounded-[4px] hover:bg-[var(--hover-bg-strong)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center justify-center transition-colors cursor-pointer"
+                  >
+                    <AlignEndVertical className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onAlignSelected('align-top')}
+                    title="Align Top Edges"
+                    className="p-1.5 rounded-[4px] hover:bg-[var(--hover-bg-strong)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center justify-center transition-colors cursor-pointer"
+                  >
+                    <AlignStartHorizontal className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onAlignSelected('align-center-y')}
+                    title="Align Vertical Centers (Row)"
+                    className="p-1.5 rounded-[4px] hover:bg-[var(--hover-bg-strong)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center justify-center transition-colors cursor-pointer"
+                  >
+                    <AlignCenterHorizontal className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onAlignSelected('align-bottom')}
+                    title="Align Bottom Edges"
+                    className="p-1.5 rounded-[4px] hover:bg-[var(--hover-bg-strong)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center justify-center transition-colors cursor-pointer"
+                  >
+                    <AlignEndHorizontal className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                {/* Equal Spacing / Distribution */}
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => onAlignSelected('distribute-horizontal')}
+                    title="Distribute elements with equal horizontal spacing"
+                    className="notion-btn flex items-center justify-center gap-1.5 py-1.5 text-[11px]"
+                  >
+                    <AlignHorizontalSpaceBetween className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
+                    <span>Distribute H</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => onAlignSelected('distribute-vertical')}
+                    title="Distribute elements with equal vertical spacing"
+                    className="notion-btn flex items-center justify-center gap-1.5 py-1.5 text-[11px]"
+                  >
+                    <AlignVerticalSpaceBetween className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
+                    <span>Distribute V</span>
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-2">
               <button
@@ -346,61 +469,84 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
         ) : selectedEdge && edgeData ? (
           /* CASE 2: EDGE SELECTED */
           <div className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-medium text-[var(--text-secondary)]">
-                Relationship Type
-              </label>
-              <div className="grid grid-cols-2 gap-1.5">
-                {(
-                  [
-                    {
-                      id: 'association',
-                      label: 'Association',
-                      badge: '—',
-                    },
-                    {
-                      id: 'include',
-                      label: '«include»',
-                      badge: '«inc»',
-                    },
-                    {
-                      id: 'extend',
-                      label: '«extend»',
-                      badge: '«ext»',
-                    },
-                    {
-                      id: 'generalization',
-                      label: 'Generalization',
-                      badge: '—▷',
-                    },
-                  ] as const
-                ).map((rel) => {
-                  const isActive =
-                    (edgeData.relationshipType || 'association') === rel.id
-                  return (
-                    <button
-                      key={rel.id}
-                      type="button"
-                      onClick={() =>
-                        onUpdateEdgeData(selectedEdge.id, {
-                          relationshipType: rel.id,
-                        })
-                      }
-                      className={`px-2 py-1.5 rounded-[4px] text-xs font-medium text-left transition-colors flex items-center justify-between ${
-                        isActive
-                          ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] font-semibold'
-                          : 'border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--hover-bg)]'
-                      }`}
-                    >
-                      <span>{rel.label}</span>
-                      <span className="font-mono text-[10px] opacity-75">
-                        {rel.badge}
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
+            {(() => {
+              const sNode = allNodes.find((n) => n.id === selectedEdge.source)
+              const tNode = allNodes.find((n) => n.id === selectedEdge.target)
+              const allowedEdgeTypes = getAllowedRelationshipTypes(
+                sNode?.type,
+                tNode?.type
+              )
+
+              return (
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-medium text-[var(--text-secondary)]">
+                    Relationship Type
+                  </label>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {(
+                      [
+                        {
+                          id: 'association',
+                          label: 'Association',
+                          badge: '—',
+                        },
+                        {
+                          id: 'include',
+                          label: '«include»',
+                          badge: '«inc»',
+                        },
+                        {
+                          id: 'extend',
+                          label: '«extend»',
+                          badge: '«ext»',
+                        },
+                        {
+                          id: 'generalization',
+                          label: 'Generalization',
+                          badge: '—▷',
+                        },
+                      ] as const
+                    ).map((rel) => {
+                      const isActive =
+                        (edgeData.relationshipType || 'association') === rel.id
+                      const isAllowed =
+                        allowedEdgeTypes.length === 0 ||
+                        allowedEdgeTypes.includes(rel.id)
+                      return (
+                        <button
+                          key={rel.id}
+                          type="button"
+                          disabled={!isAllowed}
+                          title={
+                            isAllowed
+                              ? `Set relationship to ${rel.label}`
+                              : `${rel.label} is not valid between ${sNode?.type || 'source'} and ${tNode?.type || 'target'} in UML 2.5`
+                          }
+                          onClick={() => {
+                            if (!isAllowed) return
+                            onUpdateEdgeData(selectedEdge.id, {
+                              relationshipType: rel.id,
+                            })
+                          }}
+                          className={`px-2 py-1.5 rounded-[4px] text-xs font-medium text-left transition-colors flex items-center justify-between ${
+                            isActive
+                              ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] font-semibold'
+                              : isAllowed
+                                ? 'border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--hover-bg)] cursor-pointer'
+                                : 'border border-[var(--border-subtle)]/40 text-[var(--text-tertiary)] opacity-40 cursor-not-allowed line-through'
+                          }`}
+                        >
+                          <span>{rel.label}</span>
+                          <span className="font-mono text-[10px] opacity-75">
+                            {rel.badge}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })()}
 
             {/* Flip Direction Button */}
             <div className="space-y-1.5">

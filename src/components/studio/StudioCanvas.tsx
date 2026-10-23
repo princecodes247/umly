@@ -14,17 +14,21 @@ import {
   addEdge,
   useReactFlow,
   ReactFlowProvider,
+  ViewportPortal,
   BackgroundVariant,
   SelectionMode,
   type Connection,
   type Edge,
   type Node,
+  type NodeChange,
   type NodeTypes,
   type EdgeTypes,
   type OnSelectionChangeParams,
   type OnNodeDrag,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
+import { motion, AnimatePresence } from 'motion/react'
+import { AlertCircle, X } from 'lucide-react'
 
 import { ActorNode } from '../canvas/nodes/ActorNode'
 import { UseCaseNode } from '../canvas/nodes/UseCaseNode'
@@ -48,6 +52,10 @@ import {
   getLastActiveDiagramId,
   type DiagramDraft,
 } from '../../lib/diagramStorage'
+import {
+  getAllowedRelationshipTypes,
+  validateUmlConnection,
+} from '../../lib/umlValidation'
 import type {
   UmlRelationshipType,
   UmlNodeData,
@@ -68,6 +76,40 @@ const edgeTypes: EdgeTypes = {
 interface HistorySnapshot {
   nodes: Node[]
   edges: Edge[]
+}
+
+export type AlignmentMode =
+  | 'horizontal-row'
+  | 'vertical-column'
+  | 'align-left'
+  | 'align-center-x'
+  | 'align-right'
+  | 'align-top'
+  | 'align-center-y'
+  | 'align-bottom'
+  | 'distribute-horizontal'
+  | 'distribute-vertical'
+
+interface AlignmentGuides {
+  vertical: { x: number; y1: number; y2: number } | null
+  horizontal: { y: number; x1: number; x2: number } | null
+}
+
+function getNodeDimensions(n: Node): { w: number; h: number } {
+  if (n.type === 'boundary') {
+    return {
+      w: (n.data?.width as number) || n.measured?.width || 440,
+      h: (n.data?.height as number) || n.measured?.height || 380,
+    }
+  }
+  return {
+    w:
+      n.measured?.width ??
+      (n.type === 'actor' ? 92 : n.type === 'useCase' ? 144 : 150),
+    h:
+      n.measured?.height ??
+      (n.type === 'actor' ? 112 : n.type === 'useCase' ? 64 : 80),
+  }
 }
 
 interface StudioCanvasProps {
@@ -288,8 +330,185 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
     boundaryStartPos: { x: number; y: number }
   } | null>(null)
 
+  // Shift-drag snapping & visual alignment guides
+  const shiftKeyPressedRef = useRef(false)
+  const [alignmentGuides, setAlignmentGuides] = useState<AlignmentGuides>({
+    vertical: null,
+    horizontal: null,
+  })
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') {
+        shiftKeyPressedRef.current = true
+      }
+    }
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') {
+        shiftKeyPressedRef.current = false
+        setAlignmentGuides({ vertical: null, horizontal: null })
+      }
+    }
+    const onBlur = () => {
+      shiftKeyPressedRef.current = false
+      setAlignmentGuides({ vertical: null, horizontal: null })
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    window.addEventListener('keyup', onKeyUp)
+    window.addEventListener('blur', onBlur)
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('keyup', onKeyUp)
+      window.removeEventListener('blur', onBlur)
+    }
+  }, [])
+
+  // Custom onNodesChange wrapper that snaps dragged elements to other elements when Shift is held
+  const handleNodesChange = useCallback(
+    (changes: NodeChange<Node>[]) => {
+      const draggingPosChanges = changes.filter(
+        (c): c is Extract<NodeChange<Node>, { type: 'position' }> =>
+          c.type === 'position' && Boolean(c.dragging) && Boolean(c.position)
+      )
+
+      const dragEnded = changes.some(
+        (c) => c.type === 'position' && c.dragging === false
+      )
+
+      if (dragEnded) {
+        setAlignmentGuides({ vertical: null, horizontal: null })
+      }
+
+      if (draggingPosChanges.length > 0 && shiftKeyPressedRef.current) {
+        const primaryChange = draggingPosChanges[0]
+        const draggedNode = nodes.find((n) => n.id === primaryChange.id)
+
+        if (
+          draggedNode &&
+          draggedNode.type !== 'boundary' &&
+          primaryChange.position
+        ) {
+          const { w: nw, h: nh } = getNodeDimensions(draggedNode)
+          const rawX = primaryChange.position.x
+          const rawY = primaryChange.position.y
+
+          const nLeft = rawX
+          const nCenterX = rawX + nw / 2
+          const nRight = rawX + nw
+
+          const nTop = rawY
+          const nCenterY = rawY + nh / 2
+          const nBottom = rawY + nh
+
+          const SNAP_THRESHOLD = 14
+          let bestDx: number | null = null
+          let bestAbsDx = SNAP_THRESHOLD
+          let vGuide: AlignmentGuides['vertical'] = null
+
+          let bestDy: number | null = null
+          let bestAbsDy = SNAP_THRESHOLD
+          let hGuide: AlignmentGuides['horizontal'] = null
+
+          const draggingIds = new Set(draggingPosChanges.map((c) => c.id))
+
+          for (const other of nodes) {
+            if (
+              draggingIds.has(other.id) ||
+              other.selected ||
+              other.type === 'boundary' ||
+              other.hidden
+            ) {
+              continue
+            }
+
+            const { w: ow, h: oh } = getNodeDimensions(other)
+            const oLeft = other.position.x
+            const oCenterX = other.position.x + ow / 2
+            const oRight = other.position.x + ow
+
+            const oTop = other.position.y
+            const oCenterY = other.position.y + oh / 2
+            const oBottom = other.position.y + oh
+
+            // X-axis alignment candidates (vertical guide line)
+            const xPairs = [
+              { diff: oCenterX - nCenterX, guideX: oCenterX },
+              { diff: oLeft - nLeft, guideX: oLeft },
+              { diff: oRight - nRight, guideX: oRight },
+              { diff: oRight - nLeft, guideX: oRight },
+              { diff: oLeft - nRight, guideX: oLeft },
+            ]
+
+            for (const pair of xPairs) {
+              const absDiff = Math.abs(pair.diff)
+              if (absDiff < bestAbsDx) {
+                bestAbsDx = absDiff
+                bestDx = pair.diff
+                vGuide = {
+                  x: pair.guideX,
+                  y1: Math.min(nTop, oTop) - 24,
+                  y2: Math.max(nBottom, oBottom) + 24,
+                }
+              }
+            }
+
+            // Y-axis alignment candidates (horizontal guide line)
+            const yPairs = [
+              { diff: oCenterY - nCenterY, guideY: oCenterY },
+              { diff: oTop - nTop, guideY: oTop },
+              { diff: oBottom - nBottom, guideY: oBottom },
+              { diff: oBottom - nTop, guideY: oBottom },
+              { diff: oTop - nBottom, guideY: oTop },
+            ]
+
+            for (const pair of yPairs) {
+              const absDiff = Math.abs(pair.diff)
+              if (absDiff < bestAbsDy) {
+                bestAbsDy = absDiff
+                bestDy = pair.diff
+                hGuide = {
+                  y: pair.guideY,
+                  x1: Math.min(nLeft, oLeft) - 24,
+                  x2: Math.max(nRight, oRight) + 24,
+                }
+              }
+            }
+          }
+
+          setAlignmentGuides({ vertical: vGuide, horizontal: hGuide })
+
+          if (bestDx !== null || bestDy !== null) {
+            const snappedChanges = changes.map((c) => {
+              if (c.type === 'position' && c.dragging && c.position) {
+                return {
+                  ...c,
+                  position: {
+                    x: Math.round(c.position.x + (bestDx ?? 0)),
+                    y: Math.round(c.position.y + (bestDy ?? 0)),
+                  },
+                }
+              }
+              return c
+            })
+            onNodesChange(snappedChanges)
+            return
+          }
+        }
+      } else if (draggingPosChanges.length > 0 && !shiftKeyPressedRef.current) {
+        setAlignmentGuides({ vertical: null, horizontal: null })
+      }
+
+      onNodesChange(changes)
+    },
+    [nodes, onNodesChange]
+  )
+
   const onNodeDragStart: OnNodeDrag<Node> = useCallback(
-    (_event, node) => {
+    (event, node) => {
+      shiftKeyPressedRef.current = Boolean(
+        (event as unknown as MouseEvent)?.shiftKey || shiftKeyPressedRef.current
+      )
       if (node.type === 'boundary') {
         const bWidth = (node.data?.width as number) || 440
         const bHeight = (node.data?.height as number) || 380
@@ -327,7 +546,10 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
   )
 
   const onNodeDrag: OnNodeDrag<Node> = useCallback(
-    (_event, node) => {
+    (event, node) => {
+      shiftKeyPressedRef.current = Boolean(
+        (event as unknown as MouseEvent)?.shiftKey
+      )
       if (
         node.type === 'boundary' &&
         draggingBoundaryChildrenRef.current &&
@@ -361,6 +583,7 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
   const onNodeDragStop: OnNodeDrag<Node> = useCallback(
     (_event, _node) => {
       draggingBoundaryChildrenRef.current = null
+      setAlignmentGuides({ vertical: null, horizontal: null })
       pushSnapshot()
     },
     [pushSnapshot]
@@ -417,9 +640,53 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [handleUndo, handleRedo, handleCopy, handlePaste, setNodes, setEdges])
 
-  // Handle Connections
+  // Handle Connections with strict UML 2.5 validation
+  const [validationNotice, setValidationNotice] = useState<{
+    message: string
+    suggestedType?: UmlRelationshipType
+    pendingConnection?: Connection
+  } | null>(null)
+
+  const noticeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const showValidationWarning = useCallback(
+    (
+      message: string,
+      suggestedType?: UmlRelationshipType,
+      pendingConnection?: Connection
+    ) => {
+      if (noticeTimeoutRef.current) {
+        clearTimeout(noticeTimeoutRef.current)
+      }
+      setValidationNotice({ message, suggestedType, pendingConnection })
+      noticeTimeoutRef.current = setTimeout(() => {
+        setValidationNotice(null)
+      }, 5500)
+    },
+    []
+  )
+
   const onConnect = useCallback(
     (params: Connection) => {
+      const sourceNode = nodes.find((n) => n.id === params.source)
+      const targetNode = nodes.find((n) => n.id === params.target)
+
+      const validation = validateUmlConnection(
+        sourceNode,
+        targetNode,
+        activeRelationshipType
+      )
+
+      if (!validation.valid) {
+        showValidationWarning(
+          validation.reason || 'Invalid UML 2.5 relationship.',
+          validation.suggestedType,
+          params
+        )
+        return
+      }
+
+      setValidationNotice(null)
       pushSnapshot()
       const newEdge: Edge = {
         id: `edge-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
@@ -435,7 +702,13 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
 
       setEdges((eds) => addEdge(newEdge, eds))
     },
-    [activeRelationshipType, pushSnapshot, setEdges]
+    [
+      nodes,
+      activeRelationshipType,
+      pushSnapshot,
+      setEdges,
+      showValidationWarning,
+    ]
   )
 
   // Selection change
@@ -512,6 +785,137 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
     setSelectedEdges([])
   }, [setNodes, setEdges])
 
+  // Align or distribute multiple selected nodes
+  const handleAlignSelected = useCallback(
+    (mode: AlignmentMode) => {
+      if (selectedNodes.length < 2) return
+
+      pushSnapshot()
+      const selIds = new Set(selectedNodes.map((n) => n.id))
+      const targetNodes = nodes.filter((n) => selIds.has(n.id))
+      if (targetNodes.length < 2) return
+
+      const metrics = targetNodes.map((n) => {
+        const { w, h } = getNodeDimensions(n)
+        return {
+          id: n.id,
+          x: n.position.x,
+          y: n.position.y,
+          w,
+          h,
+          cx: n.position.x + w / 2,
+          cy: n.position.y + h / 2,
+          right: n.position.x + w,
+          bottom: n.position.y + h,
+        }
+      })
+
+      const newPositions = new Map<string, { x: number; y: number }>()
+
+      if (mode === 'horizontal-row' || mode === 'align-center-y') {
+        const avgCy =
+          metrics.reduce((sum, m) => sum + m.cy, 0) / metrics.length
+        for (const m of metrics) {
+          newPositions.set(m.id, {
+            x: Math.round(m.x),
+            y: Math.round(avgCy - m.h / 2),
+          })
+        }
+      } else if (mode === 'vertical-column' || mode === 'align-center-x') {
+        const avgCx =
+          metrics.reduce((sum, m) => sum + m.cx, 0) / metrics.length
+        for (const m of metrics) {
+          newPositions.set(m.id, {
+            x: Math.round(avgCx - m.w / 2),
+            y: Math.round(m.y),
+          })
+        }
+      } else if (mode === 'align-left') {
+        const minX = Math.min(...metrics.map((m) => m.x))
+        for (const m of metrics) {
+          newPositions.set(m.id, {
+            x: Math.round(minX),
+            y: Math.round(m.y),
+          })
+        }
+      } else if (mode === 'align-right') {
+        const maxRight = Math.max(...metrics.map((m) => m.right))
+        for (const m of metrics) {
+          newPositions.set(m.id, {
+            x: Math.round(maxRight - m.w),
+            y: Math.round(m.y),
+          })
+        }
+      } else if (mode === 'align-top') {
+        const minY = Math.min(...metrics.map((m) => m.y))
+        for (const m of metrics) {
+          newPositions.set(m.id, {
+            x: Math.round(m.x),
+            y: Math.round(minY),
+          })
+        }
+      } else if (mode === 'align-bottom') {
+        const maxBottom = Math.max(...metrics.map((m) => m.bottom))
+        for (const m of metrics) {
+          newPositions.set(m.id, {
+            x: Math.round(m.x),
+            y: Math.round(maxBottom - m.h),
+          })
+        }
+      } else if (mode === 'distribute-horizontal') {
+        const sorted = [...metrics].sort((a, b) => a.cx - b.cx)
+        const totalWidth = sorted.reduce((sum, m) => sum + m.w, 0)
+        const minLeft = sorted[0].x
+        const maxRight = Math.max(...sorted.map((m) => m.right))
+        const span = Math.max(
+          maxRight - minLeft,
+          totalWidth + (sorted.length - 1) * 36
+        )
+        const gap = (span - totalWidth) / (sorted.length - 1)
+        let cursorX = minLeft
+        for (const m of sorted) {
+          newPositions.set(m.id, {
+            x: Math.round(cursorX),
+            y: Math.round(m.y),
+          })
+          cursorX += m.w + gap
+        }
+      } else if (mode === 'distribute-vertical') {
+        const sorted = [...metrics].sort((a, b) => a.cy - b.cy)
+        const totalHeight = sorted.reduce((sum, m) => sum + m.h, 0)
+        const minTop = sorted[0].y
+        const maxBottom = Math.max(...sorted.map((m) => m.bottom))
+        const span = Math.max(
+          maxBottom - minTop,
+          totalHeight + (sorted.length - 1) * 28
+        )
+        const gap = (span - totalHeight) / (sorted.length - 1)
+        let cursorY = minTop
+        for (const m of sorted) {
+          newPositions.set(m.id, {
+            x: Math.round(m.x),
+            y: Math.round(cursorY),
+          })
+          cursorY += m.h + gap
+        }
+      }
+
+      setNodes((nds) =>
+        nds.map((n) => {
+          const nextPos = newPositions.get(n.id)
+          if (nextPos) {
+            return {
+              ...n,
+              position: nextPos,
+            }
+          }
+          return n
+        })
+      )
+    },
+    [selectedNodes, nodes, pushSnapshot, setNodes]
+  )
+
   // Custom events from node & edge UI buttons
   useEffect(() => {
     const handleDuplicateEvent = (e: Event) => {
@@ -525,22 +929,26 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
       const edgeId = customEvent.detail?.edgeId
       if (!edgeId) return
 
-      pushSnapshot()
-      const order: UmlRelationshipType[] = [
-        'association',
-        'include',
-        'extend',
-        'generalization',
-      ]
+      const targetEdge = edges.find((ed) => ed.id === edgeId)
+      if (!targetEdge) return
 
+      const sNode = nodes.find((n) => n.id === targetEdge.source)
+      const tNode = nodes.find((n) => n.id === targetEdge.target)
+      const allowed = getAllowedRelationshipTypes(sNode?.type, tNode?.type)
+
+      // Only cycle if more than 1 relationship type is valid for this pair
+      if (allowed.length <= 1) return
+
+      pushSnapshot()
       setEdges((eds) =>
         eds.map((edge) => {
           if (edge.id !== edgeId) return edge
           const currentType =
-            (edge.data?.relationshipType as UmlRelationshipType) ||
-            'association'
-          const nextIndex = (order.indexOf(currentType) + 1) % order.length
-          const nextType = order[nextIndex]
+            (edge.data?.relationshipType as UmlRelationshipType) || allowed[0]
+          const currentIdx = allowed.indexOf(currentType)
+          const nextIndex =
+            currentIdx === -1 ? 0 : (currentIdx + 1) % allowed.length
+          const nextType = allowed[nextIndex]
 
           return {
             ...edge,
@@ -593,7 +1001,7 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
       window.removeEventListener('flip-edge-direction', handleFlip)
       window.removeEventListener('delete-edge', handleDelete)
     }
-  }, [handleDuplicateNode, pushSnapshot, setEdges])
+  }, [handleDuplicateNode, pushSnapshot, setEdges, edges, nodes])
 
   // Add Node handler
   const handleAddNode = useCallback(
@@ -730,9 +1138,28 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
     [pushSnapshot, reactFlowInstance, setNodes]
   )
 
-  // Update edge data from Inspector
+  // Update edge data from Inspector (with UML 2.5 validation)
   const handleUpdateEdgeData = useCallback(
     (id: string, partial: Partial<UmlEdgeData>) => {
+      if (partial.relationshipType) {
+        const targetEdge = edges.find((e) => e.id === id)
+        if (targetEdge) {
+          const sNode = nodes.find((n) => n.id === targetEdge.source)
+          const tNode = nodes.find((n) => n.id === targetEdge.target)
+          const validation = validateUmlConnection(
+            sNode,
+            tNode,
+            partial.relationshipType
+          )
+          if (!validation.valid) {
+            showValidationWarning(
+              validation.reason || 'Invalid UML 2.5 relationship.'
+            )
+            return
+          }
+        }
+      }
+
       pushSnapshot()
       setEdges((eds) =>
         eds.map((e) => {
@@ -747,7 +1174,7 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
         })
       )
     },
-    [pushSnapshot, setEdges]
+    [edges, nodes, pushSnapshot, setEdges, showValidationWarning]
   )
 
   // Template loader
@@ -875,13 +1302,74 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
           ref={canvasRef}
           className="flex-1 h-full min-h-0 relative overflow-hidden bg-[var(--bg-secondary)] rounded-[6px] border border-[var(--border-subtle)]"
         >
+          {/* UML 2.5 Relationship Validation Toast Banner */}
+          <AnimatePresence>
+            {validationNotice && (
+              <motion.div
+                initial={{ opacity: 0, y: -12, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                transition={{ type: 'spring', stiffness: 450, damping: 28 }}
+                className="studio-bottom-dock absolute top-3 left-1/2 -translate-x-1/2 z-40 max-w-lg flex items-center gap-2.5 px-3 py-2 rounded-[8px] bg-[var(--bg-primary)] border border-[var(--notion-red-text)]/40 shadow-xl text-xs font-sans"
+              >
+                <AlertCircle className="w-4 h-4 text-[var(--notion-red-text)] shrink-0" />
+                <span className="text-[var(--text-primary)] leading-snug">
+                  {validationNotice.message}
+                </span>
+                {validationNotice.suggestedType &&
+                  validationNotice.pendingConnection && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const suggested = validationNotice.suggestedType!
+                        const conn = validationNotice.pendingConnection!
+                        setActiveRelationshipType(suggested)
+                        setValidationNotice(null)
+                        pushSnapshot()
+                        const newEdge: Edge = {
+                          id: `edge-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+                          source: conn.source,
+                          target: conn.target,
+                          sourceHandle: conn.sourceHandle,
+                          targetHandle: conn.targetHandle,
+                          type: 'umlEdge',
+                          data: {
+                            relationshipType: suggested,
+                          },
+                        }
+                        setEdges((eds) => addEdge(newEdge, eds))
+                      }}
+                      className="px-2 py-1 rounded-[5px] bg-[var(--primary-btn)] text-white font-medium text-[11px] whitespace-nowrap hover:bg-[var(--primary-btn-hover)] transition-colors cursor-pointer shrink-0"
+                    >
+                      Use{' '}
+                      {validationNotice.suggestedType === 'include'
+                        ? '«include»'
+                        : validationNotice.suggestedType === 'extend'
+                          ? '«extend»'
+                          : validationNotice.suggestedType === 'generalization'
+                            ? 'Generalization'
+                            : 'Association'}
+                    </button>
+                  )}
+                <button
+                  type="button"
+                  onClick={() => setValidationNotice(null)}
+                  className="p-0.5 rounded-[4px] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] transition-colors cursor-pointer shrink-0"
+                  title="Dismiss"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <UmlMarkers />
           <ReactFlow
             nodes={nodes}
             edges={edges}
             nodeTypes={nodeTypes}
             edgeTypes={edgeTypes}
-            onNodesChange={onNodesChange}
+            onNodesChange={handleNodesChange}
             onEdgesChange={onEdgesChange}
             onNodeDragStart={onNodeDragStart}
             onNodeDrag={onNodeDrag}
@@ -899,6 +1387,75 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
             proOptions={{ hideAttribution: true }}
             style={{ width: '100%', height: '100%' }}
           >
+            {/* Shift-Drag Smart Alignment Guide Lines */}
+            {(alignmentGuides.vertical || alignmentGuides.horizontal) && (
+              <ViewportPortal>
+                <svg
+                  style={{
+                    overflow: 'visible',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: 1,
+                    height: 1,
+                    pointerEvents: 'none',
+                    zIndex: 99999,
+                  }}
+                >
+                  {alignmentGuides.vertical && (
+                    <g>
+                      <line
+                        x1={alignmentGuides.vertical.x}
+                        y1={alignmentGuides.vertical.y1}
+                        x2={alignmentGuides.vertical.x}
+                        y2={alignmentGuides.vertical.y2}
+                        stroke="var(--primary-btn)"
+                        strokeWidth={1.5}
+                        strokeDasharray="4,4"
+                      />
+                      <circle
+                        cx={alignmentGuides.vertical.x}
+                        cy={alignmentGuides.vertical.y1}
+                        r={3}
+                        fill="var(--primary-btn)"
+                      />
+                      <circle
+                        cx={alignmentGuides.vertical.x}
+                        cy={alignmentGuides.vertical.y2}
+                        r={3}
+                        fill="var(--primary-btn)"
+                      />
+                    </g>
+                  )}
+                  {alignmentGuides.horizontal && (
+                    <g>
+                      <line
+                        x1={alignmentGuides.horizontal.x1}
+                        y1={alignmentGuides.horizontal.y}
+                        x2={alignmentGuides.horizontal.x2}
+                        y2={alignmentGuides.horizontal.y}
+                        stroke="var(--primary-btn)"
+                        strokeWidth={1.5}
+                        strokeDasharray="4,4"
+                      />
+                      <circle
+                        cx={alignmentGuides.horizontal.x1}
+                        cy={alignmentGuides.horizontal.y}
+                        r={3}
+                        fill="var(--primary-btn)"
+                      />
+                      <circle
+                        cx={alignmentGuides.horizontal.x2}
+                        cy={alignmentGuides.horizontal.y}
+                        r={3}
+                        fill="var(--primary-btn)"
+                      />
+                    </g>
+                  )}
+                </svg>
+              </ViewportPortal>
+            )}
+
             <Background
               variant={BackgroundVariant.Dots}
               gap={20}
@@ -944,6 +1501,7 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
           onDeleteSelected={handleDeleteSelected}
           onDuplicateSelected={handleDuplicateSelected}
           onDeselectAll={handleDeselectAll}
+          onAlignSelected={handleAlignSelected}
           allNodes={nodes}
           allEdges={edges}
           isOpen={isInspectorOpen}
