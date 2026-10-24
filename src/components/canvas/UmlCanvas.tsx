@@ -153,14 +153,45 @@ export const UmlCanvas: React.FC<UmlCanvasProps> = ({
       setEdges((eds) => eds.filter((edge) => edge.id !== edgeId))
     }
 
+    const handleReconnectEndpoint = (e: Event) => {
+      const customEvent = e as CustomEvent<{
+        edgeId: string
+        end: 'source' | 'target'
+        newNodeId: string
+      }>
+      const { edgeId, end, newNodeId } = customEvent.detail || {}
+      if (!edgeId || !end || !newNodeId) return
+
+      setEdges((eds) =>
+        eds.map((ed) => {
+          if (ed.id !== edgeId) return ed
+          const nextSource = end === 'source' ? newNodeId : ed.source
+          const nextTarget = end === 'target' ? newNodeId : ed.target
+          if (nextSource === nextTarget) return ed
+          return {
+            ...ed,
+            source: nextSource,
+            target: nextTarget,
+            sourceHandle: undefined,
+            targetHandle: undefined,
+          }
+        })
+      )
+    }
+
     window.addEventListener('cycle-edge-type', handleCycle)
     window.addEventListener('flip-edge-direction', handleFlip)
     window.addEventListener('delete-edge', handleDelete)
+    window.addEventListener('reconnect-edge-endpoint', handleReconnectEndpoint)
 
     return () => {
       window.removeEventListener('cycle-edge-type', handleCycle)
       window.removeEventListener('flip-edge-direction', handleFlip)
       window.removeEventListener('delete-edge', handleDelete)
+      window.removeEventListener(
+        'reconnect-edge-endpoint',
+        handleReconnectEndpoint
+      )
     }
   }, [setEdges])
 

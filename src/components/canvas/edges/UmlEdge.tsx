@@ -13,7 +13,11 @@ import {
 import { motion, AnimatePresence } from 'motion/react'
 import { Trash2, ArrowLeftRight } from 'lucide-react'
 import { getAllowedRelationshipTypes } from '../../../lib/umlValidation'
-import { getFloatingEdgeParams } from '../../../lib/floatingEdges'
+import {
+  getFloatingEdgeParams,
+  getBorderIntersectionPoint,
+  getNodeBox,
+} from '../../../lib/floatingEdges'
 import type { UmlEdgeData, UmlRelationshipType } from '../../../types/game'
 
 interface UmlEdgeProps extends EdgeProps {
@@ -36,9 +40,15 @@ export const UmlEdge = memo(
   }: UmlEdgeProps) => {
     const nodes = useNodes()
     const edges = useEdges()
-    const { setEdges, setNodes } = useReactFlow()
+    const { setEdges, setNodes, screenToFlowPosition } = useReactFlow()
 
     const [isHovered, setIsHovered] = useState(false)
+    const [draggingEnd, setDraggingEnd] = useState<{
+      end: 'source' | 'target'
+      x: number
+      y: number
+      hoveredNodeId: string | null
+    } | null>(null)
     const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     const handleMouseEnter = () => {
@@ -86,6 +96,46 @@ export const UmlEdge = memo(
 
     // Compute floating border intersection coordinates so lines connect to the nearest border point
     const { sx, sy, tx, ty, sourcePos, targetPos } = useMemo(() => {
+      if (draggingEnd && sourceNode && targetNode) {
+        const hoveredNode = draggingEnd.hoveredNodeId
+          ? nodes.find((n) => n.id === draggingEnd.hoveredNodeId)
+          : null
+
+        if (draggingEnd.end === 'source') {
+          if (hoveredNode && hoveredNode.id !== target) {
+            return getFloatingEdgeParams(hoveredNode, targetNode, 0)
+          }
+          const tInt = getBorderIntersectionPoint(targetNode, {
+            x: draggingEnd.x,
+            y: draggingEnd.y,
+          })
+          return {
+            sx: draggingEnd.x,
+            sy: draggingEnd.y,
+            tx: tInt.x,
+            ty: tInt.y,
+            sourcePos: sourcePosition,
+            targetPos: tInt.position,
+          }
+        } else {
+          if (hoveredNode && hoveredNode.id !== source) {
+            return getFloatingEdgeParams(sourceNode, hoveredNode, 0)
+          }
+          const sInt = getBorderIntersectionPoint(sourceNode, {
+            x: draggingEnd.x,
+            y: draggingEnd.y,
+          })
+          return {
+            sx: sInt.x,
+            sy: sInt.y,
+            tx: draggingEnd.x,
+            ty: draggingEnd.y,
+            sourcePos: sInt.position,
+            targetPos: targetPosition,
+          }
+        }
+      }
+
       if (sourceNode && targetNode) {
         return getFloatingEdgeParams(sourceNode, targetNode, parallelOffset)
       }
@@ -98,6 +148,10 @@ export const UmlEdge = memo(
         targetPos: targetPosition,
       }
     }, [
+      draggingEnd,
+      nodes,
+      source,
+      target,
       sourceNode,
       targetNode,
       parallelOffset,
@@ -285,7 +339,7 @@ export const UmlEdge = memo(
       target,
     ])
 
-    const showActions = Boolean(selected || isHovered)
+    const showActions = Boolean(selected || isHovered || draggingEnd)
     const hasVisibleLabel = Boolean(stereotypeText)
 
     const selectThisEdge = (e: React.MouseEvent) => {
@@ -305,6 +359,93 @@ export const UmlEdge = memo(
           detail: { edgeId: id, relationshipType: newType },
         })
       )
+    }
+
+    const startEndpointDrag = (
+      e: React.PointerEvent<SVGGElement>,
+      end: 'source' | 'target'
+    ) => {
+      e.stopPropagation()
+      e.preventDefault()
+
+      // Select this edge while dragging its endpoint
+      setNodes((nds) => nds.map((n) => ({ ...n, selected: false })))
+      setEdges((eds) =>
+        eds.map((edge) => ({
+          ...edge,
+          selected: edge.id === id,
+        }))
+      )
+
+      const findTargetNodeAt = (flowX: number, flowY: number): string | null => {
+        const fixedNodeId = end === 'source' ? target : source
+        for (const n of nodes) {
+          if (n.type === 'boundary' || n.hidden || n.id === fixedNodeId) {
+            continue
+          }
+          const box = getNodeBox(n)
+          const pad = 14
+          if (
+            flowX >= box.x - pad &&
+            flowX <= box.x + box.w + pad &&
+            flowY >= box.y - pad &&
+            flowY <= box.y + box.h + pad
+          ) {
+            return n.id
+          }
+        }
+        return null
+      }
+
+      const initialFlow = screenToFlowPosition({
+        x: e.clientX,
+        y: e.clientY,
+      })
+
+      let latestHoveredId = findTargetNodeAt(initialFlow.x, initialFlow.y)
+      setDraggingEnd({
+        end,
+        x: initialFlow.x,
+        y: initialFlow.y,
+        hoveredNodeId: latestHoveredId,
+      })
+
+      const onPointerMove = (ev: PointerEvent) => {
+        const pt = screenToFlowPosition({
+          x: ev.clientX,
+          y: ev.clientY,
+        })
+        latestHoveredId = findTargetNodeAt(pt.x, pt.y)
+        setDraggingEnd({
+          end,
+          x: pt.x,
+          y: pt.y,
+          hoveredNodeId: latestHoveredId,
+        })
+      }
+
+      const onPointerUp = () => {
+        window.removeEventListener('pointermove', onPointerMove)
+        window.removeEventListener('pointerup', onPointerUp)
+
+        const previousNodeId = end === 'source' ? source : target
+        if (latestHoveredId && latestHoveredId !== previousNodeId) {
+          window.dispatchEvent(
+            new CustomEvent('reconnect-edge-endpoint', {
+              detail: {
+                edgeId: id,
+                end,
+                newNodeId: latestHoveredId,
+              },
+            })
+          )
+        }
+        // Revert visual drag state (either snaps to new node if valid, or reverts to previous node if invalid/empty)
+        setDraggingEnd(null)
+      }
+
+      window.addEventListener('pointermove', onPointerMove)
+      window.addEventListener('pointerup', onPointerUp)
     }
 
     return (
@@ -328,33 +469,11 @@ export const UmlEdge = memo(
           path={edgePath}
           markerEnd={markerEnd}
           style={{
-            strokeWidth: selected ? 2.25 : isHovered ? 2 : 1.65,
+            strokeWidth: selected || draggingEnd ? 2.25 : isHovered ? 2 : 1.65,
             strokeDasharray,
             stroke: strokeColor,
           }}
         />
-
-        {/* Visible draggable endpoint handles when the relationship is selected or hovered */}
-        {showActions && (
-          <g className="pointer-events-none">
-            <circle
-              cx={sx}
-              cy={sy}
-              r={selected ? 5 : 4}
-              fill="var(--bg-primary)"
-              stroke="var(--primary-btn)"
-              strokeWidth={2}
-            />
-            <circle
-              cx={tx}
-              cy={ty}
-              r={selected ? 5 : 4}
-              fill="var(--bg-primary)"
-              stroke="var(--primary-btn)"
-              strokeWidth={2}
-            />
-          </g>
-        )}
 
         {/* Wide invisible hit path so hovering or clicking anywhere on the line is effortless */}
         <path
@@ -366,6 +485,69 @@ export const UmlEdge = memo(
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         />
+
+        {/* Interactive draggable endpoint handles on both ends of the relationship */}
+        <g
+          className="nodrag nopan"
+          style={{ pointerEvents: 'all', cursor: 'grab' }}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+          onPointerDown={(e) => startEndpointDrag(e, 'source')}
+        >
+          <title>Drag to reconnect source end</title>
+          <circle cx={sx} cy={sy} r={13} fill="transparent" />
+          {showActions && (
+            <circle
+              cx={sx}
+              cy={sy}
+              r={
+                draggingEnd?.end === 'source'
+                  ? 6.5
+                  : selected
+                    ? 5.5
+                    : 4.5
+              }
+              fill={
+                draggingEnd?.end === 'source'
+                  ? 'var(--primary-btn)'
+                  : 'var(--bg-primary)'
+              }
+              stroke="var(--primary-btn)"
+              strokeWidth={2}
+            />
+          )}
+        </g>
+
+        <g
+          className="nodrag nopan"
+          style={{ pointerEvents: 'all', cursor: 'grab' }}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+          onPointerDown={(e) => startEndpointDrag(e, 'target')}
+        >
+          <title>Drag to reconnect target end</title>
+          <circle cx={tx} cy={ty} r={13} fill="transparent" />
+          {showActions && (
+            <circle
+              cx={tx}
+              cy={ty}
+              r={
+                draggingEnd?.end === 'target'
+                  ? 6.5
+                  : selected
+                    ? 5.5
+                    : 4.5
+              }
+              fill={
+                draggingEnd?.end === 'target'
+                  ? 'var(--primary-btn)'
+                  : 'var(--bg-primary)'
+              }
+              stroke="var(--primary-btn)"
+              strokeWidth={2}
+            />
+          )}
+        </g>
 
         {/* Clean, minimal inline stereotype label & direct post-hoc type switcher */}
         {(hasVisibleLabel || showActions) && (

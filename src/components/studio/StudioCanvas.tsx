@@ -49,7 +49,7 @@ import { NoteNode } from '../canvas/nodes/NoteNode'
 import { UmlEdge } from '../canvas/edges/UmlEdge'
 import { UmlMarkers } from '../canvas/UmlMarkers'
 import { StudioToolbar } from './StudioToolbar'
-import { StudioBottomDock, type StudioActiveTool } from './StudioBottomDock'
+import { StudioBottomDock } from './StudioBottomDock'
 import { StudioInspector } from './StudioInspector'
 import { CommandPalette } from './CommandPalette'
 import { ShortcutsModal } from './ShortcutsModal'
@@ -175,9 +175,6 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(
     initialDraft?.edges || defaultTemplate.edges
   )
-
-  // Active tool for single-key creation / direct manipulation
-  const [activeTool, setActiveTool] = useState<StudioActiveTool>('select')
 
   // Default routing style for edges ('straight' | 'orthogonal' | 'bezier')
   const [defaultRoutingStyle, setDefaultRoutingStyle] = useState<
@@ -805,7 +802,7 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
     [nodes, setNodes]
   )
 
-  // Add Node helper (supports optional flowPosition & autoFocusEdit)
+  // Add Node helper: auto-drops at visible viewport center (avoiding overlap) or at explicit drag-drop position
   const handleAddNode = useCallback(
     (
       type: 'actor' | 'useCase' | 'boundary' | 'note',
@@ -817,17 +814,68 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
     ) => {
       pushSnapshot()
       const id = `${type}-${Date.now()}`
-      const viewport = reactFlowInstance.getViewport()
 
-      const defaultX = (-viewport.x + 360) / viewport.zoom
-      const defaultY = (-viewport.y + 240) / viewport.zoom
+      const nodeW =
+        type === 'boundary'
+          ? 440
+          : type === 'useCase'
+            ? 148
+            : type === 'actor'
+              ? 88
+              : 150
+      const nodeH =
+        type === 'boundary'
+          ? 380
+          : type === 'useCase'
+            ? 64
+            : type === 'actor'
+              ? 108
+              : 76
 
-      const posX =
-        options?.position?.x ??
-        Math.round(defaultX + (Math.random() * 32 - 16))
-      const posY =
-        options?.position?.y ??
-        Math.round(defaultY + (Math.random() * 32 - 16))
+      let posX: number
+      let posY: number
+
+      if (options?.position) {
+        posX = options.position.x
+        posY = options.position.y
+      } else {
+        // Compute exact center of the visible canvas container
+        const rect = canvasRef.current?.getBoundingClientRect()
+        const centerClientX = rect
+          ? rect.left + rect.width / 2
+          : window.innerWidth / 2
+        const centerClientY = rect
+          ? rect.top + rect.height / 2
+          : window.innerHeight / 2
+
+        const flowCenter = reactFlowInstance.screenToFlowPosition({
+          x: centerClientX,
+          y: centerClientY,
+        })
+
+        // Place actors slightly to the left of center by default, useCases at center
+        posX =
+          type === 'actor'
+            ? flowCenter.x - nodeW / 2 - 180
+            : flowCenter.x - nodeW / 2
+        posY = flowCenter.y - nodeH / 2
+
+        // Step diagonally if another node of the same/solid layer is already at this spot
+        let attempts = 0
+        while (
+          attempts < 12 &&
+          nodes.some(
+            (n) =>
+              n.type !== 'boundary' &&
+              Math.abs(n.position.x - posX) < 42 &&
+              Math.abs(n.position.y - posY) < 42
+          )
+        ) {
+          posX += 32
+          posY += 32
+          attempts++
+        }
+      }
 
       let initialData: UmlNodeData
 
@@ -881,15 +929,50 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
         zIndex: type === 'boundary' ? 1 : 10,
       }
 
-      setNodes((nds) => [
-        ...nds.map((n) => ({ ...n, selected: false })),
-        newNode,
-      ])
+      setNodes((nds) => {
+        const updated = nds.map((n) => {
+          // If dropping a Use Case near or inside a System Boundary, auto-grow the boundary
+          if (type === 'useCase' && n.type === 'boundary') {
+            const bw = (n.data?.width as number) || 440
+            const bh = (n.data?.height as number) || 380
+            const bx1 = n.position.x
+            const by1 = n.position.y
+            const bx2 = bx1 + bw
+            const by2 = by1 + bh
+            const cx = newNode.position.x + nodeW / 2
+            const cy = newNode.position.y + nodeH / 2
+            const PADDING = 36
+
+            if (
+              cx >= bx1 - 30 &&
+              cx <= bx2 + 30 &&
+              cy >= by1 - 30 &&
+              cy <= by2 + 30
+            ) {
+              const newX1 = Math.min(bx1, newNode.position.x - PADDING)
+              const newY1 = Math.min(by1, newNode.position.y - (PADDING + 18))
+              const newX2 = Math.max(bx2, newNode.position.x + nodeW + PADDING)
+              const newY2 = Math.max(bx2 > 0 ? by2 : by2, newNode.position.y + nodeH + PADDING)
+              return {
+                ...n,
+                selected: false,
+                position: { x: Math.round(newX1), y: Math.round(newY1) },
+                data: {
+                  ...n.data,
+                  width: Math.round(newX2 - newX1),
+                  height: Math.round(newY2 - newY1),
+                },
+              }
+            }
+          }
+          return { ...n, selected: false }
+        })
+        return [...updated, newNode]
+      })
       setEdges((eds) => eds.map((e) => ({ ...e, selected: false })))
-      setActiveTool('select')
       return newNode
     },
-    [reactFlowInstance, pushSnapshot, setNodes, setEdges]
+    [reactFlowInstance, nodes, pushSnapshot, setNodes, setEdges]
   )
 
   // Create & connect next element (triggered by Tab key or Drop-on-Empty-Canvas menu)
@@ -1504,11 +1587,61 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
       setEdges((eds) => eds.filter((edge) => edge.id !== edgeId))
     }
 
+    const handleReconnectEndpoint = (e: Event) => {
+      const customEvent = e as CustomEvent<{
+        edgeId: string
+        end: 'source' | 'target'
+        newNodeId: string
+      }>
+      const { edgeId, end, newNodeId } = customEvent.detail || {}
+      if (!edgeId || !end || !newNodeId) return
+
+      const targetEdge = edges.find((ed) => ed.id === edgeId)
+      if (!targetEdge) return
+
+      const nextSourceId = end === 'source' ? newNodeId : targetEdge.source
+      const nextTargetId = end === 'target' ? newNodeId : targetEdge.target
+
+      if (nextSourceId === nextTargetId) return
+
+      const sNode = nodes.find((n) => n.id === nextSourceId)
+      const tNode = nodes.find((n) => n.id === nextTargetId)
+      const currentRelType: UmlRelationshipType =
+        (targetEdge.data?.relationshipType as UmlRelationshipType) ||
+        'association'
+
+      const validation = validateUmlConnection(sNode, tNode, currentRelType)
+      if (!validation.valid) {
+        showValidationWarning(
+          validation.reason ||
+            'Invalid UML 2.5 relationship — reverted to previous connection.'
+        )
+        return
+      }
+
+      setValidationNotice(null)
+      pushSnapshot()
+      setEdges((eds) =>
+        eds.map((ed) =>
+          ed.id === edgeId
+            ? {
+                ...ed,
+                source: nextSourceId,
+                target: nextTargetId,
+                sourceHandle: undefined,
+                targetHandle: undefined,
+              }
+            : ed
+        )
+      )
+    }
+
     window.addEventListener('duplicate-node', handleDuplicateEvent)
     window.addEventListener('set-edge-type', handleSetEdgeType)
     window.addEventListener('create-next-connected', handleCreateNextConnected)
     window.addEventListener('flip-edge-direction', handleFlip)
     window.addEventListener('delete-edge', handleDelete)
+    window.addEventListener('reconnect-edge-endpoint', handleReconnectEndpoint)
 
     return () => {
       window.removeEventListener('duplicate-node', handleDuplicateEvent)
@@ -1519,13 +1652,19 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
       )
       window.removeEventListener('flip-edge-direction', handleFlip)
       window.removeEventListener('delete-edge', handleDelete)
+      window.removeEventListener(
+        'reconnect-edge-endpoint',
+        handleReconnectEndpoint
+      )
     }
   }, [
     handleDuplicateNode,
     createConnectedElement,
     pushSnapshot,
     setEdges,
+    edges,
     nodes,
+    showValidationWarning,
   ])
 
   // Node deletion
@@ -1839,31 +1978,26 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
         return
       }
 
-      // Single-key tool selection: V, U, A, B, N
+      // Single-key instant element auto-drop: U, A, B, N
       const keyLower = e.key.toLowerCase()
-      if (keyLower === 'v') {
-        e.preventDefault()
-        setActiveTool('select')
-        return
-      }
       if (keyLower === 'u') {
         e.preventDefault()
-        setActiveTool('useCase')
+        handleAddNode('useCase')
         return
       }
       if (keyLower === 'a') {
         e.preventDefault()
-        setActiveTool('actor')
+        handleAddNode('actor')
         return
       }
       if (keyLower === 'b') {
         e.preventDefault()
-        setActiveTool('boundary')
+        handleAddNode('boundary')
         return
       }
       if (keyLower === 'n') {
         e.preventDefault()
-        setActiveTool('note')
+        handleAddNode('note')
         return
       }
 
@@ -1919,9 +2053,8 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
         return
       }
 
-      // Escape -> reset tool to Select, close menus, deselect
+      // Escape -> close menus, deselect
       if (e.key === 'Escape') {
-        setActiveTool('select')
         setDropCreateMenu(null)
         setEdgeContextMenu(null)
         setNodes((nds) => nds.map((n) => ({ ...n, selected: false })))
@@ -1933,6 +2066,7 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [
     selectedNodes,
+    handleAddNode,
     handleUndo,
     handleRedo,
     handleCopy,
@@ -1946,37 +2080,11 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
     setEdges,
   ])
 
-  // Pane click: if a single-key creation tool is active, place the node at click coordinates
-  const onPaneClick = useCallback(
-    (event: React.MouseEvent) => {
-      setDropCreateMenu(null)
-      setEdgeContextMenu(null)
-
-      if (activeTool !== 'select') {
-        const flowPos = reactFlowInstance.screenToFlowPosition({
-          x: event.clientX,
-          y: event.clientY,
-        })
-        const offsetX =
-          activeTool === 'boundary'
-            ? -220
-            : activeTool === 'useCase'
-              ? -72
-              : -45
-        const offsetY =
-          activeTool === 'boundary'
-            ? -190
-            : activeTool === 'useCase'
-              ? -32
-              : -50
-        handleAddNode(activeTool, {
-          position: { x: flowPos.x + offsetX, y: flowPos.y + offsetY },
-          autoFocusEdit: activeTool !== 'boundary',
-        })
-      }
-    },
-    [activeTool, reactFlowInstance, handleAddNode]
-  )
+  // Pane click: close any open floating context menus
+  const onPaneClick = useCallback(() => {
+    setDropCreateMenu(null)
+    setEdgeContextMenu(null)
+  }, [])
 
   // Double-click empty canvas -> immediately create a Use Case in inline edit mode (Item 3)
   const onCanvasDoubleClick = useCallback(
@@ -2074,37 +2182,8 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
           onDoubleClick={onCanvasDoubleClick}
           onDragOver={onDragOver}
           onDrop={onDrop}
-          className={`flex-1 h-full min-h-0 relative overflow-hidden bg-[var(--bg-secondary)] rounded-[6px] border border-[var(--border-subtle)] ${
-            activeTool !== 'select' ? 'cursor-crosshair' : ''
-          }`}
+          className="flex-1 h-full min-h-0 relative overflow-hidden bg-[var(--bg-secondary)] rounded-[6px] border border-[var(--border-subtle)]"
         >
-          {/* Active Tool Indicator Pill when placing via single-key shortcut */}
-          <AnimatePresence>
-            {activeTool !== 'select' && (
-              <motion.div
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                className="studio-bottom-dock absolute top-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--text-primary)] text-[var(--bg-primary)] text-[11px] font-medium shadow-md"
-              >
-                <span>
-                  Click anywhere on canvas to place{' '}
-                  <strong>
-                    {activeTool === 'useCase'
-                      ? 'Use Case'
-                      : activeTool === 'actor'
-                        ? 'Actor'
-                        : activeTool === 'boundary'
-                          ? 'System Boundary'
-                          : 'Note'}
-                  </strong>
-                </span>
-                <kbd className="px-1 py-0.2 rounded bg-white/15 font-mono text-[10px]">
-                  Esc
-                </kbd>
-              </motion.div>
-            )}
-          </AnimatePresence>
 
           {/* Subtle Action Toast */}
           <AnimatePresence>
@@ -2588,8 +2667,7 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
 
           {/* Direct-Manipulation Bottom Dock */}
           <StudioBottomDock
-            activeTool={activeTool}
-            onToolChange={setActiveTool}
+            onAddNode={(type) => handleAddNode(type)}
             onTidyLayout={handleTidyLayout}
             onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
             onOpenShortcuts={() => setIsShortcutsOpen(true)}
