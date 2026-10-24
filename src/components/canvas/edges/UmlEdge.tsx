@@ -2,6 +2,8 @@ import { memo, useState, useRef, useEffect, useMemo } from 'react'
 import {
   BaseEdge,
   EdgeLabelRenderer,
+  getStraightPath,
+  getSmoothStepPath,
   getBezierPath,
   useNodes,
   useEdges,
@@ -9,47 +11,13 @@ import {
   type EdgeProps,
 } from '@xyflow/react'
 import { motion, AnimatePresence } from 'motion/react'
-import { Trash2, RotateCw, ArrowLeftRight } from 'lucide-react'
+import { Trash2, ArrowLeftRight } from 'lucide-react'
 import { getAllowedRelationshipTypes } from '../../../lib/umlValidation'
+import { getFloatingEdgeParams } from '../../../lib/floatingEdges'
 import type { UmlEdgeData, UmlRelationshipType } from '../../../types/game'
 
 interface UmlEdgeProps extends EdgeProps {
   data?: UmlEdgeData
-}
-
-/**
- * Parse cubic Bezier control points from React Flow's `M sx,sy C c1x,c1y c2x,c2y tx,ty` path string.
- */
-function parseCubicBezier(
-  path: string,
-  sx: number,
-  sy: number,
-  tx: number,
-  ty: number
-) {
-  const nums = path.match(/-?\d+(?:\.\d+)?/g)?.map(Number)
-  if (nums && nums.length >= 8) {
-    return {
-      p0x: nums[0],
-      p0y: nums[1],
-      c1x: nums[2],
-      c1y: nums[3],
-      c2x: nums[4],
-      c2y: nums[5],
-      p1x: nums[6],
-      p1y: nums[7],
-    }
-  }
-  return {
-    p0x: sx,
-    p0y: sy,
-    c1x: (sx + tx) / 2,
-    c1y: sy,
-    c2x: (sx + tx) / 2,
-    c2y: ty,
-    p1x: tx,
-    p1y: ty,
-  }
 }
 
 export const UmlEdge = memo(
@@ -66,15 +34,6 @@ export const UmlEdge = memo(
     data,
     selected,
   }: UmlEdgeProps) => {
-    const [edgePath, labelX, labelY] = getBezierPath({
-      sourceX,
-      sourceY,
-      sourcePosition,
-      targetX,
-      targetY,
-      targetPosition,
-    })
-
     const nodes = useNodes()
     const edges = useEdges()
     const { setEdges, setNodes } = useReactFlow()
@@ -113,17 +72,85 @@ export const UmlEdge = memo(
       [nodes, target]
     )
 
+    // Parallel offset if multiple edges connect the same two nodes
+    const parallelOffset = useMemo(() => {
+      const pairEdges = edges.filter(
+        (e) =>
+          (e.source === source && e.target === target) ||
+          (e.source === target && e.target === source)
+      )
+      if (pairEdges.length <= 1) return 0
+      const idx = pairEdges.findIndex((e) => e.id === id)
+      return (idx - (pairEdges.length - 1) / 2) * 18
+    }, [edges, source, target, id])
+
+    // Compute floating border intersection coordinates so lines connect to the nearest border point
+    const { sx, sy, tx, ty, sourcePos, targetPos } = useMemo(() => {
+      if (sourceNode && targetNode) {
+        return getFloatingEdgeParams(sourceNode, targetNode, parallelOffset)
+      }
+      return {
+        sx: sourceX,
+        sy: sourceY,
+        tx: targetX,
+        ty: targetY,
+        sourcePos: sourcePosition,
+        targetPos: targetPosition,
+      }
+    }, [
+      sourceNode,
+      targetNode,
+      parallelOffset,
+      sourceX,
+      sourceY,
+      targetX,
+      targetY,
+      sourcePosition,
+      targetPosition,
+    ])
+
+    const routingStyle = data?.routingStyle || 'straight'
+
+    const [edgePath, labelX, labelY] = useMemo(() => {
+      if (routingStyle === 'orthogonal') {
+        return getSmoothStepPath({
+          sourceX: sx,
+          sourceY: sy,
+          sourcePosition: sourcePos,
+          targetX: tx,
+          targetY: ty,
+          targetPosition: targetPos,
+          borderRadius: 8,
+        })
+      }
+      if (routingStyle === 'bezier') {
+        return getBezierPath({
+          sourceX: sx,
+          sourceY: sy,
+          sourcePosition: sourcePos,
+          targetX: tx,
+          targetY: ty,
+          targetPosition: targetPos,
+        })
+      }
+      return getStraightPath({
+        sourceX: sx,
+        sourceY: sy,
+        targetX: tx,
+        targetY: ty,
+      })
+    }, [routingStyle, sx, sy, tx, ty, sourcePos, targetPos])
+
     const allowedTypes = useMemo(
       () => getAllowedRelationshipTypes(sourceNode?.type, targetNode?.type),
       [sourceNode?.type, targetNode?.type]
     )
-    const canCycleType = allowedTypes.length > 1
 
     const relationshipType: UmlRelationshipType =
       data?.relationshipType || 'association'
     const condition = data?.condition
 
-    // Determine styles based on UML relationship
+    // Determine styles based on UML 2.5 relationship
     let strokeDasharray = 'none'
     let markerEnd = ''
     let stereotypeText = ''
@@ -132,13 +159,13 @@ export const UmlEdge = memo(
 
     switch (relationshipType) {
       case 'include':
-        strokeDasharray = '5,4'
+        strokeDasharray = '6,4'
         markerEnd = 'url(#uml-arrowhead)'
         stereotypeText = '«include»'
         textColor = 'var(--notion-blue-text)'
         break
       case 'extend':
-        strokeDasharray = '5,4'
+        strokeDasharray = '6,4'
         markerEnd = 'url(#uml-arrowhead)'
         stereotypeText = '«extend»'
         subText = condition ? `[${condition}]` : ''
@@ -169,139 +196,93 @@ export const UmlEdge = memo(
             ? 'var(--notion-green-text)'
             : 'var(--text-secondary)'
 
-    // Strictly curve-mounted placement:
-    // Evaluate exact points B(t) on the cubic Bezier path so the label sits cleanly on the line.
+    // Stagger along the line segment if another edge midpoint or node overlaps the exact center
     const { resolvedX, resolvedY } = useMemo(() => {
-      const bez = parseCubicBezier(
-        edgePath,
-        sourceX,
-        sourceY,
-        targetX,
-        targetY
-      )
+      const pointAt = (t: number) => ({
+        x: sx + (tx - sx) * t,
+        y: sy + (ty - sy) * t,
+      })
 
-      const pointAt = (t: number) => {
-        const u = 1 - t
-        const u2 = u * u
-        const u3 = u2 * u
-        const t2 = t * t
-        const t3 = t2 * t
-        return {
-          x:
-            u3 * bez.p0x +
-            3 * u2 * t * bez.c1x +
-            3 * u * t2 * bez.c2x +
-            t3 * bez.p1x,
-          y:
-            u3 * bez.p0y +
-            3 * u2 * t * bez.c1y +
-            3 * u * t2 * bez.c2y +
-            t3 * bez.p1y,
-        }
+      if (routingStyle !== 'straight') {
+        return { resolvedX: labelX, resolvedY: labelY }
       }
 
-      const solidNodes = nodes.filter((n) => n.type !== 'boundary' && !n.hidden)
+      const solidNodes = nodes.filter(
+        (n) =>
+          n.type !== 'boundary' &&
+          !n.hidden &&
+          n.id !== source &&
+          n.id !== target
+      )
       const nodeRects = solidNodes.map((n) => {
         const w =
           n.measured?.width ??
-          (n.type === 'actor' ? 92 : n.type === 'useCase' ? 144 : 145)
+          (n.type === 'actor' ? 88 : n.type === 'useCase' ? 148 : 150)
         const h =
           n.measured?.height ??
-          (n.type === 'actor' ? 112 : n.type === 'useCase' ? 64 : 76)
+          (n.type === 'actor' ? 108 : n.type === 'useCase' ? 64 : 76)
         return {
           left: n.position.x,
           right: n.position.x + w,
           top: n.position.y,
           bottom: n.position.y + h,
-          cx: n.position.x + w / 2,
-          cy: n.position.y + h / 2,
         }
       })
 
       const myIndex = edges.findIndex((e) => e.id === id)
-      const earlierEdgeMidpoints: Array<{ x: number; y: number }> = []
+      const earlierMidpoints: Array<{ x: number; y: number }> = []
       if (myIndex > 0) {
         const nodeMap = new Map(nodes.map((n) => [n.id, n]))
         for (let i = 0; i < myIndex; i++) {
           const other = edges[i]
-          const sNode = nodeMap.get(other.source)
-          const tNode = nodeMap.get(other.target)
-          if (sNode && tNode) {
-            const sw = sNode.measured?.width ?? 120
-            const sh = sNode.measured?.height ?? 60
-            const tw = tNode.measured?.width ?? 120
-            const th = tNode.measured?.height ?? 60
-            earlierEdgeMidpoints.push({
-              x: (sNode.position.x + sw / 2 + tNode.position.x + tw / 2) / 2,
-              y: (sNode.position.y + sh / 2 + tNode.position.y + th / 2) / 2,
+          const sN = nodeMap.get(other.source)
+          const tN = nodeMap.get(other.target)
+          if (sN && tN) {
+            const fp = getFloatingEdgeParams(sN, tN, 0)
+            earlierMidpoints.push({
+              x: (fp.sx + fp.tx) / 2,
+              y: (fp.sy + fp.ty) / 2,
             })
           }
         }
       }
 
-      const halfW = 34
-      const halfH = 11
-
       const collidesWithNode = (px: number, py: number) =>
         nodeRects.some(
           (r) =>
-            px + halfW > r.left &&
-            px - halfW < r.right &&
-            py + halfH > r.top &&
-            py - halfH < r.bottom
+            px + 32 > r.left &&
+            px - 32 < r.right &&
+            py + 12 > r.top &&
+            py - 12 < r.bottom
         )
 
-      const collidesWithOtherEdge = (px: number, py: number) =>
-        earlierEdgeMidpoints.some(
-          (m) => Math.abs(px - m.x) < 62 && Math.abs(py - m.y) < 20
+      const collidesWithEdge = (px: number, py: number) =>
+        earlierMidpoints.some(
+          (m) => Math.abs(px - m.x) < 58 && Math.abs(py - m.y) < 18
         )
 
-      const tCandidates = [
-        0.5, 0.38, 0.62, 0.3, 0.7, 0.24, 0.76, 0.44, 0.56,
-      ]
-
+      const tCandidates = [0.5, 0.38, 0.62, 0.3, 0.7, 0.44, 0.56]
       for (const t of tCandidates) {
         const pt = pointAt(t)
-        if (!collidesWithNode(pt.x, pt.y) && !collidesWithOtherEdge(pt.x, pt.y)) {
+        if (!collidesWithNode(pt.x, pt.y) && !collidesWithEdge(pt.x, pt.y)) {
           return { resolvedX: pt.x, resolvedY: pt.y }
         }
       }
 
-      for (const t of tCandidates) {
-        const pt = pointAt(t)
-        if (!collidesWithNode(pt.x, pt.y)) {
-          return { resolvedX: pt.x, resolvedY: pt.y }
-        }
-      }
-
-      let bestPt = { x: labelX, y: labelY }
-      let bestDist = -1
-      for (const t of tCandidates) {
-        const pt = pointAt(t)
-        const minDist =
-          nodeRects.length > 0
-            ? Math.min(
-                ...nodeRects.map((r) => Math.hypot(pt.x - r.cx, pt.y - r.cy))
-              )
-            : 0
-        if (minDist > bestDist) {
-          bestDist = minDist
-          bestPt = pt
-        }
-      }
-
-      return { resolvedX: bestPt.x, resolvedY: bestPt.y }
+      return { resolvedX: labelX, resolvedY: labelY }
     }, [
-      edgePath,
-      sourceX,
-      sourceY,
-      targetX,
-      targetY,
+      routingStyle,
+      sx,
+      sy,
+      tx,
+      ty,
+      labelX,
+      labelY,
       nodes,
       edges,
       id,
-      labelX,
-      labelY,
+      source,
+      target,
     ])
 
     const showActions = Boolean(selected || isHovered)
@@ -318,9 +299,17 @@ export const UmlEdge = memo(
       )
     }
 
+    const handleSetType = (newType: UmlRelationshipType) => {
+      window.dispatchEvent(
+        new CustomEvent('set-edge-type', {
+          detail: { edgeId: id, relationshipType: newType },
+        })
+      )
+    }
+
     return (
       <>
-        {/* Soft highlight halo along the entire relationship path when hovered or selected */}
+        {/* Soft highlight halo along the relationship path when hovered or selected */}
         {showActions && (
           <path
             d={edgePath}
@@ -349,16 +338,16 @@ export const UmlEdge = memo(
         {showActions && (
           <g className="pointer-events-none">
             <circle
-              cx={sourceX}
-              cy={sourceY}
+              cx={sx}
+              cy={sy}
               r={selected ? 5 : 4}
               fill="var(--bg-primary)"
               stroke="var(--primary-btn)"
               strokeWidth={2}
             />
             <circle
-              cx={targetX}
-              cy={targetY}
+              cx={tx}
+              cy={ty}
               r={selected ? 5 : 4}
               fill="var(--bg-primary)"
               stroke="var(--primary-btn)"
@@ -367,18 +356,18 @@ export const UmlEdge = memo(
           </g>
         )}
 
-        {/* Wide invisible hit path so hovering anywhere on the line reveals the relationship tooltip */}
+        {/* Wide invisible hit path so hovering or clicking anywhere on the line is effortless */}
         <path
           d={edgePath}
           fill="none"
           stroke="transparent"
-          strokeWidth={24}
+          strokeWidth={22}
           className="react-flow__edge-interaction cursor-pointer"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         />
 
-        {/* Clean, minimal inline stereotype label & floating action popover */}
+        {/* Clean, minimal inline stereotype label & direct post-hoc type switcher */}
         {(hasVisibleLabel || showActions) && (
           <EdgeLabelRenderer>
             <div
@@ -395,7 +384,7 @@ export const UmlEdge = memo(
               onMouseDown={(e) => e.stopPropagation()}
               onClick={selectThisEdge}
             >
-              {/* Floating Quick Actions Popover */}
+              {/* Floating Quick Actions & Post-Hoc Relationship Type Switcher */}
               <AnimatePresence>
                 {showActions && (
                   <motion.div
@@ -408,28 +397,46 @@ export const UmlEdge = memo(
                       hasVisibleLabel
                         ? 'absolute bottom-full mb-1 left-1/2 -translate-x-1/2'
                         : 'relative'
-                    } flex items-center gap-0.5 bg-[var(--bg-primary)] border border-[var(--border-default)] rounded-[6px] p-0.5 shadow-md z-20`}
+                    } flex items-center gap-0.5 bg-[var(--bg-primary)] border border-[var(--border-default)] rounded-[6px] p-0.5 shadow-md z-20 whitespace-nowrap`}
                     onPointerDown={(e) => e.stopPropagation()}
                     onMouseDown={(e) => e.stopPropagation()}
                     onClick={(e) => e.stopPropagation()}
                   >
-                    {canCycleType && (
-                      <button
-                        type="button"
-                        title="Cycle valid relationship type («include», «extend», Generalization)"
-                        onPointerDown={(e) => e.stopPropagation()}
-                        onMouseDown={(e) => e.stopPropagation()}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          const event = new CustomEvent('cycle-edge-type', {
-                            detail: { edgeId: id },
-                          })
-                          window.dispatchEvent(event)
-                        }}
-                        className="p-1 rounded-[4px] hover:bg-[var(--hover-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
-                      >
-                        <RotateCw className="w-3 h-3" />
-                      </button>
+                    {/* Direct relationship type pills when multiple valid types exist (e.g. UseCase <-> UseCase) */}
+                    {allowedTypes.length > 1 && (
+                      <>
+                        {allowedTypes.map((t) => {
+                          const isCurrent = relationshipType === t
+                          const label =
+                            t === 'include'
+                              ? '«include»'
+                              : t === 'extend'
+                                ? '«extend»'
+                                : t === 'generalization'
+                                  ? 'Inherit'
+                                  : 'Assoc'
+                          return (
+                            <button
+                              key={t}
+                              type="button"
+                              onPointerDown={(e) => e.stopPropagation()}
+                              onMouseDown={(e) => e.stopPropagation()}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleSetType(t)
+                              }}
+                              className={`px-1.5 py-0.5 rounded-[4px] font-mono text-[10px] transition-colors cursor-pointer ${
+                                isCurrent
+                                  ? 'bg-[var(--selection-bg)] text-[var(--primary-btn)] font-semibold'
+                                  : 'text-[var(--text-secondary)] hover:bg-[var(--hover-bg)] hover:text-[var(--text-primary)]'
+                              }`}
+                            >
+                              {label}
+                            </button>
+                          )
+                        })}
+                        <div className="h-3.5 w-px bg-[var(--border-subtle)] mx-0.5" />
+                      </>
                     )}
 
                     <button
@@ -439,10 +446,11 @@ export const UmlEdge = memo(
                       onMouseDown={(e) => e.stopPropagation()}
                       onClick={(e) => {
                         e.stopPropagation()
-                        const event = new CustomEvent('flip-edge-direction', {
-                          detail: { edgeId: id },
-                        })
-                        window.dispatchEvent(event)
+                        window.dispatchEvent(
+                          new CustomEvent('flip-edge-direction', {
+                            detail: { edgeId: id },
+                          })
+                        )
                       }}
                       className="p-1 rounded-[4px] hover:bg-[var(--hover-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
                     >
@@ -456,10 +464,11 @@ export const UmlEdge = memo(
                       onMouseDown={(e) => e.stopPropagation()}
                       onClick={(e) => {
                         e.stopPropagation()
-                        const event = new CustomEvent('delete-edge', {
-                          detail: { edgeId: id },
-                        })
-                        window.dispatchEvent(event)
+                        window.dispatchEvent(
+                          new CustomEvent('delete-edge', {
+                            detail: { edgeId: id },
+                          })
+                        )
                       }}
                       className="p-1 rounded-[4px] hover:bg-[var(--notion-red-bg)] text-[var(--text-secondary)] hover:text-[var(--notion-red-text)] transition-colors cursor-pointer"
                     >
@@ -469,7 +478,7 @@ export const UmlEdge = memo(
                 )}
               </AnimatePresence>
 
-              {/* Minimal, lightweight inline label — just a tight canvas knockout behind the text */}
+              {/* Minimal inline label on the edge */}
               {hasVisibleLabel && (
                 <div
                   style={{

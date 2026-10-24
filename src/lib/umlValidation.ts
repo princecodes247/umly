@@ -41,6 +41,22 @@ export function getAllowedRelationshipTypes(
   return []
 }
 
+/**
+ * Automatically infers the natural UML 2.5 relationship type when connecting two nodes directly.
+ * - Actor <-> Use Case -> 'association'
+ * - Use Case -> Use Case -> 'include'
+ * - Actor -> Actor -> 'generalization'
+ * - Note <-> Any -> 'association'
+ */
+export function inferRelationshipType(
+  sourceType?: string,
+  targetType?: string
+): UmlRelationshipType | null {
+  const allowed = getAllowedRelationshipTypes(sourceType, targetType)
+  if (allowed.length === 0) return null
+  return allowed[0]
+}
+
 export interface UmlConnectionValidation {
   valid: boolean
   reason?: string

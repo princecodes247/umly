@@ -6,15 +6,24 @@ import {
   useReactFlow,
   type NodeProps,
 } from '@xyflow/react'
-import { Trash2, Copy, Edit2, ShieldAlert } from 'lucide-react'
-import type { UmlNodeData } from '../../../types/game'
+import { Trash2, Copy, ShieldAlert } from 'lucide-react'
+import type { UmlNodeData, NodeAccentColor } from '../../../types/game'
+
+const ACTOR_ACCENT_COLOR: Record<NodeAccentColor, string> = {
+  default: 'var(--text-primary)',
+  blue: 'var(--notion-blue-text)',
+  green: 'var(--notion-green-text)',
+  amber: 'var(--notion-yellow-text)',
+  purple: 'var(--notion-purple-text)',
+  rose: 'var(--notion-pink-text)',
+}
 
 export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
   const nodeData = data as unknown as UmlNodeData
   const { updateNodeData, deleteElements } = useReactFlow()
   const isLocked = Boolean(nodeData.isLocked)
 
-  const [isEditing, setIsEditing] = useState(false)
+  const [isEditing, setIsEditing] = useState(Boolean(nodeData.autoFocusEdit))
   const [labelValue, setLabelValue] = useState(nodeData.label || 'Actor')
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -23,23 +32,56 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
   }, [nodeData.label])
 
   useEffect(() => {
+    if (nodeData.autoFocusEdit) {
+      setIsEditing(true)
+      updateNodeData(id, { autoFocusEdit: false })
+    }
+  }, [id, nodeData.autoFocusEdit, updateNodeData])
+
+  useEffect(() => {
     if (isEditing) {
-      inputRef.current?.focus()
-      inputRef.current?.select()
+      requestAnimationFrame(() => {
+        inputRef.current?.focus()
+        inputRef.current?.select()
+      })
     }
   }, [isEditing])
+
+  useEffect(() => {
+    const handleStartEdit = (e: Event) => {
+      const detail = (e as CustomEvent<{ nodeId: string }>).detail
+      if (detail?.nodeId === id && !isLocked) {
+        setIsEditing(true)
+      }
+    }
+    window.addEventListener('start-node-edit', handleStartEdit)
+    return () => window.removeEventListener('start-node-edit', handleStartEdit)
+  }, [id, isLocked])
 
   const handleFinishEditing = () => {
     setIsEditing(false)
     const trimmed = labelValue.trim() || 'Actor'
     setLabelValue(trimmed)
-    updateNodeData(id, { label: trimmed })
+    updateNodeData(id, { label: trimmed, autoFocusEdit: false })
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
+      e.preventDefault()
+      e.stopPropagation()
       handleFinishEditing()
+    } else if (e.key === 'Tab') {
+      e.preventDefault()
+      e.stopPropagation()
+      handleFinishEditing()
+      window.dispatchEvent(
+        new CustomEvent('create-next-connected', {
+          detail: { nodeId: id },
+        })
+      )
     } else if (e.key === 'Escape') {
+      e.preventDefault()
+      e.stopPropagation()
       setLabelValue(nodeData.label || 'Actor')
       setIsEditing(false)
     }
@@ -47,10 +89,11 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
 
   const handleDuplicate = (e: React.MouseEvent) => {
     e.stopPropagation()
-    const event = new CustomEvent('duplicate-node', {
-      detail: { nodeId: id },
-    })
-    window.dispatchEvent(event)
+    window.dispatchEvent(
+      new CustomEvent('duplicate-node', {
+        detail: { nodeId: id },
+      })
+    )
   }
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -71,6 +114,18 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
   }
 
   const actorType = nodeData.actorType || 'primary'
+  const strokeColor =
+    ACTOR_ACCENT_COLOR[nodeData.accentColor || 'default'] ||
+    'var(--text-primary)'
+  const handleVisibility = selected
+    ? 'opacity-100'
+    : 'opacity-0 group-hover:opacity-100'
+
+  const stereotypeLabel = nodeData.stereotype
+    ? `«${nodeData.stereotype.replace(/^[«<]+|[»>]+$/g, '')}»`
+    : actorType === 'system'
+      ? '«system»'
+      : '«actor»'
 
   return (
     <div
@@ -79,114 +134,107 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
           ? 'ring-2 ring-[var(--primary-btn)] bg-[var(--selection-bg)] shadow-xs'
           : 'hover:bg-[var(--hover-bg)]'
       }`}
-      style={{ minWidth: 90 }}
-      onDoubleClick={() => {
+      style={{ minWidth: 88 }}
+      onDoubleClick={(e) => {
+        e.stopPropagation()
         if (!isLocked) setIsEditing(true)
       }}
     >
-      {/* NodeToolbar: Always rendered in top layer with z-[99999] so other elements cannot overlap it */}
-      {selected && !isLocked && (
+      {/* Compact toolbar positioned clear of the selection ring */}
+      {selected && !isLocked && !isEditing && (
         <NodeToolbar
-          isVisible={selected && !isLocked}
+          isVisible={selected && !isLocked && !isEditing}
           position={Position.Top}
-          offset={8}
-          className="flex items-center gap-1 bg-[var(--bg-primary)] border border-[var(--border-default)] px-1.5 py-0.5 rounded-[4px] shadow-lg z-[99999] text-xs"
+          offset={16}
+          className="nodrag nopan flex items-center gap-0.5 bg-[var(--bg-primary)] border border-[var(--border-default)] p-0.5 rounded-[5px] shadow-lg z-[99999] text-xs"
         >
           <button
             type="button"
-            title="Edit Actor Name"
-            onClick={(e) => {
-              e.stopPropagation()
-              setIsEditing(true)
-            }}
-            className="p-1 rounded-[3px] hover:bg-[var(--hover-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-          >
-            <Edit2 className="w-3 h-3" />
-          </button>
-          <button
-            type="button"
-            title={`Actor Type: ${actorType}. Click to change.`}
+            title={`Actor Type: ${actorType}. Click to cycle.`}
             onClick={handleCycleType}
-            className="p-1 rounded-[3px] hover:bg-[var(--hover-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            className="p-1 rounded-[3px] hover:bg-[var(--hover-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
           >
             <ShieldAlert className="w-3 h-3" />
           </button>
           <button
             type="button"
-            title="Duplicate Actor"
+            title="Duplicate (Cmd+D)"
             onClick={handleDuplicate}
-            className="p-1 rounded-[3px] hover:bg-[var(--hover-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            className="p-1 rounded-[3px] hover:bg-[var(--hover-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
           >
             <Copy className="w-3 h-3" />
           </button>
           <button
             type="button"
-            title="Delete Actor"
+            title="Delete (Backspace)"
             onClick={handleDelete}
-            className="p-1 rounded-[3px] hover:bg-[var(--notion-red-bg)] text-[var(--text-secondary)] hover:text-[var(--notion-red-text)]"
+            className="p-1 rounded-[3px] hover:bg-[var(--notion-red-bg)] text-[var(--text-secondary)] hover:text-[var(--notion-red-text)] cursor-pointer"
           >
             <Trash2 className="w-3 h-3" />
           </button>
         </NodeToolbar>
       )}
 
-      {/* Handles on all 4 sides with both source and target capability */}
+      {/* Handles visible only on hover or selection */}
       <Handle
         type="target"
         position={Position.Top}
         id="top"
-        className="!w-2.5 !h-2.5 !bg-[var(--text-primary)] !border !border-[var(--bg-primary)] opacity-40 group-hover:opacity-100 transition-opacity"
+        className={`!w-2.5 !h-2.5 !bg-[var(--primary-btn)] !border-2 !border-[var(--bg-primary)] ${handleVisibility} transition-opacity`}
       />
       <Handle
         type="source"
         position={Position.Top}
         id="top-source"
-        className="!w-2.5 !h-2.5 !bg-[var(--text-primary)] !border !border-[var(--bg-primary)] opacity-0 !pointer-events-none"
+        className="!w-2.5 !h-2.5 opacity-0 !pointer-events-none"
       />
 
       <Handle
         type="source"
         position={Position.Bottom}
         id="bottom"
-        className="!w-2.5 !h-2.5 !bg-[var(--text-primary)] !border !border-[var(--bg-primary)] opacity-40 group-hover:opacity-100 transition-opacity"
+        className={`!w-2.5 !h-2.5 !bg-[var(--primary-btn)] !border-2 !border-[var(--bg-primary)] ${handleVisibility} transition-opacity`}
       />
       <Handle
         type="target"
         position={Position.Bottom}
         id="bottom-target"
-        className="!w-2.5 !h-2.5 !bg-[var(--text-primary)] !border !border-[var(--bg-primary)] opacity-0 !pointer-events-none"
+        className="!w-2.5 !h-2.5 opacity-0 !pointer-events-none"
       />
 
       <Handle
         type="target"
         position={Position.Left}
         id="left"
-        className="!w-2.5 !h-2.5 !bg-[var(--text-primary)] !border !border-[var(--bg-primary)] opacity-40 group-hover:opacity-100 transition-opacity"
+        className={`!w-2.5 !h-2.5 !bg-[var(--primary-btn)] !border-2 !border-[var(--bg-primary)] ${handleVisibility} transition-opacity`}
       />
       <Handle
         type="source"
         position={Position.Left}
         id="left-source"
-        className="!w-2.5 !h-2.5 !bg-[var(--text-primary)] !border !border-[var(--bg-primary)] opacity-0 !pointer-events-none"
+        className="!w-2.5 !h-2.5 opacity-0 !pointer-events-none"
       />
 
       <Handle
         type="source"
         position={Position.Right}
         id="right"
-        className="!w-2.5 !h-2.5 !bg-[var(--text-primary)] !border !border-[var(--bg-primary)] opacity-40 group-hover:opacity-100 transition-opacity"
+        className={`!w-2.5 !h-2.5 !bg-[var(--primary-btn)] !border-2 !border-[var(--bg-primary)] ${handleVisibility} transition-opacity`}
       />
       <Handle
         type="target"
         position={Position.Right}
         id="right-target"
-        className="!w-2.5 !h-2.5 !bg-[var(--text-primary)] !border !border-[var(--bg-primary)] opacity-0 !pointer-events-none"
+        className="!w-2.5 !h-2.5 opacity-0 !pointer-events-none"
       />
 
       {/* UML Stick Figure / System Icon */}
       <div className="relative mb-1 flex items-center justify-center">
         {actorType === 'system' ? (
-          <div className="w-9 h-11 border-2 border-[var(--text-primary)] rounded-[3px] flex flex-col items-center justify-center p-1 bg-[var(--bg-primary)]">
+          <div
+            style={{ borderColor: strokeColor }}
+            className="w-9 h-11 border-2 rounded-[3px] flex flex-col items-center justify-center p-1 bg-[var(--bg-primary)]"
+          >
             <div className="w-5 h-2.5 border border-[var(--text-secondary)] rounded-xs mb-1" />
             <div className="w-5 h-2.5 border border-[var(--text-secondary)] rounded-xs" />
           </div>
@@ -197,20 +245,16 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
             viewBox="0 0 36 46"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
-            className="stroke-[var(--text-primary)] transition-colors"
+            style={{ stroke: strokeColor }}
+            className="transition-colors"
             strokeWidth="1.75"
             strokeLinecap="round"
             strokeLinejoin="round"
           >
-            {/* Head */}
             <circle cx="18" cy="8" r="6" />
-            {/* Torso */}
             <line x1="18" y1="14" x2="18" y2="30" />
-            {/* Arms */}
             <line x1="6" y1="20" x2="30" y2="20" />
-            {/* Left leg */}
             <line x1="18" y1="30" x2="8" y2="43" />
-            {/* Right leg */}
             <line x1="18" y1="30" x2="28" y2="43" />
           </svg>
         )}
@@ -230,7 +274,7 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
       {/* Actor Label */}
       <div className="text-center text-xs tracking-tight text-[var(--text-primary)] max-w-[130px] leading-tight font-sans">
         <div className="text-[10px] text-[var(--text-tertiary)] font-mono">
-          {actorType === 'system' ? '«system»' : '«actor»'}
+          {stereotypeLabel}
         </div>
 
         {isEditing ? (
@@ -241,12 +285,12 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
             onChange={(e) => setLabelValue(e.target.value)}
             onBlur={handleFinishEditing}
             onKeyDown={handleKeyDown}
-            className="w-full text-center text-xs font-semibold px-1 py-0.5 rounded-[3px] border border-[var(--primary-btn)] bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none"
+            className="nodrag nopan w-28 text-center text-xs font-semibold px-1 py-0.5 rounded-[3px] border border-[var(--primary-btn)] bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none"
           />
         ) : (
           <div
             className="font-semibold text-xs text-[var(--text-primary)] mt-0.5 break-words cursor-text"
-            title={!isLocked ? 'Double-click to rename' : undefined}
+            title={!isLocked ? 'Double-click or press Enter to rename' : undefined}
           >
             {nodeData.label}
           </div>

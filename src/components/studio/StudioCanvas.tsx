@@ -1,4 +1,4 @@
-import {
+import React, {
   useState,
   useCallback,
   useRef,
@@ -27,10 +27,20 @@ import {
   type EdgeTypes,
   type OnSelectionChangeParams,
   type OnNodeDrag,
+  type FinalConnectionState,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { motion, AnimatePresence } from 'motion/react'
-import { AlertCircle, X } from 'lucide-react'
+import {
+  AlertCircle,
+  X,
+  CircleDot,
+  User,
+  StickyNote,
+  ArrowLeftRight,
+  Trash2,
+  Check,
+} from 'lucide-react'
 
 import { ActorNode } from '../canvas/nodes/ActorNode'
 import { UseCaseNode } from '../canvas/nodes/UseCaseNode'
@@ -39,25 +49,36 @@ import { NoteNode } from '../canvas/nodes/NoteNode'
 import { UmlEdge } from '../canvas/edges/UmlEdge'
 import { UmlMarkers } from '../canvas/UmlMarkers'
 import { StudioToolbar } from './StudioToolbar'
-import { StudioBottomDock } from './StudioBottomDock'
+import { StudioBottomDock, type StudioActiveTool } from './StudioBottomDock'
 import { StudioInspector } from './StudioInspector'
+import { CommandPalette } from './CommandPalette'
+import { ShortcutsModal } from './ShortcutsModal'
 import { DIAGRAM_TEMPLATES } from '../../data/templates'
 import {
   exportDiagramAsPng,
   exportDiagramAsSvg,
   exportDiagramAsJson,
   parseDiagramJson,
+  copyDiagramAsPngToClipboard,
+  generatePlantUml,
+  generateMermaid,
+  downloadTextFile,
 } from '../../lib/exportDiagram'
 import {
   getDiagramDraft,
   saveDiagramDraft,
   getLastActiveDiagramId,
+  listDiagramSnapshots,
+  saveDiagramSnapshot,
   type DiagramDraft,
+  type DiagramSnapshot,
 } from '../../lib/diagramStorage'
 import {
   getAllowedRelationshipTypes,
+  inferRelationshipType,
   validateUmlConnection,
 } from '../../lib/umlValidation'
+import { computeTidyLayout } from '../../lib/tidyLayout'
 import type {
   UmlRelationshipType,
   UmlNodeData,
@@ -97,6 +118,21 @@ interface AlignmentGuides {
   horizontal: { y: number; x1: number; x2: number } | null
 }
 
+interface DropCreateMenuState {
+  sourceNodeId: string
+  sourceNodeType: string
+  clientX: number
+  clientY: number
+  flowX: number
+  flowY: number
+}
+
+interface EdgeContextMenuState {
+  edgeId: string
+  clientX: number
+  clientY: number
+}
+
 function getNodeDimensions(n: Node): { w: number; h: number } {
   if (n.type === 'boundary') {
     return {
@@ -107,10 +143,10 @@ function getNodeDimensions(n: Node): { w: number; h: number } {
   return {
     w:
       n.measured?.width ??
-      (n.type === 'actor' ? 92 : n.type === 'useCase' ? 144 : 150),
+      (n.type === 'actor' ? 92 : n.type === 'useCase' ? 148 : 150),
     h:
       n.measured?.height ??
-      (n.type === 'actor' ? 112 : n.type === 'useCase' ? 64 : 80),
+      (n.type === 'actor' ? 112 : n.type === 'useCase' ? 68 : 80),
   }
 }
 
@@ -139,8 +175,27 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
     initialDraft?.edges || defaultTemplate.edges
   )
 
-  const [activeRelationshipType, setActiveRelationshipType] =
-    useState<UmlRelationshipType>('association')
+  // Active tool for single-key creation / direct manipulation
+  const [activeTool, setActiveTool] = useState<StudioActiveTool>('select')
+
+  // Default routing style for edges ('straight' | 'orthogonal' | 'bezier')
+  const [defaultRoutingStyle, setDefaultRoutingStyle] = useState<
+    'straight' | 'orthogonal' | 'bezier'
+  >('straight')
+
+  // Modals & floating menus
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false)
+  const [dropCreateMenu, setDropCreateMenu] =
+    useState<DropCreateMenuState | null>(null)
+  const [edgeContextMenu, setEdgeContextMenu] =
+    useState<EdgeContextMenuState | null>(null)
+  const [toastMessage, setToastMessage] = useState<string | null>(null)
+
+  // Version history snapshots
+  const [snapshots, setSnapshots] = useState<DiagramSnapshot[]>(() =>
+    listDiagramSnapshots(activeDraftId)
+  )
 
   // Selection states
   const [selectedNodes, setSelectedNodes] = useState<Node[]>([])
@@ -154,8 +209,18 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
   const [canUndo, setCanUndo] = useState(false)
   const [canRedo, setCanRedo] = useState(false)
 
+  // Pre-drag snapshot ref so dragging/moving nodes records the exact pre-move state for Undo
+  const dragStartSnapshotRef = useRef<HistorySnapshot | null>(null)
+
   // Clipboard for Cmd+C and Cmd+V
   const clipboardRef = useRef<{ nodes: Node[]; edges: Edge[] } | null>(null)
+
+  const showToast = useCallback((msg: string) => {
+    setToastMessage(msg)
+    setTimeout(() => {
+      setToastMessage((prev) => (prev === msg ? null : prev))
+    }, 2200)
+  }, [])
 
   // Helper: push snapshot of current state before a mutation
   const pushSnapshot = useCallback(() => {
@@ -163,7 +228,7 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
       nodes: JSON.parse(JSON.stringify(nodes)),
       edges: JSON.parse(JSON.stringify(edges)),
     })
-    if (pastRef.current.length > 50) {
+    if (pastRef.current.length > 60) {
       pastRef.current.shift()
     }
     futureRef.current = []
@@ -207,6 +272,29 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
     setCanRedo(futureRef.current.length > 0)
   }, [nodes, edges, setNodes, setEdges])
 
+  // Save a version snapshot
+  const handleSaveSnapshot = useCallback(
+    (label = 'Snapshot') => {
+      const updated = saveDiagramSnapshot(activeDraftId, label, nodes, edges)
+      setSnapshots(updated)
+      if (label === 'Manual Checkpoint') {
+        showToast('Snapshot saved to Version History')
+      }
+    },
+    [activeDraftId, nodes, edges, showToast]
+  )
+
+  // Restore a version snapshot with Undo support
+  const handleRestoreSnapshot = useCallback(
+    (snap: DiagramSnapshot) => {
+      pushSnapshot()
+      setNodes(JSON.parse(JSON.stringify(snap.nodes)))
+      setEdges(JSON.parse(JSON.stringify(snap.edges)))
+      showToast(`Restored "${snap.label}"`)
+    },
+    [pushSnapshot, setNodes, setEdges, showToast]
+  )
+
   // Copy handler
   const handleCopy = useCallback(() => {
     const selNodes = nodes.filter((n) => n.selected)
@@ -246,6 +334,7 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
         selected: true,
         data: {
           ...node.data,
+          autoFocusEdit: false,
         },
       })
     })
@@ -294,13 +383,15 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
       setCanRedo(false)
       setSelectedNodes([])
       setSelectedEdges([])
+      setSnapshots(listDiagramSnapshots(activeDraftId))
       setTimeout(() => {
         reactFlowInstance.fitView({ padding: 0.2 })
       }, 50)
     }
   }, [activeDraftId, setNodes, setEdges, reactFlowInstance])
 
-  // Auto-save to diagram draft storage
+  // Auto-save to diagram draft storage + periodic version history snapshots
+  const lastSnapshotTimeRef = useRef<number>(Date.now())
   useEffect(() => {
     setIsSaved(false)
     const timeout = setTimeout(() => {
@@ -317,13 +408,40 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
         }
         saveDiagramDraft(updatedDraft)
         setIsSaved(true)
+
+        // Save an automatic version history snapshot every 45 seconds of active editing
+        const now = Date.now()
+        if (now - lastSnapshotTimeRef.current > 45000 && nodes.length > 0) {
+          lastSnapshotTimeRef.current = now
+          const updatedSnaps = saveDiagramSnapshot(
+            activeDraftId,
+            'Autosave',
+            nodes,
+            edges
+          )
+          setSnapshots(updatedSnaps)
+        }
       } catch (err) {
         console.warn('Failed to save diagram draft', err)
       }
-    }, 500)
+    }, 450)
 
     return () => clearTimeout(timeout)
   }, [activeDraftId, title, nodes, edges])
+
+  // Close floating menus on outside pointerdown
+  useEffect(() => {
+    if (!dropCreateMenu && !edgeContextMenu) return
+    const handlePointerDown = (e: PointerEvent) => {
+      const target = e.target as HTMLElement | null
+      if (target?.closest('.floating-context-menu')) return
+      setDropCreateMenu(null)
+      setEdgeContextMenu(null)
+    }
+    window.addEventListener('pointerdown', handlePointerDown, true)
+    return () =>
+      window.removeEventListener('pointerdown', handlePointerDown, true)
+  }, [dropCreateMenu, edgeContextMenu])
 
   // System Boundary Contained Children Drag Logic
   const draggingBoundaryChildrenRef = useRef<{
@@ -332,7 +450,7 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
     boundaryStartPos: { x: number; y: number }
   } | null>(null)
 
-  // Shift-drag snapping & visual alignment guides
+  // Smart alignment guides ON by default; holding Shift temporarily disables snapping
   const shiftKeyPressedRef = useRef(false)
   const [alignmentGuides, setAlignmentGuides] = useState<AlignmentGuides>({
     vertical: null,
@@ -343,12 +461,12 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Shift') {
         shiftKeyPressedRef.current = true
+        setAlignmentGuides({ vertical: null, horizontal: null })
       }
     }
     const onKeyUp = (e: KeyboardEvent) => {
       if (e.key === 'Shift') {
         shiftKeyPressedRef.current = false
-        setAlignmentGuides({ vertical: null, horizontal: null })
       }
     }
     const onBlur = () => {
@@ -366,7 +484,7 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
     }
   }, [])
 
-  // Custom onNodesChange wrapper that snaps dragged elements to other elements when Shift is held
+  // Custom onNodesChange wrapper: Snaps by default unless Shift is held
   const handleNodesChange = useCallback(
     (changes: NodeChange<Node>[]) => {
       const draggingPosChanges = changes.filter(
@@ -382,7 +500,8 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
         setAlignmentGuides({ vertical: null, horizontal: null })
       }
 
-      if (draggingPosChanges.length > 0 && shiftKeyPressedRef.current) {
+      // Snapping is ON by default; holding Shift disables snapping
+      if (draggingPosChanges.length > 0 && !shiftKeyPressedRef.current) {
         const primaryChange = draggingPosChanges[0]
         const draggedNode = nodes.find((n) => n.id === primaryChange.id)
 
@@ -403,7 +522,7 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
           const nCenterY = rawY + nh / 2
           const nBottom = rawY + nh
 
-          const SNAP_THRESHOLD = 14
+          const SNAP_THRESHOLD = 10
           let bestDx: number | null = null
           let bestAbsDx = SNAP_THRESHOLD
           let vGuide: AlignmentGuides['vertical'] = null
@@ -438,8 +557,6 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
               { diff: oCenterX - nCenterX, guideX: oCenterX },
               { diff: oLeft - nLeft, guideX: oLeft },
               { diff: oRight - nRight, guideX: oRight },
-              { diff: oRight - nLeft, guideX: oRight },
-              { diff: oLeft - nRight, guideX: oLeft },
             ]
 
             for (const pair of xPairs) {
@@ -460,8 +577,6 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
               { diff: oCenterY - nCenterY, guideY: oCenterY },
               { diff: oTop - nTop, guideY: oTop },
               { diff: oBottom - nBottom, guideY: oBottom },
-              { diff: oBottom - nTop, guideY: oBottom },
-              { diff: oTop - nBottom, guideY: oTop },
             ]
 
             for (const pair of yPairs) {
@@ -497,7 +612,7 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
             return
           }
         }
-      } else if (draggingPosChanges.length > 0 && !shiftKeyPressedRef.current) {
+      } else if (draggingPosChanges.length > 0 && shiftKeyPressedRef.current) {
         setAlignmentGuides({ vertical: null, horizontal: null })
       }
 
@@ -509,8 +624,14 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
   const onNodeDragStart: OnNodeDrag<Node> = useCallback(
     (event, node) => {
       shiftKeyPressedRef.current = Boolean(
-        (event as unknown as MouseEvent)?.shiftKey || shiftKeyPressedRef.current
+        (event as unknown as MouseEvent)?.shiftKey
       )
+      // Capture pre-drag state for rock-solid move undo
+      dragStartSnapshotRef.current = {
+        nodes: JSON.parse(JSON.stringify(nodes)),
+        edges: JSON.parse(JSON.stringify(edges)),
+      }
+
       if (node.type === 'boundary') {
         const bWidth = (node.data?.width as number) || 440
         const bHeight = (node.data?.height as number) || 380
@@ -523,13 +644,11 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
 
         nodes.forEach((n) => {
           if (n.id === node.id || n.type === 'boundary') return
-          // Approximate center point of node
           const nw = n.measured?.width ?? 120
           const nh = n.measured?.height ?? 60
           const cx = n.position.x + nw / 2
           const cy = n.position.y + nh / 2
 
-          // If node center is inside boundary bounds, it moves with the boundary
           if (cx >= bx1 && cx <= bx2 && cy >= by1 && cy <= by2) {
             childMap.set(n.id, { x: n.position.x, y: n.position.y })
           }
@@ -544,7 +663,7 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
         draggingBoundaryChildrenRef.current = null
       }
     },
-    [nodes]
+    [nodes, edges]
   )
 
   const onNodeDrag: OnNodeDrag<Node> = useCallback(
@@ -577,6 +696,69 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
             return n
           })
         )
+      } else if (node.type === 'useCase' || node.type === 'note') {
+        // Item 5: Auto-grow System Boundary when dragging a Use Case near or inside its edge
+        const { w: nw, h: nh } = getNodeDimensions(node)
+        const nLeft = node.position.x
+        const nRight = node.position.x + nw
+        const nTop = node.position.y
+        const nBottom = node.position.y + nh
+        const nCx = node.position.x + nw / 2
+        const nCy = node.position.y + nh / 2
+
+        const PADDING = 36
+        const PROXIMITY = 28
+
+        setNodes((nds) =>
+          nds.map((b) => {
+            if (b.type !== 'boundary') return b
+            const bw = (b.data?.width as number) || 440
+            const bh = (b.data?.height as number) || 380
+            const bx1 = b.position.x
+            const by1 = b.position.y
+            const bx2 = bx1 + bw
+            const by2 = by1 + bh
+
+            const isNearOrInside =
+              nCx >= bx1 - PROXIMITY &&
+              nCx <= bx2 + PROXIMITY &&
+              nCy >= by1 - PROXIMITY &&
+              nCy <= by2 + PROXIMITY
+
+            if (!isNearOrInside) {
+              if (b.data?.isHoveredByDrag) {
+                return {
+                  ...b,
+                  data: { ...b.data, isHoveredByDrag: false },
+                }
+              }
+              return b
+            }
+
+            // Expand boundary if dragged useCase approaches or crosses its border
+            const newX1 = Math.min(bx1, nLeft - PADDING)
+            const newY1 = Math.min(by1, nTop - (PADDING + 18))
+            const newX2 = Math.max(bx2, nRight + PADDING)
+            const newY2 = Math.max(by2, nBottom + PADDING)
+
+            const newWidth = Math.round(newX2 - newX1)
+            const newHeight = Math.round(newY2 - newY1)
+
+            return {
+              ...b,
+              position: {
+                x: Math.round(newX1),
+                y: Math.round(newY1),
+              },
+              data: {
+                ...b.data,
+                width: newWidth,
+                height: newHeight,
+                isHoveredByDrag: true,
+              },
+            }
+          })
+        )
       }
     },
     [setNodes]
@@ -586,63 +768,214 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
     (_event, _node) => {
       draggingBoundaryChildrenRef.current = null
       setAlignmentGuides({ vertical: null, horizontal: null })
-      pushSnapshot()
+
+      // Clear boundary hover highlight
+      setNodes((nds) =>
+        nds.map((n) =>
+          n.type === 'boundary' && n.data?.isHoveredByDrag
+            ? { ...n, data: { ...n.data, isHoveredByDrag: false } }
+            : n
+        )
+      )
+
+      // Push pre-drag snapshot if any node actually moved
+      if (dragStartSnapshotRef.current) {
+        const pre = dragStartSnapshotRef.current
+        const moved = pre.nodes.some((pn) => {
+          const cur = nodes.find((cn) => cn.id === pn.id)
+          return (
+            cur &&
+            (Math.round(cur.position.x) !== Math.round(pn.position.x) ||
+              Math.round(cur.position.y) !== Math.round(pn.position.y))
+          )
+        })
+        if (moved) {
+          pastRef.current.push(pre)
+          if (pastRef.current.length > 60) {
+            pastRef.current.shift()
+          }
+          futureRef.current = []
+          setCanUndo(true)
+          setCanRedo(false)
+        }
+        dragStartSnapshotRef.current = null
+      }
     },
-    [pushSnapshot]
+    [nodes, setNodes]
   )
 
-  // Keyboard shortcuts (Cmd/Ctrl + Z, Y, C, V, A, Escape)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement
-      ) {
-        return
+  // Add Node helper (supports optional flowPosition & autoFocusEdit)
+  const handleAddNode = useCallback(
+    (
+      type: 'actor' | 'useCase' | 'boundary' | 'note',
+      options?: {
+        actorType?: 'primary' | 'secondary' | 'system'
+        position?: { x: number; y: number }
+        autoFocusEdit?: boolean
+      }
+    ) => {
+      pushSnapshot()
+      const id = `${type}-${Date.now()}`
+      const viewport = reactFlowInstance.getViewport()
+
+      const defaultX = (-viewport.x + 360) / viewport.zoom
+      const defaultY = (-viewport.y + 240) / viewport.zoom
+
+      const posX =
+        options?.position?.x ??
+        Math.round(defaultX + (Math.random() * 32 - 16))
+      const posY =
+        options?.position?.y ??
+        Math.round(defaultY + (Math.random() * 32 - 16))
+
+      let initialData: UmlNodeData
+
+      switch (type) {
+        case 'actor':
+          initialData = {
+            nodeType: 'actor',
+            label:
+              options?.actorType === 'secondary'
+                ? 'External Service'
+                : options?.actorType === 'system'
+                  ? 'System Actor'
+                  : 'Actor',
+            actorType: options?.actorType || 'primary',
+            autoFocusEdit: options?.autoFocusEdit ?? true,
+          }
+          break
+        case 'useCase':
+          initialData = {
+            nodeType: 'useCase',
+            label: 'New Use Case',
+            autoFocusEdit: options?.autoFocusEdit ?? true,
+          }
+          break
+        case 'boundary':
+          initialData = {
+            nodeType: 'boundary',
+            boundaryTitle: 'System Boundary',
+            label: 'System Boundary',
+            width: 440,
+            height: 380,
+            autoFocusEdit: options?.autoFocusEdit ?? false,
+          }
+          break
+        case 'note':
+          initialData = {
+            nodeType: 'note',
+            label: 'Note',
+            description: 'Note / Constraint',
+            autoFocusEdit: options?.autoFocusEdit ?? true,
+          }
+          break
       }
 
-      // Cmd/Ctrl + Z
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
-        e.preventDefault()
-        if (e.shiftKey) {
-          handleRedo()
-        } else {
-          handleUndo()
-        }
+      const newNode: Node = {
+        id,
+        type,
+        position: { x: Math.round(posX), y: Math.round(posY) },
+        selected: true,
+        data: initialData as unknown as Record<string, unknown>,
+        zIndex: type === 'boundary' ? 1 : 10,
       }
-      // Cmd/Ctrl + Y
-      else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'y') {
-        e.preventDefault()
-        handleRedo()
-      }
-      // Cmd/Ctrl + C
-      else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'c') {
-        e.preventDefault()
-        handleCopy()
-      }
-      // Cmd/Ctrl + V
-      else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'v') {
-        e.preventDefault()
-        handlePaste()
-      }
-      // Cmd/Ctrl + A
-      else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a') {
-        e.preventDefault()
-        setNodes((nds) => nds.map((n) => ({ ...n, selected: true })))
-        setEdges((eds) => eds.map((e) => ({ ...e, selected: true })))
-      }
-      // Escape
-      else if (e.key === 'Escape') {
-        setNodes((nds) => nds.map((n) => ({ ...n, selected: false })))
-        setEdges((eds) => eds.map((e) => ({ ...e, selected: false })))
-      }
-    }
 
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleUndo, handleRedo, handleCopy, handlePaste, setNodes, setEdges])
+      setNodes((nds) => [
+        ...nds.map((n) => ({ ...n, selected: false })),
+        newNode,
+      ])
+      setEdges((eds) => eds.map((e) => ({ ...e, selected: false })))
+      setActiveTool('select')
+      return newNode
+    },
+    [reactFlowInstance, pushSnapshot, setNodes, setEdges]
+  )
 
-  // Handle Connections with strict UML 2.5 validation
+  // Create & connect next element (triggered by Tab key or Drop-on-Empty-Canvas menu)
+  const createConnectedElement = useCallback(
+    (
+      sourceNodeId: string,
+      targetType: 'useCase' | 'actor' | 'note',
+      relationshipType: UmlRelationshipType,
+      flowPos?: { x: number; y: number }
+    ) => {
+      const sourceNode = nodes.find((n) => n.id === sourceNodeId)
+      if (!sourceNode) return
+
+      pushSnapshot()
+      const timestamp = Date.now()
+      const newNodeId = `${targetType}-${timestamp}`
+
+      const { w: sw, h: sh } = getNodeDimensions(sourceNode)
+      const defaultPos =
+        sourceNode.type === 'actor'
+          ? {
+              x: Math.round(sourceNode.position.x + sw + 130),
+              y: Math.round(sourceNode.position.y + sh / 2 - 34),
+            }
+          : {
+              x: Math.round(sourceNode.position.x + sw + 110),
+              y: Math.round(sourceNode.position.y),
+            }
+
+      const pos = flowPos
+        ? { x: Math.round(flowPos.x - 70), y: Math.round(flowPos.y - 32) }
+        : defaultPos
+
+      const newNodeData: UmlNodeData =
+        targetType === 'actor'
+          ? {
+              nodeType: 'actor',
+              label: 'Actor',
+              actorType: 'primary',
+              autoFocusEdit: true,
+            }
+          : targetType === 'note'
+            ? {
+                nodeType: 'note',
+                label: 'Note',
+                description: 'Constraint',
+                autoFocusEdit: true,
+              }
+            : {
+                nodeType: 'useCase',
+                label: 'New Use Case',
+                autoFocusEdit: true,
+              }
+
+      const newNode: Node = {
+        id: newNodeId,
+        type: targetType,
+        position: pos,
+        selected: true,
+        data: newNodeData as unknown as Record<string, unknown>,
+        zIndex: 10,
+      }
+
+      const newEdge: Edge = {
+        id: `edge-${timestamp}`,
+        source: sourceNodeId,
+        target: newNodeId,
+        type: 'umlEdge',
+        data: {
+          relationshipType,
+          routingStyle: defaultRoutingStyle,
+        },
+      }
+
+      setNodes((nds) => [
+        ...nds.map((n) => ({ ...n, selected: false })),
+        newNode,
+      ])
+      setEdges((eds) => [
+        ...eds.map((e) => ({ ...e, selected: false })),
+        newEdge,
+      ])
+    },
+    [nodes, pushSnapshot, defaultRoutingStyle, setNodes, setEdges]
+  )
+
+  // Handle Connections with automatic relationship type inference (Item 2)
   const [validationNotice, setValidationNotice] = useState<{
     message: string
     suggestedType?: UmlRelationshipType
@@ -668,15 +1001,23 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
     []
   )
 
+  const connectedInLastAttemptRef = useRef(false)
+
   const onConnect = useCallback(
     (params: Connection) => {
+      connectedInLastAttemptRef.current = true
       const sourceNode = nodes.find((n) => n.id === params.source)
       const targetNode = nodes.find((n) => n.id === params.target)
+
+      // Infer relationship type automatically based on source and target node types
+      const inferredType: UmlRelationshipType =
+        inferRelationshipType(sourceNode?.type, targetNode?.type) ||
+        'association'
 
       const validation = validateUmlConnection(
         sourceNode,
         targetNode,
-        activeRelationshipType
+        inferredType
       )
 
       if (!validation.valid) {
@@ -698,7 +1039,8 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
         targetHandle: params.targetHandle,
         type: 'umlEdge',
         data: {
-          relationshipType: activeRelationshipType,
+          relationshipType: inferredType,
+          routingStyle: defaultRoutingStyle,
         },
       }
 
@@ -706,11 +1048,68 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
     },
     [
       nodes,
-      activeRelationshipType,
+      defaultRoutingStyle,
       pushSnapshot,
       setEdges,
       showValidationWarning,
     ]
+  )
+
+  // Drop connection line on empty canvas -> open "Create Connected Element" menu (Item 2)
+  const onConnectStart = useCallback(() => {
+    connectedInLastAttemptRef.current = false
+  }, [])
+
+  const onConnectEnd = useCallback(
+    (
+      event: MouseEvent | TouchEvent,
+      connectionState: FinalConnectionState
+    ) => {
+      if (connectedInLastAttemptRef.current) return
+      if (connectionState.isValid) return
+      const fromNode = connectionState.fromNode
+      if (!fromNode || fromNode.type === 'boundary') return
+
+      const clientX =
+        'changedTouches' in event
+          ? event.changedTouches[0]?.clientX ?? 0
+          : event.clientX
+      const clientY =
+        'changedTouches' in event
+          ? event.changedTouches[0]?.clientY ?? 0
+          : event.clientY
+
+      // Check if dropped onto an existing node element (in case loose handle wasn't hit directly)
+      const elemUnderCursor = document.elementFromPoint(clientX, clientY)
+      const targetNodeEl = elemUnderCursor?.closest('.react-flow__node')
+      if (targetNodeEl) {
+        const targetId = targetNodeEl.getAttribute('data-id')
+        if (targetId && targetId !== fromNode.id) {
+          onConnect({
+            source: fromNode.id,
+            target: targetId,
+            sourceHandle: connectionState.fromHandle?.id || null,
+            targetHandle: null,
+          })
+          return
+        }
+      }
+
+      const flowPos = reactFlowInstance.screenToFlowPosition({
+        x: clientX,
+        y: clientY,
+      })
+
+      setDropCreateMenu({
+        sourceNodeId: fromNode.id,
+        sourceNodeType: fromNode.type || 'useCase',
+        clientX,
+        clientY,
+        flowX: flowPos.x,
+        flowY: flowPos.y,
+      })
+    },
+    [reactFlowInstance, onConnect]
   )
 
   // Handle dragging the source or target end of an existing relationship to reconnect it
@@ -718,8 +1117,10 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
     (oldEdge: Edge, newConnection: Connection) => {
       const sourceNode = nodes.find((n) => n.id === newConnection.source)
       const targetNode = nodes.find((n) => n.id === newConnection.target)
-      const currentRelType =
-        (oldEdge.data?.relationshipType as UmlRelationshipType) || 'association'
+      const currentRelType: UmlRelationshipType =
+        (oldEdge.data?.relationshipType as UmlRelationshipType) ||
+        inferRelationshipType(sourceNode?.type, targetNode?.type) ||
+        'association'
 
       const validation = validateUmlConnection(
         sourceNode,
@@ -727,9 +1128,21 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
         currentRelType
       )
 
-      if (!validation.valid) {
+      const finalRelType: UmlRelationshipType = validation.valid
+        ? currentRelType
+        : validation.suggestedType ||
+          inferRelationshipType(sourceNode?.type, targetNode?.type) ||
+          'association'
+
+      const recheck = validateUmlConnection(
+        sourceNode,
+        targetNode,
+        finalRelType
+      )
+
+      if (!recheck.valid) {
         showValidationWarning(
-          validation.reason ||
+          recheck.reason ||
             'Invalid UML 2.5 relationship for this reconnection.'
         )
         return
@@ -737,9 +1150,34 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
 
       setValidationNotice(null)
       pushSnapshot()
-      setEdges((eds) => reconnectEdge(oldEdge, newConnection, eds))
+      setEdges((eds) =>
+        reconnectEdge(oldEdge, newConnection, eds).map((e) =>
+          e.id === oldEdge.id
+            ? {
+                ...e,
+                data: {
+                  ...e.data,
+                  relationshipType: finalRelType,
+                },
+              }
+            : e
+        )
+      )
     },
     [nodes, pushSnapshot, setEdges, showValidationWarning]
+  )
+
+  // Right-click on edge opens context menu to change relationship type or routing (Item 2)
+  const onEdgeContextMenu = useCallback(
+    (event: React.MouseEvent, edge: Edge) => {
+      event.preventDefault()
+      setEdgeContextMenu({
+        edgeId: edge.id,
+        clientX: event.clientX,
+        clientY: event.clientY,
+      })
+    },
+    []
   )
 
   // Selection change
@@ -770,6 +1208,7 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
         data: {
           ...target.data,
           label: `${(target.data as unknown as UmlNodeData).label || ''} Copy`,
+          autoFocusEdit: false,
         },
       }
 
@@ -815,6 +1254,45 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
     setSelectedNodes([])
     setSelectedEdges([])
   }, [setNodes, setEdges])
+
+  // One-click Tidy Up auto-layout (Item 5)
+  const handleTidyLayout = useCallback(() => {
+    if (nodes.length === 0) return
+    pushSnapshot()
+    const tidied = computeTidyLayout(nodes, edges)
+    setNodes(tidied)
+    handleSaveSnapshot('Before Tidy Layout')
+    setTimeout(() => {
+      reactFlowInstance.fitView({ padding: 0.2, duration: 350 })
+    }, 60)
+    showToast('Diagram layout tidied')
+  }, [
+    nodes,
+    edges,
+    pushSnapshot,
+    setNodes,
+    handleSaveSnapshot,
+    reactFlowInstance,
+    showToast,
+  ])
+
+  // Change default routing style and apply to edges
+  const handleDefaultRoutingStyleChange = useCallback(
+    (style: 'straight' | 'orthogonal' | 'bezier') => {
+      setDefaultRoutingStyle(style)
+      pushSnapshot()
+      setEdges((eds) =>
+        eds.map((e) => ({
+          ...e,
+          data: {
+            ...e.data,
+            routingStyle: style,
+          },
+        }))
+      )
+    },
+    [pushSnapshot, setEdges]
+  )
 
   // Align or distribute multiple selected nodes
   const handleAlignSelected = useCallback(
@@ -955,41 +1433,38 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
       if (nodeId) handleDuplicateNode(nodeId)
     }
 
-    const handleCycle = (e: Event) => {
-      const customEvent = e as CustomEvent<{ edgeId: string }>
-      const edgeId = customEvent.detail?.edgeId
-      if (!edgeId) return
-
-      const targetEdge = edges.find((ed) => ed.id === edgeId)
-      if (!targetEdge) return
-
-      const sNode = nodes.find((n) => n.id === targetEdge.source)
-      const tNode = nodes.find((n) => n.id === targetEdge.target)
-      const allowed = getAllowedRelationshipTypes(sNode?.type, tNode?.type)
-
-      // Only cycle if more than 1 relationship type is valid for this pair
-      if (allowed.length <= 1) return
+    const handleSetEdgeType = (e: Event) => {
+      const customEvent = e as CustomEvent<{
+        edgeId: string
+        relationshipType: UmlRelationshipType
+      }>
+      const { edgeId, relationshipType } = customEvent.detail || {}
+      if (!edgeId || !relationshipType) return
 
       pushSnapshot()
       setEdges((eds) =>
-        eds.map((edge) => {
-          if (edge.id !== edgeId) return edge
-          const currentType =
-            (edge.data?.relationshipType as UmlRelationshipType) || allowed[0]
-          const currentIdx = allowed.indexOf(currentType)
-          const nextIndex =
-            currentIdx === -1 ? 0 : (currentIdx + 1) % allowed.length
-          const nextType = allowed[nextIndex]
-
-          return {
-            ...edge,
-            data: {
-              ...edge.data,
-              relationshipType: nextType,
-            },
-          }
-        })
+        eds.map((edge) =>
+          edge.id === edgeId
+            ? {
+                ...edge,
+                data: {
+                  ...edge.data,
+                  relationshipType,
+                },
+              }
+            : edge
+        )
       )
+    }
+
+    const handleCreateNextConnected = (e: Event) => {
+      const customEvent = e as CustomEvent<{ nodeId: string }>
+      const nodeId = customEvent.detail?.nodeId
+      if (!nodeId) return
+      const sNode = nodes.find((n) => n.id === nodeId)
+      if (!sNode) return
+      const rel = sNode.type === 'actor' ? 'association' : 'include'
+      createConnectedElement(nodeId, 'useCase', rel)
     }
 
     const handleFlip = (e: Event) => {
@@ -1022,90 +1497,28 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
     }
 
     window.addEventListener('duplicate-node', handleDuplicateEvent)
-    window.addEventListener('cycle-edge-type', handleCycle)
+    window.addEventListener('set-edge-type', handleSetEdgeType)
+    window.addEventListener('create-next-connected', handleCreateNextConnected)
     window.addEventListener('flip-edge-direction', handleFlip)
     window.addEventListener('delete-edge', handleDelete)
 
     return () => {
       window.removeEventListener('duplicate-node', handleDuplicateEvent)
-      window.removeEventListener('cycle-edge-type', handleCycle)
+      window.removeEventListener('set-edge-type', handleSetEdgeType)
+      window.removeEventListener(
+        'create-next-connected',
+        handleCreateNextConnected
+      )
       window.removeEventListener('flip-edge-direction', handleFlip)
       window.removeEventListener('delete-edge', handleDelete)
     }
-  }, [handleDuplicateNode, pushSnapshot, setEdges, edges, nodes])
-
-  // Add Node handler
-  const handleAddNode = useCallback(
-    (
-      type: 'actor' | 'useCase' | 'boundary' | 'note',
-      options?: { actorType?: 'primary' | 'secondary' | 'system' }
-    ) => {
-      pushSnapshot()
-      const id = `${type}-${Date.now()}`
-      const viewport = reactFlowInstance.getViewport()
-
-      const centerX = (-viewport.x + 350) / viewport.zoom
-      const centerY = (-viewport.y + 250) / viewport.zoom
-
-      let initialData: UmlNodeData
-
-      switch (type) {
-        case 'actor':
-          initialData = {
-            nodeType: 'actor',
-            label:
-              options?.actorType === 'secondary'
-                ? 'External Service'
-                : options?.actorType === 'system'
-                  ? 'Payment System'
-                  : 'Actor',
-            actorType: options?.actorType || 'primary',
-          }
-          break
-        case 'useCase':
-          initialData = {
-            nodeType: 'useCase',
-            label: 'New Use Case',
-          }
-          break
-        case 'boundary':
-          initialData = {
-            nodeType: 'boundary',
-            boundaryTitle: 'System Boundary',
-            label: 'System Boundary',
-            width: 440,
-            height: 380,
-          }
-          break
-        case 'note':
-          initialData = {
-            nodeType: 'note',
-            label: 'Note',
-            description: 'Note / Constraint specification',
-          }
-          break
-      }
-
-      const newNode: Node = {
-        id,
-        type,
-        position: {
-          x: Math.round(centerX + (Math.random() * 40 - 20)),
-          y: Math.round(centerY + (Math.random() * 40 - 20)),
-        },
-        selected: true,
-        data: initialData as unknown as Record<string, unknown>,
-        zIndex: type === 'boundary' ? 1 : 10,
-      }
-
-      // Deselect existing, select newly added node
-      setNodes((nds) => [
-        ...nds.map((n) => ({ ...n, selected: false })),
-        newNode,
-      ])
-    },
-    [reactFlowInstance, pushSnapshot, setNodes]
-  )
+  }, [
+    handleDuplicateNode,
+    createConnectedElement,
+    pushSnapshot,
+    setEdges,
+    nodes,
+  ])
 
   // Node deletion
   const handleDeleteNode = useCallback(
@@ -1252,7 +1665,7 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
 
   // Fit View
   const handleFitView = useCallback(() => {
-    reactFlowInstance.fitView({ padding: 0.2, duration: 400 })
+    reactFlowInstance.fitView({ padding: 0.2, duration: 350 })
   }, [reactFlowInstance])
 
   // Exports
@@ -1262,11 +1675,36 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
     await exportDiagramAsPng(canvasRef.current, `${safeTitle}.png`)
   }, [title])
 
+  const handleCopyPngClipboard = useCallback(async () => {
+    if (!canvasRef.current) return false
+    const ok = await copyDiagramAsPngToClipboard(canvasRef.current)
+    if (ok) {
+      showToast('Copied diagram image to clipboard')
+    } else {
+      showToast('Could not copy image to clipboard')
+    }
+    return ok
+  }, [showToast])
+
   const handleExportSvg = useCallback(async () => {
     if (!canvasRef.current) return
     const safeTitle = title.toLowerCase().replace(/[^a-z0-9]+/g, '-')
     await exportDiagramAsSvg(canvasRef.current, `${safeTitle}.svg`)
   }, [title])
+
+  const handleExportPlantUml = useCallback(() => {
+    const safeTitle = title.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+    const puml = generatePlantUml(title, nodes, edges)
+    downloadTextFile(puml, `${safeTitle}.puml`)
+    showToast('Exported PlantUML (.puml)')
+  }, [title, nodes, edges, showToast])
+
+  const handleExportMermaid = useCallback(() => {
+    const safeTitle = title.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+    const mmd = generateMermaid(title, nodes, edges)
+    downloadTextFile(mmd, `${safeTitle}.mmd`)
+    showToast('Exported Mermaid (.mmd)')
+  }, [title, nodes, edges, showToast])
 
   const handleExportJson = useCallback(() => {
     const safeTitle = title.toLowerCase().replace(/[^a-z0-9]+/g, '-')
@@ -1297,12 +1735,302 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
             reactFlowInstance.fitView({ padding: 0.2 })
           }, 50)
         } else {
-          alert('Invalid diagram JSON file. Please select a valid .umly.json file.')
+          alert(
+            'Invalid diagram JSON file. Please select a valid .umly.json file.'
+          )
         }
       }
       reader.readAsText(file)
     },
     [pushSnapshot, reactFlowInstance, setNodes, setEdges]
+  )
+
+  // Keyboard-first shortcuts (Item 3 & Item 7)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        (e.target as HTMLElement)?.isContentEditable
+      ) {
+        return
+      }
+
+      // Cmd/Ctrl + K -> Command Palette
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setIsCommandPaletteOpen((prev) => !prev)
+        return
+      }
+
+      // Cmd/Ctrl + Shift + C -> Copy PNG to Clipboard
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        e.shiftKey &&
+        e.key.toLowerCase() === 'c'
+      ) {
+        e.preventDefault()
+        handleCopyPngClipboard()
+        return
+      }
+
+      // Cmd/Ctrl + D -> Duplicate selected
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'd') {
+        e.preventDefault()
+        if (selectedNodes.length === 1) {
+          handleDuplicateNode(selectedNodes[0].id)
+        } else if (selectedNodes.length > 1) {
+          handleDuplicateSelected()
+        }
+        return
+      }
+
+      // Cmd/Ctrl + Z
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault()
+        if (e.shiftKey) {
+          handleRedo()
+        } else {
+          handleUndo()
+        }
+        return
+      }
+      // Cmd/Ctrl + Y
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault()
+        handleRedo()
+        return
+      }
+      // Cmd/Ctrl + C
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'c') {
+        e.preventDefault()
+        handleCopy()
+        return
+      }
+      // Cmd/Ctrl + V
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'v') {
+        e.preventDefault()
+        handlePaste()
+        return
+      }
+      // Cmd/Ctrl + A
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a') {
+        e.preventDefault()
+        setNodes((nds) => nds.map((n) => ({ ...n, selected: true })))
+        setEdges((eds) => eds.map((e) => ({ ...e, selected: true })))
+        return
+      }
+
+      // Don't trigger single-key shortcuts when modifiers are held
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+
+      // ? -> Keyboard Shortcuts Overlay
+      if (e.key === '?') {
+        e.preventDefault()
+        setIsShortcutsOpen((prev) => !prev)
+        return
+      }
+
+      // Single-key tool selection: V, U, A, B, N
+      const keyLower = e.key.toLowerCase()
+      if (keyLower === 'v') {
+        e.preventDefault()
+        setActiveTool('select')
+        return
+      }
+      if (keyLower === 'u') {
+        e.preventDefault()
+        setActiveTool('useCase')
+        return
+      }
+      if (keyLower === 'a') {
+        e.preventDefault()
+        setActiveTool('actor')
+        return
+      }
+      if (keyLower === 'b') {
+        e.preventDefault()
+        setActiveTool('boundary')
+        return
+      }
+      if (keyLower === 'n') {
+        e.preventDefault()
+        setActiveTool('note')
+        return
+      }
+
+      // Enter -> Rename selected node inline
+      if (e.key === 'Enter' && selectedNodes.length === 1) {
+        e.preventDefault()
+        window.dispatchEvent(
+          new CustomEvent('start-node-edit', {
+            detail: { nodeId: selectedNodes[0].id },
+          })
+        )
+        return
+      }
+
+      // Tab -> Create & connect next Use Case from selected node
+      if (e.key === 'Tab' && selectedNodes.length === 1) {
+        e.preventDefault()
+        const sNode = selectedNodes[0]
+        if (sNode.type !== 'boundary') {
+          const rel = sNode.type === 'actor' ? 'association' : 'include'
+          createConnectedElement(sNode.id, 'useCase', rel)
+        }
+        return
+      }
+
+      // Arrow keys -> Nudge selected elements (1px, or 10px with Shift)
+      if (
+        ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) &&
+        selectedNodes.length > 0
+      ) {
+        e.preventDefault()
+        const step = e.shiftKey ? 10 : 1
+        const dx =
+          e.key === 'ArrowRight' ? step : e.key === 'ArrowLeft' ? -step : 0
+        const dy =
+          e.key === 'ArrowDown' ? step : e.key === 'ArrowUp' ? -step : 0
+
+        pushSnapshot()
+        const selIds = new Set(selectedNodes.map((n) => n.id))
+        setNodes((nds) =>
+          nds.map((n) =>
+            selIds.has(n.id)
+              ? {
+                  ...n,
+                  position: {
+                    x: Math.round(n.position.x + dx),
+                    y: Math.round(n.position.y + dy),
+                  },
+                }
+              : n
+          )
+        )
+        return
+      }
+
+      // Escape -> reset tool to Select, close menus, deselect
+      if (e.key === 'Escape') {
+        setActiveTool('select')
+        setDropCreateMenu(null)
+        setEdgeContextMenu(null)
+        setNodes((nds) => nds.map((n) => ({ ...n, selected: false })))
+        setEdges((eds) => eds.map((e) => ({ ...e, selected: false })))
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [
+    selectedNodes,
+    handleUndo,
+    handleRedo,
+    handleCopy,
+    handlePaste,
+    handleDuplicateNode,
+    handleDuplicateSelected,
+    handleCopyPngClipboard,
+    createConnectedElement,
+    pushSnapshot,
+    setNodes,
+    setEdges,
+  ])
+
+  // Pane click: if a single-key creation tool is active, place the node at click coordinates
+  const onPaneClick = useCallback(
+    (event: React.MouseEvent) => {
+      setDropCreateMenu(null)
+      setEdgeContextMenu(null)
+
+      if (activeTool !== 'select') {
+        const flowPos = reactFlowInstance.screenToFlowPosition({
+          x: event.clientX,
+          y: event.clientY,
+        })
+        const offsetX =
+          activeTool === 'boundary'
+            ? -220
+            : activeTool === 'useCase'
+              ? -72
+              : -45
+        const offsetY =
+          activeTool === 'boundary'
+            ? -190
+            : activeTool === 'useCase'
+              ? -32
+              : -50
+        handleAddNode(activeTool, {
+          position: { x: flowPos.x + offsetX, y: flowPos.y + offsetY },
+          autoFocusEdit: activeTool !== 'boundary',
+        })
+      }
+    },
+    [activeTool, reactFlowInstance, handleAddNode]
+  )
+
+  // Double-click empty canvas -> immediately create a Use Case in inline edit mode (Item 3)
+  const onCanvasDoubleClick = useCallback(
+    (event: React.MouseEvent) => {
+      const target = event.target as HTMLElement | null
+      if (!target) return
+      if (
+        target.closest('.react-flow__node') ||
+        target.closest('.react-flow__edge') ||
+        target.closest('.react-flow__edgelabel-renderer') ||
+        target.closest('.studio-bottom-dock') ||
+        target.closest('.react-flow__controls')
+      ) {
+        return
+      }
+
+      const flowPos = reactFlowInstance.screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      })
+      handleAddNode('useCase', {
+        position: { x: flowPos.x - 72, y: flowPos.y - 32 },
+        autoFocusEdit: true,
+      })
+    },
+    [reactFlowInstance, handleAddNode]
+  )
+
+  // Drag-from-palette onto canvas (Item 3)
+  const onDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault()
+    event.dataTransfer.dropEffect = 'copy'
+  }, [])
+
+  const onDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault()
+      const rawType = event.dataTransfer.getData('application/umly-node-type')
+      if (
+        rawType !== 'actor' &&
+        rawType !== 'useCase' &&
+        rawType !== 'boundary' &&
+        rawType !== 'note'
+      ) {
+        return
+      }
+
+      const flowPos = reactFlowInstance.screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      })
+      const offsetX =
+        rawType === 'boundary' ? -220 : rawType === 'useCase' ? -72 : -45
+      const offsetY =
+        rawType === 'boundary' ? -190 : rawType === 'useCase' ? -32 : -50
+
+      handleAddNode(rawType, {
+        position: { x: flowPos.x + offsetX, y: flowPos.y + offsetY },
+        autoFocusEdit: rawType !== 'boundary',
+      })
+    },
+    [reactFlowInstance, handleAddNode]
   )
 
   return (
@@ -1316,10 +2044,14 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
         canUndo={canUndo}
         canRedo={canRedo}
         onFitView={handleFitView}
+        onTidyLayout={handleTidyLayout}
         onClearCanvas={handleClearCanvas}
         onLoadTemplate={handleLoadTemplate}
         onExportPng={handleExportPng}
+        onCopyImageToClipboard={handleCopyPngClipboard}
         onExportSvg={handleExportSvg}
+        onExportPlantUml={handleExportPlantUml}
+        onExportMermaid={handleExportMermaid}
         onExportJson={handleExportJson}
         onImportJson={handleImportJson}
         onNewDiagram={onOpenNewDiagram}
@@ -1331,8 +2063,56 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
         {/* Canvas Area */}
         <div
           ref={canvasRef}
-          className="flex-1 h-full min-h-0 relative overflow-hidden bg-[var(--bg-secondary)] rounded-[6px] border border-[var(--border-subtle)]"
+          onDoubleClick={onCanvasDoubleClick}
+          onDragOver={onDragOver}
+          onDrop={onDrop}
+          className={`flex-1 h-full min-h-0 relative overflow-hidden bg-[var(--bg-secondary)] rounded-[6px] border border-[var(--border-subtle)] ${
+            activeTool !== 'select' ? 'cursor-crosshair' : ''
+          }`}
         >
+          {/* Active Tool Indicator Pill when placing via single-key shortcut */}
+          <AnimatePresence>
+            {activeTool !== 'select' && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                className="studio-bottom-dock absolute top-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--text-primary)] text-[var(--bg-primary)] text-[11px] font-medium shadow-md"
+              >
+                <span>
+                  Click anywhere on canvas to place{' '}
+                  <strong>
+                    {activeTool === 'useCase'
+                      ? 'Use Case'
+                      : activeTool === 'actor'
+                        ? 'Actor'
+                        : activeTool === 'boundary'
+                          ? 'System Boundary'
+                          : 'Note'}
+                  </strong>
+                </span>
+                <kbd className="px-1 py-0.2 rounded bg-white/15 font-mono text-[10px]">
+                  Esc
+                </kbd>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Subtle Action Toast */}
+          <AnimatePresence>
+            {toastMessage && (
+              <motion.div
+                initial={{ opacity: 0, y: -10, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                className="studio-bottom-dock absolute top-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 px-3 py-1.5 rounded-[7px] bg-[var(--bg-primary)] border border-[var(--border-default)] shadow-lg text-xs font-medium text-[var(--text-primary)]"
+              >
+                <Check className="w-3.5 h-3.5 text-[#448361]" />
+                <span>{toastMessage}</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* UML 2.5 Relationship Validation Toast Banner */}
           <AnimatePresence>
             {validationNotice && (
@@ -1354,7 +2134,6 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
                       onClick={() => {
                         const suggested = validationNotice.suggestedType!
                         const conn = validationNotice.pendingConnection!
-                        setActiveRelationshipType(suggested)
                         setValidationNotice(null)
                         pushSnapshot()
                         const newEdge: Edge = {
@@ -1366,6 +2145,7 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
                           type: 'umlEdge',
                           data: {
                             relationshipType: suggested,
+                            routingStyle: defaultRoutingStyle,
                           },
                         }
                         setEdges((eds) => addEdge(newEdge, eds))
@@ -1394,6 +2174,283 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
             )}
           </AnimatePresence>
 
+          {/* Drop Connection on Empty Canvas: "Create Connected Element" Menu (Item 2) */}
+          <AnimatePresence>
+            {dropCreateMenu && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.94, y: 4 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.94, y: 4 }}
+                transition={{ duration: 0.12 }}
+                style={{
+                  position: 'fixed',
+                  left: Math.min(dropCreateMenu.clientX, window.innerWidth - 220),
+                  top: Math.min(dropCreateMenu.clientY, window.innerHeight - 200),
+                  zIndex: 100000,
+                }}
+                className="floating-context-menu studio-bottom-dock w-52 p-1.5 rounded-[9px] bg-[var(--bg-primary)] border border-[var(--border-default)] shadow-2xl text-xs font-sans"
+              >
+                <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] font-mono">
+                  Connect to New...
+                </div>
+                {dropCreateMenu.sourceNodeType === 'actor' ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        createConnectedElement(
+                          dropCreateMenu.sourceNodeId,
+                          'useCase',
+                          'association',
+                          {
+                            x: dropCreateMenu.flowX,
+                            y: dropCreateMenu.flowY,
+                          }
+                        )
+                        setDropCreateMenu(null)
+                      }}
+                      className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-[6px] hover:bg-[var(--hover-bg)] text-[var(--text-primary)] transition-colors cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2 font-medium">
+                        <CircleDot className="w-3.5 h-3.5 text-[#2383e2]" />
+                        <span>Use Case</span>
+                      </span>
+                      <span className="text-[10px] font-mono text-[var(--text-tertiary)]">
+                        Association
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        createConnectedElement(
+                          dropCreateMenu.sourceNodeId,
+                          'actor',
+                          'generalization',
+                          {
+                            x: dropCreateMenu.flowX,
+                            y: dropCreateMenu.flowY,
+                          }
+                        )
+                        setDropCreateMenu(null)
+                      }}
+                      className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-[6px] hover:bg-[var(--hover-bg)] text-[var(--text-primary)] transition-colors cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2 font-medium">
+                        <User className="w-3.5 h-3.5 text-[#9065b0]" />
+                        <span>Parent Actor</span>
+                      </span>
+                      <span className="text-[10px] font-mono text-[var(--text-tertiary)]">
+                        Inherit —▷
+                      </span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        createConnectedElement(
+                          dropCreateMenu.sourceNodeId,
+                          'useCase',
+                          'include',
+                          {
+                            x: dropCreateMenu.flowX,
+                            y: dropCreateMenu.flowY,
+                          }
+                        )
+                        setDropCreateMenu(null)
+                      }}
+                      className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-[6px] hover:bg-[var(--hover-bg)] text-[var(--text-primary)] transition-colors cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2 font-medium">
+                        <CircleDot className="w-3.5 h-3.5 text-[#2383e2]" />
+                        <span>Use Case</span>
+                      </span>
+                      <span className="text-[10px] font-mono text-[#2383e2]">
+                        «include»
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        createConnectedElement(
+                          dropCreateMenu.sourceNodeId,
+                          'useCase',
+                          'extend',
+                          {
+                            x: dropCreateMenu.flowX,
+                            y: dropCreateMenu.flowY,
+                          }
+                        )
+                        setDropCreateMenu(null)
+                      }}
+                      className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-[6px] hover:bg-[var(--hover-bg)] text-[var(--text-primary)] transition-colors cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2 font-medium">
+                        <CircleDot className="w-3.5 h-3.5 text-[#cb912f]" />
+                        <span>Use Case</span>
+                      </span>
+                      <span className="text-[10px] font-mono text-[#cb912f]">
+                        «extend»
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        createConnectedElement(
+                          dropCreateMenu.sourceNodeId,
+                          'actor',
+                          'association',
+                          {
+                            x: dropCreateMenu.flowX,
+                            y: dropCreateMenu.flowY,
+                          }
+                        )
+                        setDropCreateMenu(null)
+                      }}
+                      className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-[6px] hover:bg-[var(--hover-bg)] text-[var(--text-primary)] transition-colors cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2 font-medium">
+                        <User className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
+                        <span>Actor</span>
+                      </span>
+                      <span className="text-[10px] font-mono text-[var(--text-tertiary)]">
+                        Association
+                      </span>
+                    </button>
+                  </>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    createConnectedElement(
+                      dropCreateMenu.sourceNodeId,
+                      'note',
+                      'association',
+                      {
+                        x: dropCreateMenu.flowX,
+                        y: dropCreateMenu.flowY,
+                      }
+                    )
+                    setDropCreateMenu(null)
+                  }}
+                  className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-[6px] hover:bg-[var(--hover-bg)] text-[var(--text-primary)] transition-colors cursor-pointer"
+                >
+                  <span className="flex items-center gap-2 font-medium">
+                    <StickyNote className="w-3.5 h-3.5 text-[#cb912f]" />
+                    <span>Note</span>
+                  </span>
+                  <span className="text-[10px] font-mono text-[var(--text-tertiary)]">
+                    Link
+                  </span>
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Right-Click Edge Context Menu (Item 2) */}
+          <AnimatePresence>
+            {edgeContextMenu &&
+              (() => {
+                const targetEdge = edges.find(
+                  (e) => e.id === edgeContextMenu.edgeId
+                )
+                if (!targetEdge) return null
+                const sNode = nodes.find((n) => n.id === targetEdge.source)
+                const tNode = nodes.find((n) => n.id === targetEdge.target)
+                const allowed = getAllowedRelationshipTypes(
+                  sNode?.type,
+                  tNode?.type
+                )
+                const currentRel =
+                  (targetEdge.data?.relationshipType as UmlRelationshipType) ||
+                  'association'
+
+                return (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.1 }}
+                    style={{
+                      position: 'fixed',
+                      left: Math.min(
+                        edgeContextMenu.clientX,
+                        window.innerWidth - 200
+                      ),
+                      top: Math.min(
+                        edgeContextMenu.clientY,
+                        window.innerHeight - 220
+                      ),
+                      zIndex: 100000,
+                    }}
+                    className="floating-context-menu studio-bottom-dock w-48 p-1.5 rounded-[9px] bg-[var(--bg-primary)] border border-[var(--border-default)] shadow-2xl text-xs font-sans"
+                  >
+                    <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] font-mono">
+                      Relationship Type
+                    </div>
+                    {(
+                      [
+                        { id: 'association', label: 'Association' },
+                        { id: 'include', label: '«include»' },
+                        { id: 'extend', label: '«extend»' },
+                        { id: 'generalization', label: 'Generalization' },
+                      ] as const
+                    )
+                      .filter(
+                        (r) => allowed.length === 0 || allowed.includes(r.id)
+                      )
+                      .map((r) => (
+                        <button
+                          key={r.id}
+                          type="button"
+                          onClick={() => {
+                            handleUpdateEdgeData(targetEdge.id, {
+                              relationshipType: r.id,
+                            })
+                            setEdgeContextMenu(null)
+                          }}
+                          className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-[6px] transition-colors cursor-pointer ${
+                            currentRel === r.id
+                              ? 'bg-[var(--selection-bg)] text-[var(--primary-btn)] font-semibold'
+                              : 'hover:bg-[var(--hover-bg)] text-[var(--text-primary)]'
+                          }`}
+                        >
+                          <span>{r.label}</span>
+                          {currentRel === r.id && (
+                            <Check className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                      ))}
+
+                    <div className="h-px bg-[var(--border-subtle)] my-1" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleFlipEdge(targetEdge.id)
+                        setEdgeContextMenu(null)
+                      }}
+                      className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-[6px] hover:bg-[var(--hover-bg)] text-[var(--text-primary)] transition-colors cursor-pointer"
+                    >
+                      <ArrowLeftRight className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
+                      <span>Flip Direction</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleDeleteEdge(targetEdge.id)
+                        setEdgeContextMenu(null)
+                      }}
+                      className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-[6px] hover:bg-[var(--notion-red-bg)] text-[var(--notion-red-text)] transition-colors cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Delete Connection</span>
+                    </button>
+                  </motion.div>
+                )
+              })()}
+          </AnimatePresence>
+
           <UmlMarkers />
           <ReactFlow
             nodes={nodes}
@@ -1406,7 +2463,11 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
             onNodeDrag={onNodeDrag}
             onNodeDragStop={onNodeDragStop}
             onConnect={onConnect}
+            onConnectStart={onConnectStart}
+            onConnectEnd={onConnectEnd}
             onReconnect={onReconnect}
+            onPaneClick={onPaneClick}
+            onEdgeContextMenu={onEdgeContextMenu}
             edgesReconnectable
             reconnectRadius={14}
             elevateEdgesOnSelect
@@ -1416,15 +2477,17 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
             selectionMode={SelectionMode.Partial}
             multiSelectionKeyCode={['Meta', 'Control', 'Shift']}
             selectionKeyCode="Shift"
+            panActivationKeyCode="Space"
+            zoomOnDoubleClick={false}
             fitView
             fitViewOptions={{ padding: 0.2 }}
-            minZoom={0.3}
-            maxZoom={2.2}
+            minZoom={0.25}
+            maxZoom={2.4}
             deleteKeyCode={['Backspace', 'Delete']}
             proOptions={{ hideAttribution: true }}
             style={{ width: '100%', height: '100%' }}
           >
-            {/* Shift-Drag Smart Alignment Guide Lines */}
+            {/* Smart Alignment Guide Lines (On by Default, Hold Shift to Disable) */}
             {(alignmentGuides.vertical || alignmentGuides.horizontal) && (
               <ViewportPortal>
                 <svg
@@ -1504,22 +2567,24 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
               showInteractive={false}
               className="!bg-[var(--bg-primary)] !border-[var(--border-default)] !rounded-[4px] !shadow-xs overflow-hidden"
             />
-            <MiniMap
-              nodeStrokeWidth={2}
-              zoomable
-              pannable
-              className="!bottom-4 !right-4 !bg-[var(--bg-primary)] !border-[var(--border-default)] !rounded-[4px] !shadow-sm overflow-hidden"
-            />
+            {/* Item 6: Hide MiniMap until the diagram is large enough to need it */}
+            {nodes.length >= 8 && (
+              <MiniMap
+                nodeStrokeWidth={2}
+                zoomable
+                pannable
+                className="!bottom-4 !right-4 !bg-[var(--bg-primary)] !border-[var(--border-default)] !rounded-[4px] !shadow-sm overflow-hidden"
+              />
+            )}
           </ReactFlow>
 
-          {/* Unified Floating Bottom Dock with Popovers */}
+          {/* Direct-Manipulation Bottom Dock */}
           <StudioBottomDock
-            activeRelationshipType={activeRelationshipType}
-            onRelationshipTypeChange={setActiveRelationshipType}
-            onAddNode={handleAddNode}
-            onFitView={handleFitView}
-            onZoomIn={() => reactFlowInstance.zoomIn({ duration: 300 })}
-            onZoomOut={() => reactFlowInstance.zoomOut({ duration: 300 })}
+            activeTool={activeTool}
+            onToolChange={setActiveTool}
+            onTidyLayout={handleTidyLayout}
+            onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+            onOpenShortcuts={() => setIsShortcutsOpen(true)}
           />
         </div>
 
@@ -1539,12 +2604,173 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
           onDuplicateSelected={handleDuplicateSelected}
           onDeselectAll={handleDeselectAll}
           onAlignSelected={handleAlignSelected}
+          onTidyLayout={handleTidyLayout}
+          defaultRoutingStyle={defaultRoutingStyle}
+          onDefaultRoutingStyleChange={handleDefaultRoutingStyleChange}
+          snapshots={snapshots}
+          onSaveSnapshot={handleSaveSnapshot}
+          onRestoreSnapshot={handleRestoreSnapshot}
+          diagramTitle={title}
           allNodes={nodes}
           allEdges={edges}
           isOpen={isInspectorOpen}
           onToggleOpen={() => setIsInspectorOpen(!isInspectorOpen)}
         />
       </div>
+
+      {/* Cmd+K Command Palette Modal */}
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        commands={[
+          {
+            id: 'add-usecase',
+            category: 'Create',
+            label: 'New Use Case',
+            shortcut: 'U',
+            icon: <CircleDot className="w-3.5 h-3.5 text-[#2383e2]" />,
+            onSelect: () => handleAddNode('useCase'),
+          },
+          {
+            id: 'add-actor',
+            category: 'Create',
+            label: 'New Actor',
+            shortcut: 'A',
+            icon: <User className="w-3.5 h-3.5 text-[var(--primary-btn)]" />,
+            onSelect: () => handleAddNode('actor'),
+          },
+          {
+            id: 'add-boundary',
+            category: 'Create',
+            label: 'New System Boundary',
+            shortcut: 'B',
+            icon: <CircleDot className="w-3.5 h-3.5 text-[#9065b0]" />,
+            onSelect: () => handleAddNode('boundary'),
+          },
+          {
+            id: 'add-note',
+            category: 'Create',
+            label: 'New Note / Constraint',
+            shortcut: 'N',
+            icon: <StickyNote className="w-3.5 h-3.5 text-[#cb912f]" />,
+            onSelect: () => handleAddNode('note'),
+          },
+          {
+            id: 'tidy-layout',
+            category: 'Layout & Routing',
+            label: 'Tidy Up Layout (Auto-Arrange)',
+            icon: <Check className="w-3.5 h-3.5 text-[#448361]" />,
+            onSelect: handleTidyLayout,
+          },
+          {
+            id: 'route-straight',
+            category: 'Layout & Routing',
+            label: 'Set Edge Routing: Straight Lines',
+            icon: <ArrowLeftRight className="w-3.5 h-3.5" />,
+            onSelect: () => handleDefaultRoutingStyleChange('straight'),
+          },
+          {
+            id: 'route-orthogonal',
+            category: 'Layout & Routing',
+            label: 'Set Edge Routing: Orthogonal Step',
+            icon: <ArrowLeftRight className="w-3.5 h-3.5" />,
+            onSelect: () => handleDefaultRoutingStyleChange('orthogonal'),
+          },
+          {
+            id: 'fit-view',
+            category: 'Canvas',
+            label: 'Fit Diagram to Screen',
+            icon: <CircleDot className="w-3.5 h-3.5" />,
+            onSelect: handleFitView,
+          },
+          {
+            id: 'copy-image',
+            category: 'Export & Share',
+            label: 'Copy Diagram as PNG to Clipboard',
+            shortcut: '⌘⇧C',
+            icon: <Check className="w-3.5 h-3.5" />,
+            onSelect: () => {
+              handleCopyPngClipboard()
+            },
+          },
+          {
+            id: 'export-png',
+            category: 'Export & Share',
+            label: 'Export PNG Image',
+            icon: <Check className="w-3.5 h-3.5" />,
+            onSelect: () => {
+              handleExportPng()
+            },
+          },
+          {
+            id: 'export-svg',
+            category: 'Export & Share',
+            label: 'Export SVG Vector',
+            icon: <Check className="w-3.5 h-3.5" />,
+            onSelect: () => {
+              handleExportSvg()
+            },
+          },
+          {
+            id: 'export-puml',
+            category: 'Export & Share',
+            label: 'Export PlantUML (.puml)',
+            icon: <Check className="w-3.5 h-3.5" />,
+            onSelect: handleExportPlantUml,
+          },
+          {
+            id: 'export-mermaid',
+            category: 'Export & Share',
+            label: 'Export Mermaid (.mmd)',
+            icon: <Check className="w-3.5 h-3.5" />,
+            onSelect: handleExportMermaid,
+          },
+          {
+            id: 'save-snapshot',
+            category: 'History',
+            label: 'Save Version Snapshot',
+            icon: <Check className="w-3.5 h-3.5" />,
+            onSelect: () => handleSaveSnapshot('Manual Checkpoint'),
+          },
+          {
+            id: 'undo',
+            category: 'History',
+            label: 'Undo',
+            shortcut: '⌘Z',
+            icon: <ArrowLeftRight className="w-3.5 h-3.5" />,
+            onSelect: handleUndo,
+          },
+          {
+            id: 'redo',
+            category: 'History',
+            label: 'Redo',
+            shortcut: '⌘⇧Z',
+            icon: <ArrowLeftRight className="w-3.5 h-3.5" />,
+            onSelect: handleRedo,
+          },
+          {
+            id: 'shortcuts',
+            category: 'Help',
+            label: 'Show Keyboard Shortcuts',
+            shortcut: '?',
+            icon: <AlertCircle className="w-3.5 h-3.5" />,
+            onSelect: () => setIsShortcutsOpen(true),
+          },
+          {
+            id: 'clear-canvas',
+            category: 'Danger Zone',
+            label: 'Clear Entire Canvas',
+            icon: <Trash2 className="w-3.5 h-3.5 text-[var(--notion-red-text)]" />,
+            onSelect: handleClearCanvas,
+          },
+        ]}
+      />
+
+      {/* ? Keyboard Shortcuts Overlay Modal */}
+      <ShortcutsModal
+        isOpen={isShortcutsOpen}
+        onClose={() => setIsShortcutsOpen(false)}
+      />
     </div>
   )
 }

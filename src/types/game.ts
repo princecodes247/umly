@@ -2,15 +2,27 @@ export type UmlRelationshipType = 'association' | 'include' | 'extend' | 'genera
 
 export type LevelType = 'build' | 'fix' | 'classify'
 
+export type NodeAccentColor =
+  | 'default'
+  | 'blue'
+  | 'green'
+  | 'amber'
+  | 'purple'
+  | 'rose'
+
 export interface UmlNodeData {
   label: string
   nodeType: 'actor' | 'useCase' | 'boundary' | 'note'
   actorType?: 'primary' | 'secondary' | 'system'
+  stereotype?: string
+  accentColor?: NodeAccentColor
   boundaryTitle?: string
   width?: number
   height?: number
   description?: string
   isLocked?: boolean
+  autoFocusEdit?: boolean
+  isHoveredByDrag?: boolean
   [key: string]: unknown
 }
 
@@ -18,6 +30,7 @@ export interface UmlEdgeData {
   relationshipType: UmlRelationshipType
   label?: string
   condition?: string
+  routingStyle?: 'straight' | 'orthogonal' | 'bezier'
   [key: string]: unknown
 }
 

@@ -6,15 +6,45 @@ import {
   useReactFlow,
   type NodeProps,
 } from '@xyflow/react'
-import { Trash2, Copy, Edit2 } from 'lucide-react'
-import type { UmlNodeData } from '../../../types/game'
+import { Trash2, Copy } from 'lucide-react'
+import type { UmlNodeData, NodeAccentColor } from '../../../types/game'
+
+const ACCENT_STYLES: Record<
+  NodeAccentColor,
+  { border: string; bg: string }
+> = {
+  default: {
+    border: 'var(--border-strong)',
+    bg: 'var(--bg-primary)',
+  },
+  blue: {
+    border: 'var(--notion-blue-text)',
+    bg: 'var(--notion-blue-bg)',
+  },
+  green: {
+    border: 'var(--notion-green-text)',
+    bg: 'var(--notion-green-bg)',
+  },
+  amber: {
+    border: 'var(--notion-yellow-text)',
+    bg: 'var(--notion-yellow-bg)',
+  },
+  purple: {
+    border: 'var(--notion-purple-text)',
+    bg: 'var(--notion-purple-bg)',
+  },
+  rose: {
+    border: 'var(--notion-pink-text)',
+    bg: 'var(--notion-pink-bg)',
+  },
+}
 
 export const UseCaseNode = memo(({ id, data, selected }: NodeProps) => {
   const nodeData = data as unknown as UmlNodeData
   const { updateNodeData, deleteElements } = useReactFlow()
   const isLocked = Boolean(nodeData.isLocked)
 
-  const [isEditing, setIsEditing] = useState(false)
+  const [isEditing, setIsEditing] = useState(Boolean(nodeData.autoFocusEdit))
   const [labelValue, setLabelValue] = useState(nodeData.label || 'Use Case')
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -23,23 +53,57 @@ export const UseCaseNode = memo(({ id, data, selected }: NodeProps) => {
   }, [nodeData.label])
 
   useEffect(() => {
+    if (nodeData.autoFocusEdit) {
+      setIsEditing(true)
+      updateNodeData(id, { autoFocusEdit: false })
+    }
+  }, [id, nodeData.autoFocusEdit, updateNodeData])
+
+  useEffect(() => {
     if (isEditing) {
-      inputRef.current?.focus()
-      inputRef.current?.select()
+      requestAnimationFrame(() => {
+        inputRef.current?.focus()
+        inputRef.current?.select()
+      })
     }
   }, [isEditing])
+
+  // Listen for Enter-to-rename event dispatched by StudioCanvas
+  useEffect(() => {
+    const handleStartEdit = (e: Event) => {
+      const detail = (e as CustomEvent<{ nodeId: string }>).detail
+      if (detail?.nodeId === id && !isLocked) {
+        setIsEditing(true)
+      }
+    }
+    window.addEventListener('start-node-edit', handleStartEdit)
+    return () => window.removeEventListener('start-node-edit', handleStartEdit)
+  }, [id, isLocked])
 
   const handleFinishEditing = () => {
     setIsEditing(false)
     const trimmed = labelValue.trim() || 'Use Case'
     setLabelValue(trimmed)
-    updateNodeData(id, { label: trimmed })
+    updateNodeData(id, { label: trimmed, autoFocusEdit: false })
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
+      e.preventDefault()
+      e.stopPropagation()
       handleFinishEditing()
+    } else if (e.key === 'Tab') {
+      e.preventDefault()
+      e.stopPropagation()
+      handleFinishEditing()
+      window.dispatchEvent(
+        new CustomEvent('create-next-connected', {
+          detail: { nodeId: id },
+        })
+      )
     } else if (e.key === 'Escape') {
+      e.preventDefault()
+      e.stopPropagation()
       setLabelValue(nodeData.label || 'Use Case')
       setIsEditing(false)
     }
@@ -47,10 +111,11 @@ export const UseCaseNode = memo(({ id, data, selected }: NodeProps) => {
 
   const handleDuplicate = (e: React.MouseEvent) => {
     e.stopPropagation()
-    const event = new CustomEvent('duplicate-node', {
-      detail: { nodeId: id },
-    })
-    window.dispatchEvent(event)
+    window.dispatchEvent(
+      new CustomEvent('duplicate-node', {
+        detail: { nodeId: id },
+      })
+    )
   }
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -58,115 +123,118 @@ export const UseCaseNode = memo(({ id, data, selected }: NodeProps) => {
     deleteElements({ nodes: [{ id }] })
   }
 
+  const accent = ACCENT_STYLES[nodeData.accentColor || 'default'] || ACCENT_STYLES.default
+  const handleVisibility = selected
+    ? 'opacity-100'
+    : 'opacity-0 group-hover:opacity-100'
+
   return (
     <div
-      className={`group relative flex items-center justify-center px-5 py-3 transition-all duration-150 select-none ${
+      className={`group relative flex flex-col items-center justify-center px-5 py-3 transition-all duration-150 select-none border-[1.5px] ${
         selected
-          ? 'border-[var(--primary-btn)] ring-2 ring-[var(--primary-btn)] shadow-md bg-[var(--selection-bg)]'
-          : 'border-[var(--border-strong)] bg-[var(--bg-primary)] hover:border-[var(--text-primary)] shadow-xs'
-      } border-[1.5px]`}
+          ? 'ring-2 ring-[var(--primary-btn)] shadow-md'
+          : 'hover:border-[var(--text-primary)] shadow-xs'
+      }`}
       style={{
-        minWidth: 140,
-        minHeight: 56,
+        minWidth: 144,
+        minHeight: 58,
         borderRadius: '50% / 50%',
+        borderColor: selected ? 'var(--primary-btn)' : accent.border,
+        backgroundColor: selected ? 'var(--selection-bg)' : accent.bg,
       }}
-      onDoubleClick={() => {
+      onDoubleClick={(e) => {
+        e.stopPropagation()
         if (!isLocked) setIsEditing(true)
       }}
     >
-      {/* NodeToolbar: Always rendered in top layer with z-[99999] so other elements cannot overlap it */}
-      {selected && !isLocked && (
+      {/* Compact toolbar positioned well clear of the selection ring */}
+      {selected && !isLocked && !isEditing && (
         <NodeToolbar
-          isVisible={selected && !isLocked}
+          isVisible={selected && !isLocked && !isEditing}
           position={Position.Top}
-          offset={8}
-          className="flex items-center gap-1 bg-[var(--bg-primary)] border border-[var(--border-default)] px-1.5 py-0.5 rounded-[4px] shadow-lg z-[99999] text-xs"
+          offset={16}
+          className="nodrag nopan flex items-center gap-0.5 bg-[var(--bg-primary)] border border-[var(--border-default)] p-0.5 rounded-[5px] shadow-lg z-[99999] text-xs"
         >
           <button
             type="button"
-            title="Edit Use Case Name"
-            onClick={(e) => {
-              e.stopPropagation()
-              setIsEditing(true)
-            }}
-            className="p-1 rounded-[3px] hover:bg-[var(--hover-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-          >
-            <Edit2 className="w-3 h-3" />
-          </button>
-          <button
-            type="button"
-            title="Duplicate Use Case"
+            title="Duplicate (Cmd+D)"
             onClick={handleDuplicate}
-            className="p-1 rounded-[3px] hover:bg-[var(--hover-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            className="p-1 rounded-[3px] hover:bg-[var(--hover-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
           >
             <Copy className="w-3 h-3" />
           </button>
           <button
             type="button"
-            title="Delete Use Case"
+            title="Delete (Backspace)"
             onClick={handleDelete}
-            className="p-1 rounded-[3px] hover:bg-[var(--notion-red-bg)] text-[var(--text-secondary)] hover:text-[var(--notion-red-text)]"
+            className="p-1 rounded-[3px] hover:bg-[var(--notion-red-bg)] text-[var(--text-secondary)] hover:text-[var(--notion-red-text)] cursor-pointer"
           >
             <Trash2 className="w-3 h-3" />
           </button>
         </NodeToolbar>
       )}
 
-      {/* Handles on all 4 sides with both source & target support */}
+      {/* Handles visible only on hover or selection */}
       <Handle
         type="target"
         position={Position.Top}
         id="top"
-        className="!w-2.5 !h-2.5 !bg-[var(--text-primary)] !border !border-[var(--bg-primary)] opacity-40 group-hover:opacity-100 transition-opacity"
+        className={`!w-2.5 !h-2.5 !bg-[var(--primary-btn)] !border-2 !border-[var(--bg-primary)] ${handleVisibility} transition-opacity`}
       />
       <Handle
         type="source"
         position={Position.Top}
         id="top-source"
-        className="!w-2.5 !h-2.5 !bg-[var(--text-primary)] !border !border-[var(--bg-primary)] opacity-0 !pointer-events-none"
+        className="!w-2.5 !h-2.5 opacity-0 !pointer-events-none"
       />
 
       <Handle
         type="source"
         position={Position.Bottom}
         id="bottom"
-        className="!w-2.5 !h-2.5 !bg-[var(--text-primary)] !border !border-[var(--bg-primary)] opacity-40 group-hover:opacity-100 transition-opacity"
+        className={`!w-2.5 !h-2.5 !bg-[var(--primary-btn)] !border-2 !border-[var(--bg-primary)] ${handleVisibility} transition-opacity`}
       />
       <Handle
         type="target"
         position={Position.Bottom}
         id="bottom-target"
-        className="!w-2.5 !h-2.5 !bg-[var(--text-primary)] !border !border-[var(--bg-primary)] opacity-0 !pointer-events-none"
+        className="!w-2.5 !h-2.5 opacity-0 !pointer-events-none"
       />
 
       <Handle
         type="target"
         position={Position.Left}
         id="left"
-        className="!w-2.5 !h-2.5 !bg-[var(--text-primary)] !border !border-[var(--bg-primary)] opacity-40 group-hover:opacity-100 transition-opacity"
+        className={`!w-2.5 !h-2.5 !bg-[var(--primary-btn)] !border-2 !border-[var(--bg-primary)] ${handleVisibility} transition-opacity`}
       />
       <Handle
         type="source"
         position={Position.Left}
         id="left-source"
-        className="!w-2.5 !h-2.5 !bg-[var(--text-primary)] !border !border-[var(--bg-primary)] opacity-0 !pointer-events-none"
+        className="!w-2.5 !h-2.5 opacity-0 !pointer-events-none"
       />
 
       <Handle
         type="source"
         position={Position.Right}
         id="right"
-        className="!w-2.5 !h-2.5 !bg-[var(--text-primary)] !border !border-[var(--bg-primary)] opacity-40 group-hover:opacity-100 transition-opacity"
+        className={`!w-2.5 !h-2.5 !bg-[var(--primary-btn)] !border-2 !border-[var(--bg-primary)] ${handleVisibility} transition-opacity`}
       />
       <Handle
         type="target"
         position={Position.Right}
         id="right-target"
-        className="!w-2.5 !h-2.5 !bg-[var(--text-primary)] !border !border-[var(--bg-primary)] opacity-0 !pointer-events-none"
+        className="!w-2.5 !h-2.5 opacity-0 !pointer-events-none"
       />
 
+      {nodeData.stereotype && (
+        <span className="text-[9px] font-mono text-[var(--text-tertiary)] leading-none mb-0.5">
+          «{nodeData.stereotype.replace(/^[«<]+|[»>]+$/g, '')}»
+        </span>
+      )}
+
       {/* Use Case Label */}
-      <div className="text-center font-medium text-xs text-[var(--text-primary)] max-w-[140px] leading-snug px-1 font-sans">
+      <div className="text-center font-medium text-xs text-[var(--text-primary)] max-w-[148px] leading-snug px-1 font-sans">
         {isEditing ? (
           <input
             ref={inputRef}
@@ -175,12 +243,12 @@ export const UseCaseNode = memo(({ id, data, selected }: NodeProps) => {
             onChange={(e) => setLabelValue(e.target.value)}
             onBlur={handleFinishEditing}
             onKeyDown={handleKeyDown}
-            className="w-full text-center text-xs font-medium px-1 py-0.5 rounded-[3px] border border-[var(--primary-btn)] bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none"
+            className="nodrag nopan w-32 text-center text-xs font-medium px-1.5 py-0.5 rounded-[3px] border border-[var(--primary-btn)] bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none"
           />
         ) : (
           <div
             className="cursor-text break-words"
-            title={!isLocked ? 'Double-click to rename' : undefined}
+            title={!isLocked ? 'Double-click or press Enter to rename' : undefined}
           >
             {nodeData.label}
           </div>

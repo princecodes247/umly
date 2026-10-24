@@ -8,6 +8,14 @@ export type DiagramType =
   | 'activity'
   | 'state_machine'
 
+export interface DiagramSnapshot {
+  id: string
+  timestamp: string
+  label: string
+  nodes: Node[]
+  edges: Edge[]
+}
+
 export interface DiagramDraft {
   id: string
   title: string
@@ -21,10 +29,13 @@ export interface DiagramDraft {
 
 const STORAGE_KEY = 'umly_diagram_drafts_v1'
 const LAST_ACTIVE_KEY = 'umly_last_active_diagram_id'
+const SNAPSHOTS_PREFIX = 'umly_snapshots_v1_'
+const MAX_SNAPSHOTS = 15
 
-// Default seed draft if user has no drafts yet
 export function getDefaultSeedDraft(): DiagramDraft {
-  const atmTemplate = DIAGRAM_TEMPLATES.find((t) => t.id === 'atm-banking') || DIAGRAM_TEMPLATES[1]
+  const atmTemplate =
+    DIAGRAM_TEMPLATES.find((t) => t.id === 'atm-banking') ||
+    DIAGRAM_TEMPLATES[1]
   const now = new Date().toISOString()
 
   return {
@@ -45,7 +56,6 @@ export function listDiagramDrafts(): DiagramDraft[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) {
-      // Seed with default ATM demo diagram on first visit
       const seed = getDefaultSeedDraft()
       localStorage.setItem(STORAGE_KEY, JSON.stringify([seed]))
       return [seed]
@@ -96,6 +106,81 @@ export function saveDiagramDraft(draft: DiagramDraft): void {
   }
 }
 
+export function listDiagramSnapshots(diagramId: string): DiagramSnapshot[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = localStorage.getItem(`${SNAPSHOTS_PREFIX}${diagramId}`)
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? (parsed as DiagramSnapshot[]) : []
+  } catch {
+    return []
+  }
+}
+
+export function saveDiagramSnapshot(
+  diagramId: string,
+  label: string,
+  nodes: Node[],
+  edges: Edge[]
+): DiagramSnapshot[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const existing = listDiagramSnapshots(diagramId)
+    // Avoid saving duplicate consecutive snapshot if topology & positions haven't changed
+    if (existing.length > 0) {
+      const latest = existing[0]
+      const sameNodes =
+        JSON.stringify(
+          latest.nodes.map((n) => ({
+            id: n.id,
+            p: n.position,
+            l: n.data?.label,
+          }))
+        ) ===
+        JSON.stringify(
+          nodes.map((n) => ({ id: n.id, p: n.position, l: n.data?.label }))
+        )
+      const sameEdges =
+        JSON.stringify(
+          latest.edges.map((e) => ({
+            s: e.source,
+            t: e.target,
+            r: e.data?.relationshipType,
+          }))
+        ) ===
+        JSON.stringify(
+          edges.map((e) => ({
+            s: e.source,
+            t: e.target,
+            r: e.data?.relationshipType,
+          }))
+        )
+      if (sameNodes && sameEdges && label === 'Autosave') {
+        return existing
+      }
+    }
+
+    const snapshot: DiagramSnapshot = {
+      id: `snap-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      timestamp: new Date().toISOString(),
+      label,
+      nodes: JSON.parse(JSON.stringify(nodes)),
+      edges: JSON.parse(JSON.stringify(edges)),
+    }
+
+    const updated = [snapshot, ...existing].slice(0, MAX_SNAPSHOTS)
+    localStorage.setItem(
+      `${SNAPSHOTS_PREFIX}${diagramId}`,
+      JSON.stringify(updated)
+    )
+    return updated
+  } catch (err) {
+    console.warn('Failed to save snapshot', err)
+    return []
+  }
+}
+
 export function deleteDiagramDraft(id: string): void {
   if (typeof window === 'undefined') return
 
@@ -103,6 +188,7 @@ export function deleteDiagramDraft(id: string): void {
     const drafts = listDiagramDrafts()
     const filtered = drafts.filter((d) => d.id !== id)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered))
+    localStorage.removeItem(`${SNAPSHOTS_PREFIX}${id}`)
 
     const lastActive = localStorage.getItem(LAST_ACTIVE_KEY)
     if (lastActive === id) {
@@ -131,7 +217,6 @@ export function createDiagramDraft(
   if (templateId && templateId !== 'blank') {
     const template = DIAGRAM_TEMPLATES.find((t) => t.id === templateId)
     if (template) {
-      // Clone nodes and edges
       initialNodes = JSON.parse(JSON.stringify(template.nodes))
       initialEdges = JSON.parse(JSON.stringify(template.edges))
     }
@@ -160,4 +245,3 @@ export function getLastActiveDiagramId(): string {
   const drafts = listDiagramDrafts()
   return drafts.length > 0 ? drafts[0].id : 'draft-atm-demo'
 }
-

@@ -6,7 +6,7 @@ import {
   useReactFlow,
   type NodeProps,
 } from '@xyflow/react'
-import { Trash2, Edit2 } from 'lucide-react'
+import { Trash2, Copy } from 'lucide-react'
 import type { UmlNodeData } from '../../../types/game'
 
 export const NoteNode = memo(({ id, data, selected }: NodeProps) => {
@@ -14,7 +14,7 @@ export const NoteNode = memo(({ id, data, selected }: NodeProps) => {
   const { updateNodeData, deleteElements } = useReactFlow()
   const isLocked = Boolean(nodeData.isLocked)
 
-  const [isEditing, setIsEditing] = useState(false)
+  const [isEditing, setIsEditing] = useState(Boolean(nodeData.autoFocusEdit))
   const [textValue, setTextValue] = useState(
     nodeData.description || nodeData.label || 'Note / Constraint'
   )
@@ -25,17 +25,50 @@ export const NoteNode = memo(({ id, data, selected }: NodeProps) => {
   }, [nodeData.description, nodeData.label])
 
   useEffect(() => {
+    if (nodeData.autoFocusEdit) {
+      setIsEditing(true)
+      updateNodeData(id, { autoFocusEdit: false })
+    }
+  }, [id, nodeData.autoFocusEdit, updateNodeData])
+
+  useEffect(() => {
     if (isEditing) {
-      textareaRef.current?.focus()
-      textareaRef.current?.select()
+      requestAnimationFrame(() => {
+        textareaRef.current?.focus()
+        textareaRef.current?.select()
+      })
     }
   }, [isEditing])
+
+  useEffect(() => {
+    const handleStartEdit = (e: Event) => {
+      const detail = (e as CustomEvent<{ nodeId: string }>).detail
+      if (detail?.nodeId === id && !isLocked) {
+        setIsEditing(true)
+      }
+    }
+    window.addEventListener('start-node-edit', handleStartEdit)
+    return () => window.removeEventListener('start-node-edit', handleStartEdit)
+  }, [id, isLocked])
 
   const handleFinishEditing = () => {
     setIsEditing(false)
     const trimmed = textValue.trim() || 'Note'
     setTextValue(trimmed)
-    updateNodeData(id, { description: trimmed, label: trimmed })
+    updateNodeData(id, {
+      label: trimmed,
+      description: trimmed,
+      autoFocusEdit: false,
+    })
+  }
+
+  const handleDuplicate = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    window.dispatchEvent(
+      new CustomEvent('duplicate-node', {
+        detail: { nodeId: id },
+      })
+    )
   }
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -43,79 +76,77 @@ export const NoteNode = memo(({ id, data, selected }: NodeProps) => {
     deleteElements({ nodes: [{ id }] })
   }
 
+  const handleVisibility = selected
+    ? 'opacity-100'
+    : 'opacity-0 group-hover:opacity-100'
+
   return (
     <div
-      className={`group relative p-3 rounded-[3px] transition-all select-none bg-[var(--notion-yellow-bg)] border border-[#e3d7b8] dark:border-[#524522] text-[var(--notion-yellow-text)] shadow-xs ${
-        selected ? 'ring-2 ring-[var(--primary-btn)] shadow-md' : 'hover:shadow-sm'
+      className={`group relative p-3 rounded-[4px] bg-[var(--notion-yellow-bg)] text-[var(--text-primary)] border transition-all select-none shadow-xs ${
+        selected
+          ? 'border-[var(--primary-btn)] ring-2 ring-[var(--primary-btn)]'
+          : 'border-[#e6d59c] dark:border-[#5c512c]'
       }`}
       style={{
-        minWidth: 120,
-        maxWidth: 200,
-        clipPath:
-          'polygon(0% 0%, calc(100% - 12px) 0%, 100% 12px, 100% 100%, 0% 100%)',
+        minWidth: 150,
+        maxWidth: 220,
+        minHeight: 68,
       }}
-      onDoubleClick={() => {
+      onDoubleClick={(e) => {
+        e.stopPropagation()
         if (!isLocked) setIsEditing(true)
       }}
     >
-      {/* Dog-ear fold */}
-      <div
-        className="absolute top-0 right-0 w-3 h-3 bg-[#dfce9f] dark:bg-[#463819] pointer-events-none"
-        style={{
-          clipPath: 'polygon(0% 0%, 100% 100%, 0% 100%)',
-        }}
-      />
+      {/* Folded corner effect */}
+      <div className="absolute top-0 right-0 w-3 h-3 bg-[#e6d59c] dark:bg-[#5c512c] rounded-bl-[3px]" />
 
-      {/* Handles */}
+      {/* Handles visible only on hover or selection */}
       <Handle
         type="target"
         position={Position.Top}
         id="top"
-        className="!w-2 !h-2 !bg-[#cb912f] opacity-40 group-hover:opacity-100"
+        className={`!w-2 !h-2 !bg-[var(--primary-btn)] !border !border-[var(--bg-primary)] ${handleVisibility} transition-opacity`}
       />
       <Handle
         type="source"
         position={Position.Bottom}
         id="bottom"
-        className="!w-2 !h-2 !bg-[#cb912f] opacity-40 group-hover:opacity-100"
+        className={`!w-2 !h-2 !bg-[var(--primary-btn)] !border !border-[var(--bg-primary)] ${handleVisibility} transition-opacity`}
       />
       <Handle
         type="target"
         position={Position.Left}
         id="left"
-        className="!w-2 !h-2 !bg-[#cb912f] opacity-40 group-hover:opacity-100"
+        className={`!w-2 !h-2 !bg-[var(--primary-btn)] !border !border-[var(--bg-primary)] ${handleVisibility} transition-opacity`}
       />
       <Handle
         type="source"
         position={Position.Right}
         id="right"
-        className="!w-2 !h-2 !bg-[#cb912f] opacity-40 group-hover:opacity-100"
+        className={`!w-2 !h-2 !bg-[var(--primary-btn)] !border !border-[var(--bg-primary)] ${handleVisibility} transition-opacity`}
       />
 
-      {/* NodeToolbar: Always rendered in top layer with z-[99999] */}
-      {selected && !isLocked && (
+      {/* Compact toolbar positioned clear of selection */}
+      {selected && !isLocked && !isEditing && (
         <NodeToolbar
-          isVisible={selected && !isLocked}
+          isVisible={selected && !isLocked && !isEditing}
           position={Position.Top}
-          offset={8}
-          className="flex items-center gap-1 bg-[var(--bg-primary)] border border-[var(--border-default)] px-1.5 py-0.5 rounded-[4px] shadow-lg z-[99999] text-xs"
+          offset={16}
+          className="nodrag nopan flex items-center gap-0.5 bg-[var(--bg-primary)] border border-[var(--border-default)] p-0.5 rounded-[5px] shadow-lg z-[99999] text-xs"
         >
           <button
             type="button"
-            title="Edit note"
-            onClick={(e) => {
-              e.stopPropagation()
-              setIsEditing(true)
-            }}
-            className="p-1 rounded-[3px] hover:bg-[var(--hover-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            title="Duplicate (Cmd+D)"
+            onClick={handleDuplicate}
+            className="p-1 rounded-[3px] hover:bg-[var(--hover-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
           >
-            <Edit2 className="w-3 h-3" />
+            <Copy className="w-3 h-3" />
           </button>
           <button
             type="button"
-            title="Delete note"
+            title="Delete (Backspace)"
             onClick={handleDelete}
-            className="p-1 rounded-[3px] hover:bg-[var(--notion-red-bg)] text-[var(--text-secondary)] hover:text-[var(--notion-red-text)]"
+            className="p-1 rounded-[3px] hover:bg-[var(--notion-red-bg)] text-[var(--text-secondary)] hover:text-[var(--notion-red-text)] cursor-pointer"
           >
             <Trash2 className="w-3 h-3" />
           </button>
@@ -131,7 +162,18 @@ export const NoteNode = memo(({ id, data, selected }: NodeProps) => {
             value={textValue}
             onChange={(e) => setTextValue(e.target.value)}
             onBlur={handleFinishEditing}
-            className="w-full text-[11px] p-1 rounded-[2px] bg-transparent border border-[var(--primary-btn)] focus:outline-none resize-none"
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                e.preventDefault()
+                e.stopPropagation()
+                setIsEditing(false)
+              } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault()
+                e.stopPropagation()
+                handleFinishEditing()
+              }
+            }}
+            className="nodrag nopan w-full text-[11px] p-1 rounded-[2px] bg-transparent border border-[var(--primary-btn)] focus:outline-none resize-none"
           />
         ) : (
           <div className="whitespace-pre-wrap">{textValue}</div>

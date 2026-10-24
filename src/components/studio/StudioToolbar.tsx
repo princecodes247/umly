@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { Link } from '@tanstack/react-router'
 import {
   Undo2,
@@ -15,6 +15,9 @@ import {
   Sparkles,
   ArrowLeft,
   Plus,
+  Copy,
+  Wand2,
+  FileText,
 } from 'lucide-react'
 import { DIAGRAM_TEMPLATES } from '../../data/templates'
 
@@ -26,11 +29,15 @@ interface StudioToolbarProps {
   canUndo: boolean
   canRedo: boolean
   onFitView: () => void
+  onTidyLayout?: () => void
   onClearCanvas: () => void
   onLoadTemplate: (templateId: string) => void
   onExportPng: () => void
   onExportSvg: () => void
   onExportJson: () => void
+  onExportPlantUml?: () => void
+  onExportMermaid?: () => void
+  onCopyImageToClipboard?: () => void
   onImportJson: (file: File) => void
   onNewDiagram?: () => void
   isSaved?: boolean
@@ -44,11 +51,15 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
   canUndo,
   canRedo,
   onFitView,
+  onTidyLayout,
   onClearCanvas,
   onLoadTemplate,
   onExportPng,
   onExportSvg,
   onExportJson,
+  onExportPlantUml,
+  onExportMermaid,
+  onCopyImageToClipboard,
   onImportJson,
   onNewDiagram,
   isSaved = true,
@@ -58,6 +69,31 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
   const [isEditingTitle, setIsEditingTitle] = useState(false)
   const [titleInput, setTitleInput] = useState(title)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const templatesMenuRef = useRef<HTMLDivElement>(null)
+  const exportMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    setTitleInput(title)
+  }, [title])
+
+  useEffect(() => {
+    const handleOutside = (e: MouseEvent | PointerEvent) => {
+      const target = e.target as Node | null
+      if (!target) return
+      if (
+        templatesMenuRef.current &&
+        !templatesMenuRef.current.contains(target)
+      ) {
+        setShowTemplatesMenu(false)
+      }
+      if (exportMenuRef.current && !exportMenuRef.current.contains(target)) {
+        setShowExportMenu(false)
+      }
+    }
+    document.addEventListener('pointerdown', handleOutside, true)
+    return () =>
+      document.removeEventListener('pointerdown', handleOutside, true)
+  }, [])
 
   const handleFinishTitle = () => {
     setIsEditingTitle(false)
@@ -85,11 +121,11 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
           <button
             type="button"
             onClick={onNewDiagram}
-            className="flex items-center gap-1 px-2 py-1 rounded-[4px] text-xs font-medium bg-[var(--selection-bg)] text-[var(--primary-btn)] hover:opacity-90 transition-opacity shrink-0"
-            title="Create another diagram draft"
+            className="notion-btn notion-btn-primary py-1 px-2 text-xs shrink-0"
+            title="Create a new diagram draft"
           >
-            <Plus className="w-3 h-3" />
-            <span className="hidden sm:inline">New</span>
+            <Plus className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">New Draft</span>
           </button>
         )}
 
@@ -97,7 +133,6 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
           <input
             type="text"
             value={titleInput}
-            autoFocus
             onChange={(e) => setTitleInput(e.target.value)}
             onBlur={handleFinishTitle}
             onKeyDown={(e) => {
@@ -107,7 +142,8 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
                 setIsEditingTitle(false)
               }
             }}
-            className="text-xs font-semibold px-1.5 py-0.5 rounded-[3px] border border-[var(--primary-btn)] bg-[var(--bg-secondary)] text-[var(--text-primary)] focus:outline-none w-48 sm:w-64"
+            autoFocus
+            className="px-2 py-0.5 text-sm font-semibold rounded-[4px] border border-[var(--primary-btn)] bg-[var(--bg-secondary)] text-[var(--text-primary)] focus:outline-none w-52"
           />
         ) : (
           <button
@@ -116,63 +152,79 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
               setTitleInput(title)
               setIsEditingTitle(true)
             }}
-            className="text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--hover-bg)] px-1.5 py-0.5 rounded-[3px] truncate max-w-[180px] sm:max-w-xs text-left"
             title="Click to rename diagram"
+            className="text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--hover-bg)] px-2 py-0.5 rounded-[4px] transition-colors truncate max-w-[180px] sm:max-w-xs text-left cursor-pointer"
           >
             {title}
           </button>
         )}
 
-        {/* Saved indicator */}
         <span
-          className="flex items-center gap-1 text-[11px] text-[var(--text-tertiary)] font-mono shrink-0"
-          title="Diagram changes are auto-saved in local cache"
+          className="hidden lg:inline-flex items-center gap-1 text-[11px] text-[var(--text-tertiary)] shrink-0"
+          title="Auto-saved to browser storage"
         >
-          {isSaved ? (
-            <>
-              <Check className="w-3 h-3 text-[var(--notion-green-text)]" />
-              <span className="hidden sm:inline">Saved</span>
-            </>
-          ) : (
-            <span className="text-[var(--notion-yellow-text)]">Saving...</span>
-          )}
+          <Check className="w-3 h-3 text-[var(--notion-green-text)]" />
+          {isSaved ? 'Saved' : 'Saving...'}
         </span>
       </div>
 
-      {/* Right Actions: Undo, Redo, Templates, Export, Import, Fit, Clear */}
-      <div className="flex items-center gap-1 shrink-0">
-        {/* Undo & Redo */}
-        <div className="flex items-center gap-0.5 mr-1 border-r border-[var(--border-subtle)] pr-1.5">
+      {/* Right: Undo/Redo, Tidy, Templates, Export */}
+      <div className="flex items-center gap-1">
+        {/* Undo / Redo */}
+        <div className="flex items-center gap-0.5">
           <button
             type="button"
-            disabled={!canUndo}
             onClick={onUndo}
-            title="Undo (⌘Z / Ctrl+Z)"
-            className="p-1.5 rounded-[4px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] disabled:opacity-30 disabled:pointer-events-none transition-colors"
+            disabled={!canUndo}
+            title="Undo (Cmd+Z)"
+            className="notion-btn notion-btn-ghost p-1.5 disabled:opacity-35 disabled:pointer-events-none"
           >
             <Undo2 className="w-3.5 h-3.5" />
           </button>
           <button
             type="button"
-            disabled={!canRedo}
             onClick={onRedo}
-            title="Redo (⌘⇧Z / Ctrl+Y)"
-            className="p-1.5 rounded-[4px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] disabled:opacity-30 disabled:pointer-events-none transition-colors"
+            disabled={!canRedo}
+            title="Redo (Cmd+Shift+Z)"
+            className="notion-btn notion-btn-ghost p-1.5 disabled:opacity-35 disabled:pointer-events-none"
           >
             <Redo2 className="w-3.5 h-3.5" />
           </button>
         </div>
 
-        {/* Templates Dropdown */}
-        <div className="relative">
+        <div className="h-4 w-px bg-[var(--border-subtle)] mx-0.5" />
+
+        {onTidyLayout && (
+          <button
+            type="button"
+            onClick={onTidyLayout}
+            title="Tidy Up Layout"
+            className="notion-btn py-1 px-2 text-xs"
+          >
+            <Wand2 className="w-3.5 h-3.5 text-[var(--primary-btn)]" />
+            <span className="hidden md:inline">Tidy Up</span>
+          </button>
+        )}
+
+        <button
+          type="button"
+          onClick={onFitView}
+          title="Fit diagram into view"
+          className="notion-btn notion-btn-ghost py-1 px-2 text-xs hidden sm:inline-flex"
+        >
+          <Maximize2 className="w-3.5 h-3.5" />
+          <span className="hidden lg:inline">Fit</span>
+        </button>
+
+        {/* Starter Templates Menu */}
+        <div ref={templatesMenuRef} className="relative">
           <button
             type="button"
             onClick={() => {
               setShowTemplatesMenu(!showTemplatesMenu)
               setShowExportMenu(false)
             }}
-            className="flex items-center gap-1 px-2 py-1 rounded-[4px] text-xs font-medium border border-[var(--border-default)] hover:bg-[var(--hover-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-            title="Load starter diagram templates"
+            className="notion-btn py-1 px-2 text-xs"
           >
             <Sparkles className="w-3.5 h-3.5 text-[#cb912f] dark:text-[#dcb14b]" />
             <span className="hidden sm:inline">Templates</span>
@@ -180,28 +232,25 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
           </button>
 
           {showTemplatesMenu && (
-            <div
-              className="absolute right-0 top-full mt-1 w-64 bg-[var(--bg-primary)] border border-[var(--border-default)] rounded-[6px] shadow-lg py-1 z-50 text-xs"
-              onMouseLeave={() => setShowTemplatesMenu(false)}
-            >
-              <div className="px-3 py-1 font-semibold text-[10px] uppercase font-mono text-[var(--text-tertiary)] border-b border-[var(--border-subtle)]">
-                Starter Diagrams
+            <div className="absolute right-0 mt-1.5 w-64 rounded-[6px] bg-[var(--bg-primary)] border border-[var(--border-default)] shadow-lg py-1 z-50 text-xs">
+              <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] font-mono border-b border-[var(--border-subtle)]">
+                Starter Templates
               </div>
-              {DIAGRAM_TEMPLATES.map((tmpl) => (
+              {DIAGRAM_TEMPLATES.map((tpl) => (
                 <button
-                  key={tmpl.id}
+                  key={tpl.id}
                   type="button"
                   onClick={() => {
                     setShowTemplatesMenu(false)
-                    onLoadTemplate(tmpl.id)
+                    onLoadTemplate(tpl.id)
                   }}
-                  className="w-full text-left px-3 py-1.5 hover:bg-[var(--hover-bg)] transition-colors flex flex-col"
+                  className="w-full text-left px-3 py-2 hover:bg-[var(--hover-bg)] transition-colors flex flex-col gap-0.5 cursor-pointer"
                 >
                   <span className="font-medium text-[var(--text-primary)]">
-                    {tmpl.name}
+                    {tpl.name}
                   </span>
-                  <span className="text-[10px] text-[var(--text-secondary)] line-clamp-1">
-                    {tmpl.description}
+                  <span className="text-[11px] text-[var(--text-secondary)] line-clamp-1">
+                    {tpl.description}
                   </span>
                 </button>
               ))}
@@ -209,36 +258,54 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
           )}
         </div>
 
-        {/* Export Dropdown */}
-        <div className="relative">
+        {/* Export / Import Menu */}
+        <div ref={exportMenuRef} className="relative">
           <button
             type="button"
             onClick={() => {
               setShowExportMenu(!showExportMenu)
               setShowTemplatesMenu(false)
             }}
-            className="flex items-center gap-1 px-2 py-1 rounded-[4px] text-xs font-medium bg-[var(--text-primary)] text-[var(--bg-primary)] hover:opacity-90 transition-opacity"
+            className="notion-btn py-1 px-2.5 text-xs"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Export</span>
-            <ChevronDown className="w-3 h-3 opacity-75" />
+            <span className="hidden sm:inline">Export</span>
+            <ChevronDown className="w-3 h-3 opacity-60" />
           </button>
 
           {showExportMenu && (
-            <div
-              className="absolute right-0 top-full mt-1 w-44 bg-[var(--bg-primary)] border border-[var(--border-default)] rounded-[6px] shadow-lg py-1 z-50 text-xs"
-              onMouseLeave={() => setShowExportMenu(false)}
-            >
+            <div className="absolute right-0 mt-1.5 w-60 rounded-[6px] bg-[var(--bg-primary)] border border-[var(--border-default)] shadow-lg py-1 z-50 text-xs">
+              <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] font-mono">
+                Image & Clipboard
+              </div>
+              {onCopyImageToClipboard && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowExportMenu(false)
+                    onCopyImageToClipboard()
+                  }}
+                  className="w-full text-left px-3 py-1.5 hover:bg-[var(--hover-bg)] flex items-center justify-between gap-2 text-[var(--text-primary)] cursor-pointer"
+                >
+                  <span className="flex items-center gap-2">
+                    <Copy className="w-3.5 h-3.5 text-[var(--primary-btn)]" />
+                    <span>Copy PNG to Clipboard</span>
+                  </span>
+                  <kbd className="text-[9px] font-mono text-[var(--text-tertiary)]">
+                    ⌘⇧C
+                  </kbd>
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => {
                   setShowExportMenu(false)
                   onExportPng()
                 }}
-                className="w-full text-left px-3 py-1.5 hover:bg-[var(--hover-bg)] flex items-center gap-2 text-[var(--text-primary)]"
+                className="w-full text-left px-3 py-1.5 hover:bg-[var(--hover-bg)] flex items-center gap-2 text-[var(--text-primary)] cursor-pointer"
               >
                 <ImageIcon className="w-3.5 h-3.5 text-[var(--notion-blue-text)]" />
-                <span>Download PNG</span>
+                <span>Export PNG Image (.png)</span>
               </button>
               <button
                 type="button"
@@ -246,68 +313,94 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
                   setShowExportMenu(false)
                   onExportSvg()
                 }}
-                className="w-full text-left px-3 py-1.5 hover:bg-[var(--hover-bg)] flex items-center gap-2 text-[var(--text-primary)]"
+                className="w-full text-left px-3 py-1.5 hover:bg-[var(--hover-bg)] flex items-center gap-2 text-[var(--text-primary)] cursor-pointer"
               >
-                <FileCode className="w-3.5 h-3.5 text-[var(--notion-green-text)]" />
-                <span>Download SVG</span>
+                <FileCode className="w-3.5 h-3.5 text-[var(--notion-purple-text)]" />
+                <span>Export Vector SVG (.svg)</span>
               </button>
+
+              <div className="my-1 border-t border-[var(--border-subtle)]" />
+              <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] font-mono">
+                Diagram-as-Code & Project
+              </div>
+              {onExportPlantUml && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowExportMenu(false)
+                    onExportPlantUml()
+                  }}
+                  className="w-full text-left px-3 py-1.5 hover:bg-[var(--hover-bg)] flex items-center gap-2 text-[var(--text-primary)] cursor-pointer"
+                >
+                  <FileText className="w-3.5 h-3.5 text-[var(--notion-orange-text)]" />
+                  <span>Export PlantUML (.puml)</span>
+                </button>
+              )}
+              {onExportMermaid && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowExportMenu(false)
+                    onExportMermaid()
+                  }}
+                  className="w-full text-left px-3 py-1.5 hover:bg-[var(--hover-bg)] flex items-center gap-2 text-[var(--text-primary)] cursor-pointer"
+                >
+                  <FileText className="w-3.5 h-3.5 text-[var(--notion-green-text)]" />
+                  <span>Export Mermaid (.mmd)</span>
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => {
                   setShowExportMenu(false)
                   onExportJson()
                 }}
-                className="w-full text-left px-3 py-1.5 hover:bg-[var(--hover-bg)] flex items-center gap-2 text-[var(--text-primary)]"
+                className="w-full text-left px-3 py-1.5 hover:bg-[var(--hover-bg)] flex items-center gap-2 text-[var(--text-primary)] cursor-pointer"
               >
-                <FolderOpen className="w-3.5 h-3.5 text-[var(--notion-purple-text)]" />
-                <span>Download .umly JSON</span>
+                <FolderOpen className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
+                <span>Save Project (.umly.json)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowExportMenu(false)
+                  fileInputRef.current?.click()
+                }}
+                className="w-full text-left px-3 py-1.5 hover:bg-[var(--hover-bg)] flex items-center gap-2 text-[var(--text-primary)] cursor-pointer"
+              >
+                <Upload className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
+                <span>Open Project (.umly.json)</span>
+              </button>
+
+              <div className="my-1 border-t border-[var(--border-subtle)]" />
+              <button
+                type="button"
+                onClick={() => {
+                  setShowExportMenu(false)
+                  onClearCanvas()
+                }}
+                className="w-full text-left px-3 py-1.5 hover:bg-[var(--notion-red-bg)] flex items-center gap-2 text-[var(--notion-red-text)] cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Clear Canvas</span>
               </button>
             </div>
           )}
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json,.umly.json"
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file) {
+                onImportJson(file)
+                e.target.value = ''
+              }
+            }}
+            className="hidden"
+          />
         </div>
-
-        {/* Import JSON button */}
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          title="Load diagram from .umly JSON file"
-          className="p-1.5 rounded-[4px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] transition-colors"
-        >
-          <Upload className="w-3.5 h-3.5" />
-        </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".json,.umly"
-          className="hidden"
-          onChange={(e) => {
-            const file = e.target.files?.[0]
-            if (file) {
-              onImportJson(file)
-              e.target.value = ''
-            }
-          }}
-        />
-
-        {/* Fit View */}
-        <button
-          type="button"
-          onClick={onFitView}
-          title="Fit diagram into view"
-          className="p-1.5 rounded-[4px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] transition-colors"
-        >
-          <Maximize2 className="w-3.5 h-3.5" />
-        </button>
-
-        {/* Clear Canvas */}
-        <button
-          type="button"
-          onClick={onClearCanvas}
-          title="Clear all elements from canvas"
-          className="p-1.5 rounded-[4px] text-[var(--text-secondary)] hover:text-[var(--notion-red-text)] hover:bg-[var(--notion-red-bg)] transition-colors"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
       </div>
     </div>
   )

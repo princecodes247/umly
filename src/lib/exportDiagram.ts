@@ -1,5 +1,6 @@
-import { toPng, toSvg } from 'html-to-image'
+import { toPng, toSvg, toBlob } from 'html-to-image'
 import type { Node, Edge } from '@xyflow/react'
+import type { UmlNodeData, UmlEdgeData } from '../types/game'
 
 export interface DiagramProject {
   title: string
@@ -83,7 +84,6 @@ function prepareCanvasForExport(canvasElement: HTMLElement) {
     rootStyle.getPropertyValue('--text-primary').trim() ||
     (isDark ? '#e6e6e6' : '#37352f')
 
-  // Hide UI overlays during export
   const controls = canvasElement.querySelectorAll(
     '.react-flow__controls, .react-flow__minimap, .react-flow__panel, .react-flow__node-toolbar, .studio-bottom-dock'
   )
@@ -147,6 +147,37 @@ export async function exportDiagramAsPng(
   }
 }
 
+export async function copyDiagramAsPngToClipboard(
+  canvasElement: HTMLElement
+): Promise<boolean> {
+  const { backgroundColor, restore } = prepareCanvasForExport(canvasElement)
+
+  try {
+    const blob = await toBlob(canvasElement, {
+      quality: 0.98,
+      pixelRatio: 2,
+      backgroundColor,
+      filter: (node) => shouldIncludeExportNode(node as HTMLElement),
+    })
+
+    if (!blob || !navigator.clipboard || typeof ClipboardItem === 'undefined') {
+      return false
+    }
+
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        'image/png': blob,
+      }),
+    ])
+    return true
+  } catch (err) {
+    console.error('Failed to copy diagram image to clipboard', err)
+    return false
+  } finally {
+    restore()
+  }
+}
+
 export async function exportDiagramAsSvg(
   canvasElement: HTMLElement,
   fileName = 'use-case-diagram.svg'
@@ -168,18 +199,183 @@ export async function exportDiagramAsSvg(
   }
 }
 
-export function exportDiagramAsJson(
-  project: DiagramProject,
-  fileName = 'diagram.umly.json'
+export function generatePlantUml(
+  title: string,
+  nodes: Node[],
+  edges: Edge[]
+): string {
+  const lines: string[] = [
+    '@startuml',
+    `title ${title || 'Use Case Diagram'}`,
+    'left to right direction',
+    'skinparam packageStyle rectangle',
+    '',
+  ]
+
+  const safeId = (id: string) => id.replace(/[^a-zA-Z0-9_]/g, '_')
+
+  const boundaries = nodes.filter((n) => n.type === 'boundary')
+  const actors = nodes.filter((n) => n.type === 'actor')
+  const useCases = nodes.filter((n) => n.type === 'useCase')
+  const notes = nodes.filter((n) => n.type === 'note')
+
+  actors.forEach((a) => {
+    const d = a.data as unknown as UmlNodeData
+    const st = d.stereotype
+      ? ` <<${d.stereotype}>>`
+      : d.actorType === 'system'
+        ? ' <<system>>'
+        : d.actorType === 'secondary'
+          ? ' <<secondary>>'
+          : ''
+    lines.push(`actor "${d.label || 'Actor'}" as ${safeId(a.id)}${st}`)
+  })
+
+  if (actors.length > 0) lines.push('')
+
+  if (boundaries.length > 0) {
+    const b = boundaries[0]
+    const bd = b.data as unknown as UmlNodeData
+    lines.push(`rectangle "${bd.boundaryTitle || bd.label || 'System'}" {`)
+    useCases.forEach((u) => {
+      const ud = u.data as unknown as UmlNodeData
+      const st = ud.stereotype ? ` <<${ud.stereotype}>>` : ''
+      lines.push(`  usecase "${ud.label || 'Use Case'}" as ${safeId(u.id)}${st}`)
+    })
+    lines.push('}')
+  } else {
+    useCases.forEach((u) => {
+      const ud = u.data as unknown as UmlNodeData
+      const st = ud.stereotype ? ` <<${ud.stereotype}>>` : ''
+      lines.push(`usecase "${ud.label || 'Use Case'}" as ${safeId(u.id)}${st}`)
+    })
+  }
+
+  if (notes.length > 0) {
+    lines.push('')
+    notes.forEach((n) => {
+      const nd = n.data as unknown as UmlNodeData
+      const text = (nd.description || nd.label || 'Note').replace(/\n/g, '\\n')
+      lines.push(`note "${text}" as ${safeId(n.id)}`)
+    })
+  }
+
+  if (edges.length > 0) {
+    lines.push('')
+    edges.forEach((e) => {
+      const ed = e.data as unknown as UmlEdgeData
+      const rel = ed?.relationshipType || 'association'
+      const s = safeId(e.source)
+      const t = safeId(e.target)
+      if (rel === 'include') {
+        lines.push(`${s} ..> ${t} : <<include>>`)
+      } else if (rel === 'extend') {
+        const cond = ed?.condition ? ` (${ed.condition})` : ''
+        lines.push(`${s} ..> ${t} : <<extend>>${cond}`)
+      } else if (rel === 'generalization') {
+        lines.push(`${s} --|> ${t}`)
+      } else {
+        const lbl = ed?.label ? ` : ${ed.label}` : ''
+        lines.push(`${s} --> ${t}${lbl}`)
+      }
+    })
+  }
+
+  lines.push('@enduml')
+  return lines.join('\n')
+}
+
+export function generateMermaid(
+  title: string,
+  nodes: Node[],
+  edges: Edge[]
+): string {
+  const lines: string[] = [
+    `---`,
+    `title: ${title || 'Use Case Diagram'}`,
+    `---`,
+    `flowchart LR`,
+  ]
+
+  const safeId = (id: string) => id.replace(/[^a-zA-Z0-9_]/g, '_')
+
+  const boundaries = nodes.filter((n) => n.type === 'boundary')
+  const actors = nodes.filter((n) => n.type === 'actor')
+  const useCases = nodes.filter((n) => n.type === 'useCase')
+  const notes = nodes.filter((n) => n.type === 'note')
+
+  actors.forEach((a) => {
+    const d = a.data as unknown as UmlNodeData
+    const prefix = d.actorType === 'system' ? '⚙️ ' : '👤 '
+    lines.push(`  ${safeId(a.id)}["${prefix}${d.label || 'Actor'}"]`)
+  })
+
+  if (boundaries.length > 0) {
+    const b = boundaries[0]
+    const bd = b.data as unknown as UmlNodeData
+    lines.push(
+      `  subgraph ${safeId(b.id)}["${bd.boundaryTitle || bd.label || 'System Boundary'}"]`
+    )
+    useCases.forEach((u) => {
+      const ud = u.data as unknown as UmlNodeData
+      lines.push(`    ${safeId(u.id)}(["${ud.label || 'Use Case'}"])`)
+    })
+    lines.push(`  end`)
+  } else {
+    useCases.forEach((u) => {
+      const ud = u.data as unknown as UmlNodeData
+      lines.push(`  ${safeId(u.id)}(["${ud.label || 'Use Case'}"])`)
+    })
+  }
+
+  notes.forEach((n) => {
+    const nd = n.data as unknown as UmlNodeData
+    lines.push(
+      `  ${safeId(n.id)}["📝 ${(nd.description || nd.label || 'Note').replace(/"/g, "'")}"]`
+    )
+  })
+
+  edges.forEach((e) => {
+    const ed = e.data as unknown as UmlEdgeData
+    const rel = ed?.relationshipType || 'association'
+    const s = safeId(e.source)
+    const t = safeId(e.target)
+    if (rel === 'include') {
+      lines.push(`  ${s} -. "«include»" .-> ${t}`)
+    } else if (rel === 'extend') {
+      const lbl = ed?.condition ? `«extend» [${ed.condition}]` : '«extend»'
+      lines.push(`  ${s} -. "${lbl}" .-> ${t}`)
+    } else if (rel === 'generalization') {
+      lines.push(`  ${s} --|> ${t}`)
+    } else {
+      const lbl = ed?.label ? `|${ed.label}|` : ''
+      lines.push(`  ${s} ---${lbl} ${t}`)
+    }
+  })
+
+  return lines.join('\n')
+}
+
+export function downloadTextFile(
+  content: string,
+  fileName: string,
+  mimeType = 'text/plain;charset=utf-8'
 ): void {
-  const jsonStr = JSON.stringify(project, null, 2)
-  const blob = new Blob([jsonStr], { type: 'application/json' })
+  const blob = new Blob([content], { type: mimeType })
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.download = fileName
   link.href = url
   link.click()
   URL.revokeObjectURL(url)
+}
+
+export function exportDiagramAsJson(
+  project: DiagramProject,
+  fileName = 'diagram.umly.json'
+): void {
+  const jsonStr = JSON.stringify(project, null, 2)
+  downloadTextFile(jsonStr, fileName, 'application/json')
 }
 
 export function parseDiagramJson(jsonString: string): DiagramProject | null {
