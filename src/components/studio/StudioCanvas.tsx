@@ -12,11 +12,13 @@ import {
   useNodesState,
   useEdgesState,
   addEdge,
+  reconnectEdge,
   useReactFlow,
   ReactFlowProvider,
   ViewportPortal,
   BackgroundVariant,
   SelectionMode,
+  ConnectionMode,
   type Connection,
   type Edge,
   type Node,
@@ -711,6 +713,35 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
     ]
   )
 
+  // Handle dragging the source or target end of an existing relationship to reconnect it
+  const onReconnect = useCallback(
+    (oldEdge: Edge, newConnection: Connection) => {
+      const sourceNode = nodes.find((n) => n.id === newConnection.source)
+      const targetNode = nodes.find((n) => n.id === newConnection.target)
+      const currentRelType =
+        (oldEdge.data?.relationshipType as UmlRelationshipType) || 'association'
+
+      const validation = validateUmlConnection(
+        sourceNode,
+        targetNode,
+        currentRelType
+      )
+
+      if (!validation.valid) {
+        showValidationWarning(
+          validation.reason ||
+            'Invalid UML 2.5 relationship for this reconnection.'
+        )
+        return
+      }
+
+      setValidationNotice(null)
+      pushSnapshot()
+      setEdges((eds) => reconnectEdge(oldEdge, newConnection, eds))
+    },
+    [nodes, pushSnapshot, setEdges, showValidationWarning]
+  )
+
   // Selection change
   const onSelectionChange = useCallback(
     ({ nodes: selNodes, edges: selEdges }: OnSelectionChangeParams) => {
@@ -1375,6 +1406,12 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
             onNodeDrag={onNodeDrag}
             onNodeDragStop={onNodeDragStop}
             onConnect={onConnect}
+            onReconnect={onReconnect}
+            edgesReconnectable
+            reconnectRadius={14}
+            elevateEdgesOnSelect
+            connectionMode={ConnectionMode.Loose}
+            connectionRadius={28}
             onSelectionChange={onSelectionChange}
             selectionMode={SelectionMode.Partial}
             multiSelectionKeyCode={['Meta', 'Control', 'Shift']}

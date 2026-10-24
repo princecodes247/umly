@@ -345,6 +345,28 @@ export const UmlEdge = memo(
           }}
         />
 
+        {/* Visible draggable endpoint handles when the relationship is selected or hovered */}
+        {showActions && (
+          <g className="pointer-events-none">
+            <circle
+              cx={sourceX}
+              cy={sourceY}
+              r={selected ? 5 : 4}
+              fill="var(--bg-primary)"
+              stroke="var(--primary-btn)"
+              strokeWidth={2}
+            />
+            <circle
+              cx={targetX}
+              cy={targetY}
+              r={selected ? 5 : 4}
+              fill="var(--bg-primary)"
+              stroke="var(--primary-btn)"
+              strokeWidth={2}
+            />
+          </g>
+        )}
+
         {/* Wide invisible hit path so hovering anywhere on the line reveals the relationship tooltip */}
         <path
           d={edgePath}

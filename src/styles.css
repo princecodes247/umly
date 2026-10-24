@@ -493,3 +493,25 @@ pre code {
   z-index: 99999 !important;
   pointer-events: none !important;
 }
+
+/* Selected or updating edges sit above nodes so their endpoints can be grabbed and dragged */
+.react-flow__edges svg:has(.react-flow__edge.selected),
+.react-flow__edges svg:has(.react-flow__edge.updating) {
+  z-index: 60 !important;
+}
+
+.react-flow__edgeupdater {
+  cursor: grab !important;
+  pointer-events: all !important;
+  transition: fill 120ms ease, stroke 120ms ease;
+}
+
+.react-flow__edgeupdater:hover {
+  fill: rgba(35, 131, 226, 0.2) !important;
+  stroke: var(--primary-btn) !important;
+  stroke-width: 1.5px !important;
+}
+
+.react-flow__edgeupdater:active {
+  cursor: grabbing !important;
+}

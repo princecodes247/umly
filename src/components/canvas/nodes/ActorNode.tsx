@@ -141,7 +141,7 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
         type="source"
         position={Position.Top}
         id="top-source"
-        className="!w-2.5 !h-2.5 !bg-[var(--text-primary)] !border !border-[var(--bg-primary)] opacity-0"
+        className="!w-2.5 !h-2.5 !bg-[var(--text-primary)] !border !border-[var(--bg-primary)] opacity-0 !pointer-events-none"
       />
 
       <Handle
@@ -154,7 +154,7 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
         type="target"
         position={Position.Bottom}
         id="bottom-target"
-        className="!w-2.5 !h-2.5 !bg-[var(--text-primary)] !border !border-[var(--bg-primary)] opacity-0"
+        className="!w-2.5 !h-2.5 !bg-[var(--text-primary)] !border !border-[var(--bg-primary)] opacity-0 !pointer-events-none"
       />
 
       <Handle
@@ -167,7 +167,7 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
         type="source"
         position={Position.Left}
         id="left-source"
-        className="!w-2.5 !h-2.5 !bg-[var(--text-primary)] !border !border-[var(--bg-primary)] opacity-0"
+        className="!w-2.5 !h-2.5 !bg-[var(--text-primary)] !border !border-[var(--bg-primary)] opacity-0 !pointer-events-none"
       />
 
       <Handle
@@ -180,7 +180,7 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
         type="target"
         position={Position.Right}
         id="right-target"
-        className="!w-2.5 !h-2.5 !bg-[var(--text-primary)] !border !border-[var(--bg-primary)] opacity-0"
+        className="!w-2.5 !h-2.5 !bg-[var(--text-primary)] !border !border-[var(--bg-primary)] opacity-0 !pointer-events-none"
       />
 
       {/* UML Stick Figure / System Icon */}
