@@ -71,6 +71,20 @@ export const BoundaryNode = memo(({ id, data, selected }: NodeProps) => {
     })
   }
 
+  // Exit edit mode automatically whenever the node is deselected
+  useEffect(() => {
+    if (!selected && isEditing) {
+      setIsEditing(false)
+      const trimmed = titleValue.trim() || 'System Boundary'
+      setTitleValue(trimmed)
+      updateNodeData(id, {
+        boundaryTitle: trimmed,
+        label: trimmed,
+        autoFocusEdit: false,
+      })
+    }
+  }, [selected, isEditing, id, titleValue, updateNodeData])
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault()

@@ -65,6 +65,16 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
     updateNodeData(id, { label: trimmed, autoFocusEdit: false })
   }
 
+  // Exit edit mode automatically whenever the node is deselected
+  useEffect(() => {
+    if (!selected && isEditing) {
+      setIsEditing(false)
+      const trimmed = labelValue.trim() || 'Actor'
+      setLabelValue(trimmed)
+      updateNodeData(id, { label: trimmed, autoFocusEdit: false })
+    }
+  }, [selected, isEditing, id, labelValue, updateNodeData])
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault()

@@ -62,6 +62,20 @@ export const NoteNode = memo(({ id, data, selected }: NodeProps) => {
     })
   }
 
+  // Exit edit mode automatically whenever the node is deselected
+  useEffect(() => {
+    if (!selected && isEditing) {
+      setIsEditing(false)
+      const trimmed = textValue.trim() || 'Note'
+      setTextValue(trimmed)
+      updateNodeData(id, {
+        label: trimmed,
+        description: trimmed,
+        autoFocusEdit: false,
+      })
+    }
+  }, [selected, isEditing, id, textValue, updateNodeData])
+
   const handleDuplicate = (e: React.MouseEvent) => {
     e.stopPropagation()
     window.dispatchEvent(
