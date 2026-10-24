@@ -143,3 +143,52 @@ export function getFloatingEdgeParams(
   }
 }
 
+/**
+ * Converts any handle ID on a node to its valid `type="source"` handle counterpart,
+ * or `undefined` so React Flow never fails to render an edge due to a source/target handle mismatch.
+ */
+export function toSourceHandleId(handleId?: string | null): string | undefined {
+  if (!handleId) return undefined
+  switch (handleId) {
+    case 'top':
+    case 'top-source':
+      return 'top-source'
+    case 'bottom':
+    case 'bottom-target':
+      return 'bottom'
+    case 'left':
+    case 'left-source':
+      return 'left-source'
+    case 'right':
+    case 'right-target':
+      return 'right'
+    default:
+      return undefined
+  }
+}
+
+/**
+ * Converts any handle ID on a node to its valid `type="target"` handle counterpart,
+ * or `undefined` so React Flow never fails to render an edge due to a source/target handle mismatch.
+ */
+export function toTargetHandleId(handleId?: string | null): string | undefined {
+  if (!handleId) return undefined
+  switch (handleId) {
+    case 'top':
+    case 'top-source':
+      return 'top'
+    case 'bottom':
+    case 'bottom-target':
+      return 'bottom-target'
+    case 'left':
+    case 'left-source':
+      return 'left'
+    case 'right':
+    case 'right-target':
+      return 'right-target'
+    default:
+      return undefined
+  }
+}
+
+

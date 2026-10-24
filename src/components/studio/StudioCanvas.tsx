@@ -79,6 +79,7 @@ import {
   validateUmlConnection,
 } from '../../lib/umlValidation'
 import { computeTidyLayout } from '../../lib/tidyLayout'
+import { toSourceHandleId, toTargetHandleId } from '../../lib/floatingEdges'
 import type {
   UmlRelationshipType,
   UmlNodeData,
@@ -1035,8 +1036,8 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
         id: `edge-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
         source: params.source,
         target: params.target,
-        sourceHandle: params.sourceHandle,
-        targetHandle: params.targetHandle,
+        sourceHandle: toSourceHandleId(params.sourceHandle),
+        targetHandle: toTargetHandleId(params.targetHandle),
         type: 'umlEdge',
         data: {
           relationshipType: inferredType,
@@ -1150,11 +1151,18 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
 
       setValidationNotice(null)
       pushSnapshot()
+      const normalizedConnection: Connection = {
+        ...newConnection,
+        sourceHandle: toSourceHandleId(newConnection.sourceHandle) ?? null,
+        targetHandle: toTargetHandleId(newConnection.targetHandle) ?? null,
+      }
       setEdges((eds) =>
-        reconnectEdge(oldEdge, newConnection, eds).map((e) =>
+        reconnectEdge(oldEdge, normalizedConnection, eds).map((e) =>
           e.id === oldEdge.id
             ? {
                 ...e,
+                sourceHandle: toSourceHandleId(normalizedConnection.sourceHandle),
+                targetHandle: toTargetHandleId(normalizedConnection.targetHandle),
                 data: {
                   ...e.data,
                   relationshipType: finalRelType,
@@ -1480,8 +1488,8 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
             ...edge,
             source: edge.target,
             target: edge.source,
-            sourceHandle: edge.targetHandle,
-            targetHandle: edge.sourceHandle,
+            sourceHandle: toSourceHandleId(edge.targetHandle),
+            targetHandle: toTargetHandleId(edge.sourceHandle),
           }
         })
       )
@@ -1552,8 +1560,8 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
             ...edge,
             source: edge.target,
             target: edge.source,
-            sourceHandle: edge.targetHandle,
-            targetHandle: edge.sourceHandle,
+            sourceHandle: toSourceHandleId(edge.targetHandle),
+            targetHandle: toTargetHandleId(edge.sourceHandle),
           }
         })
       )

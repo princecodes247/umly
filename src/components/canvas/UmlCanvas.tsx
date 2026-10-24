@@ -22,6 +22,7 @@ import { BoundaryNode } from './nodes/BoundaryNode'
 import { NoteNode } from './nodes/NoteNode'
 import { UmlEdge } from './edges/UmlEdge'
 import { UmlMarkers } from './UmlMarkers'
+import { toSourceHandleId, toTargetHandleId } from '../../lib/floatingEdges'
 import type { UmlRelationshipType } from '../../types/game'
 
 const nodeTypes: NodeTypes = {
@@ -138,8 +139,8 @@ export const UmlCanvas: React.FC<UmlCanvasProps> = ({
             ...edge,
             source: edge.target,
             target: edge.source,
-            sourceHandle: edge.targetHandle,
-            targetHandle: edge.sourceHandle,
+            sourceHandle: toSourceHandleId(edge.targetHandle),
+            targetHandle: toTargetHandleId(edge.sourceHandle),
           }
         })
       )
