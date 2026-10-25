@@ -194,18 +194,6 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
 
         <div className="h-4 w-px bg-[var(--border-subtle)] mx-0.5" />
 
-        {onTidyLayout && (
-          <button
-            type="button"
-            onClick={onTidyLayout}
-            title="Tidy Up Layout"
-            className="notion-btn py-1 px-2 text-xs"
-          >
-            <Wand2 className="w-3.5 h-3.5 text-[var(--primary-btn)]" />
-            <span className="hidden md:inline">Tidy Up</span>
-          </button>
-        )}
-
         <button
           type="button"
           onClick={onFitView}
