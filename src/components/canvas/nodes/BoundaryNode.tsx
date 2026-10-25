@@ -20,8 +20,26 @@ const BOUNDARY_BORDER_COLOR: Record<NodeAccentColor, string> = {
 
 export const BoundaryNode = memo(({ id, data, selected }: NodeProps) => {
   const nodeData = data as unknown as UmlNodeData
-  const { updateNode, updateNodeData, deleteElements } = useReactFlow()
+  const { updateNode, updateNodeData, deleteElements, setNodes, setEdges } =
+    useReactFlow()
   const isLocked = Boolean(nodeData.isLocked)
+
+  const handleSelectBoundary = (e: React.MouseEvent) => {
+    setNodes((nds) =>
+      nds.map((n) => ({
+        ...n,
+        selected:
+          e.shiftKey || e.metaKey || e.ctrlKey
+            ? n.id === id
+              ? true
+              : n.selected
+            : n.id === id,
+      }))
+    )
+    if (!e.shiftKey && !e.metaKey && !e.ctrlKey) {
+      setEdges((eds) => eds.map((edge) => ({ ...edge, selected: false })))
+    }
+  }
 
   const [isEditing, setIsEditing] = useState(Boolean(nodeData.autoFocusEdit))
   const [titleValue, setTitleValue] = useState(
@@ -151,13 +169,26 @@ export const BoundaryNode = memo(({ id, data, selected }: NodeProps) => {
         </NodeToolbar>
       )}
 
-      {/* Interactive perimeter strip so dragging/clicking the boundary edges moves it */}
+      {/* 4 explicit 16px border hit-strips (top, right, bottom, left) so clicking or dragging anywhere on the dashed border selects & moves the boundary, while leaving the interior 100% pass-through */}
       <div
-        className="boundary-interactive absolute inset-0 rounded-[8px] pointer-events-auto"
-        style={{
-          clipPath:
-            'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 14px, 14px 14px, 14px calc(100% - 14px), calc(100% - 14px) calc(100% - 14px), calc(100% - 14px) 14px, 0% 14px)',
-        }}
+        onMouseDown={handleSelectBoundary}
+        onClick={handleSelectBoundary}
+        className="boundary-interactive absolute -top-1.5 -left-1.5 -right-1.5 h-4 cursor-pointer pointer-events-auto"
+      />
+      <div
+        onMouseDown={handleSelectBoundary}
+        onClick={handleSelectBoundary}
+        className="boundary-interactive absolute -bottom-1.5 -left-1.5 -right-1.5 h-4 cursor-pointer pointer-events-auto"
+      />
+      <div
+        onMouseDown={handleSelectBoundary}
+        onClick={handleSelectBoundary}
+        className="boundary-interactive absolute -top-1.5 -bottom-1.5 -left-1.5 w-4 cursor-pointer pointer-events-auto"
+      />
+      <div
+        onMouseDown={handleSelectBoundary}
+        onClick={handleSelectBoundary}
+        className="boundary-interactive absolute -top-1.5 -bottom-1.5 -right-1.5 w-4 cursor-pointer pointer-events-auto"
       />
 
       {/* NodeResizer for free resizing */}
@@ -184,8 +215,11 @@ export const BoundaryNode = memo(({ id, data, selected }: NodeProps) => {
         />
       )}
 
-      {/* Single Top-Left Editable Boundary Title Header (removed duplicate bottom-right watermark) */}
-      <div className="boundary-interactive absolute top-2.5 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] bg-[var(--bg-primary)] border border-[var(--border-default)] shadow-xs text-xs pointer-events-auto z-10">
+      {/* Single Top-Left Editable Boundary Title Header */}
+      <div
+        onClick={handleSelectBoundary}
+        className="boundary-interactive absolute top-2.5 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] bg-[var(--bg-primary)] border border-[var(--border-default)] shadow-xs text-xs pointer-events-auto cursor-pointer z-10"
+      >
         <span
           className="w-2 h-2 rounded-full shrink-0"
           style={{
