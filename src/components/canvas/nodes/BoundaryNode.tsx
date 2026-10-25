@@ -20,7 +20,7 @@ const BOUNDARY_BORDER_COLOR: Record<NodeAccentColor, string> = {
 
 export const BoundaryNode = memo(({ id, data, selected }: NodeProps) => {
   const nodeData = data as unknown as UmlNodeData
-  const { updateNodeData, deleteElements } = useReactFlow()
+  const { updateNode, updateNodeData, deleteElements } = useReactFlow()
   const isLocked = Boolean(nodeData.isLocked)
 
   const [isEditing, setIsEditing] = useState(Boolean(nodeData.autoFocusEdit))
@@ -169,10 +169,17 @@ export const BoundaryNode = memo(({ id, data, selected }: NodeProps) => {
           lineClassName="!border-[var(--primary-btn)] pointer-events-auto"
           handleClassName="!w-3 !h-3 !bg-[var(--bg-primary)] !border-2 !border-[var(--primary-btn)] !rounded-[2px] pointer-events-auto"
           onResize={(_, params) => {
-            updateNodeData(id, {
-              width: Math.round(params.width),
-              height: Math.round(params.height),
-            })
+            updateNode(id, (node) => ({
+              position: {
+                x: Math.round(params.x),
+                y: Math.round(params.y),
+              },
+              data: {
+                ...node.data,
+                width: Math.round(params.width),
+                height: Math.round(params.height),
+              },
+            }))
           }}
         />
       )}
