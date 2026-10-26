@@ -24,7 +24,6 @@ import {
   History,
   RotateCcw,
   Plus,
-  Sparkles,
   FileCode2,
   Check,
   Route,
@@ -48,14 +47,12 @@ interface StudioInspectorProps {
   onUpdateNodeData: (id: string, data: Partial<UmlNodeData>) => void
   onUpdateEdgeData: (id: string, data: Partial<UmlEdgeData>) => void
   onDeleteNode: (id: string) => void
-  onDeleteEdge: (id: string) => void
   onDuplicateNode: (id: string) => void
   onFlipEdgeDirection: (id: string) => void
   onDeleteSelected?: () => void
   onDuplicateSelected?: () => void
   onDeselectAll?: () => void
   onAlignSelected?: (mode: AlignmentMode) => void
-  onTidyLayout?: () => void
   defaultRoutingStyle?: 'straight' | 'orthogonal' | 'bezier'
   onDefaultRoutingStyleChange?: (style: 'straight' | 'orthogonal' | 'bezier') => void
   snapshots?: DiagramSnapshot[]
@@ -89,14 +86,12 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
   onUpdateNodeData,
   onUpdateEdgeData,
   onDeleteNode,
-  onDeleteEdge,
   onDuplicateNode,
   onFlipEdgeDirection,
   onDeleteSelected,
   onDuplicateSelected,
   onDeselectAll,
   onAlignSelected,
-  onTidyLayout,
   defaultRoutingStyle = 'straight',
   onDefaultRoutingStyleChange,
   snapshots = [],
@@ -797,18 +792,6 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                 )}
               </div>
             </div>
-
-            {/* Delete Edge Action */}
-            <div className="pt-2 border-t border-[var(--border-subtle)]">
-              <button
-                type="button"
-                onClick={() => onDeleteEdge(selectedEdge.id)}
-                className="w-full notion-btn text-[var(--notion-red-text)] hover:bg-[var(--notion-red-bg)] flex items-center justify-center gap-1.5"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>Delete Connection</span>
-              </button>
-            </div>
           </div>
         ) : (
           /* CASE 3: NO SELECTION (OVERVIEW, LAYOUT, EXPORT & VERSION HISTORY) */
@@ -880,17 +863,6 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                   )
                 })}
               </div>
-
-              {onTidyLayout && (
-                <button
-                  type="button"
-                  onClick={onTidyLayout}
-                  className="w-full notion-btn flex items-center justify-center gap-1.5 py-2 text-xs font-medium"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-[var(--primary-btn)]" />
-                  <span>Tidy Up Layout (Auto-Arrange)</span>
-                </button>
-              )}
             </div>
 
             {/* Diagram-as-Code Quick Copy */}

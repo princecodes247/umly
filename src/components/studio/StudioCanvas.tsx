@@ -8,7 +8,6 @@ import {
   ReactFlow,
   Background,
   Controls,
-  MiniMap,
   useNodesState,
   useEdgesState,
   addEdge,
@@ -153,10 +152,9 @@ function getNodeDimensions(n: Node): { w: number; h: number } {
 
 interface StudioCanvasProps {
   diagramId?: string
-  onOpenNewDiagram?: () => void
 }
 
-function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
+function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
   const reactFlowInstance = useReactFlow()
   const canvasRef = useRef<HTMLDivElement>(null)
 
@@ -2159,8 +2157,6 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
         onRedo={handleRedo}
         canUndo={canUndo}
         canRedo={canRedo}
-        onFitView={handleFitView}
-        onTidyLayout={handleTidyLayout}
         onClearCanvas={handleClearCanvas}
         onLoadTemplate={handleLoadTemplate}
         onExportPng={handleExportPng}
@@ -2170,7 +2166,6 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
         onExportMermaid={handleExportMermaid}
         onExportJson={handleExportJson}
         onImportJson={handleImportJson}
-        onNewDiagram={onOpenNewDiagram}
         isSaved={isSaved}
       />
 
@@ -2654,15 +2649,6 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
               showInteractive={false}
               className="!bg-[var(--bg-primary)] !border-[var(--border-default)] !rounded-[4px] !shadow-xs overflow-hidden"
             />
-            {/* Item 6: Hide MiniMap until the diagram is large enough to need it */}
-            {nodes.length >= 8 && (
-              <MiniMap
-                nodeStrokeWidth={2}
-                zoomable
-                pannable
-                className="!bottom-4 !right-4 !bg-[var(--bg-primary)] !border-[var(--border-default)] !rounded-[4px] !shadow-sm overflow-hidden"
-              />
-            )}
           </ReactFlow>
 
           {/* Direct-Manipulation Bottom Dock */}
@@ -2683,14 +2669,12 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
           onUpdateNodeData={handleUpdateNodeData}
           onUpdateEdgeData={handleUpdateEdgeData}
           onDeleteNode={handleDeleteNode}
-          onDeleteEdge={handleDeleteEdge}
           onDuplicateNode={handleDuplicateNode}
           onFlipEdgeDirection={handleFlipEdge}
           onDeleteSelected={handleDeleteSelected}
           onDuplicateSelected={handleDuplicateSelected}
           onDeselectAll={handleDeselectAll}
           onAlignSelected={handleAlignSelected}
-          onTidyLayout={handleTidyLayout}
           defaultRoutingStyle={defaultRoutingStyle}
           onDefaultRoutingStyleChange={handleDefaultRoutingStyleChange}
           snapshots={snapshots}
@@ -2861,10 +2845,10 @@ function StudioCanvasInner({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
   )
 }
 
-export function StudioCanvas({ diagramId, onOpenNewDiagram }: StudioCanvasProps) {
+export function StudioCanvas({ diagramId }: StudioCanvasProps) {
   return (
     <ReactFlowProvider>
-      <StudioCanvasInner diagramId={diagramId} onOpenNewDiagram={onOpenNewDiagram} />
+      <StudioCanvasInner diagramId={diagramId} />
     </ReactFlowProvider>
   )
 }

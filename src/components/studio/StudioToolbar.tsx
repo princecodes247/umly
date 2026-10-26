@@ -3,7 +3,6 @@ import { Link } from '@tanstack/react-router'
 import {
   Undo2,
   Redo2,
-  Maximize2,
   Download,
   Upload,
   Trash2,
@@ -14,7 +13,6 @@ import {
   Image as ImageIcon,
   Sparkles,
   ArrowLeft,
-  Plus,
   Copy,
   FileText,
 } from 'lucide-react'
@@ -27,8 +25,6 @@ interface StudioToolbarProps {
   onRedo: () => void
   canUndo: boolean
   canRedo: boolean
-  onFitView: () => void
-  onTidyLayout?: () => void
   onClearCanvas: () => void
   onLoadTemplate: (templateId: string) => void
   onExportPng: () => void
@@ -38,7 +34,6 @@ interface StudioToolbarProps {
   onExportMermaid?: () => void
   onCopyImageToClipboard?: () => void
   onImportJson: (file: File) => void
-  onNewDiagram?: () => void
   isSaved?: boolean
 }
 
@@ -49,8 +44,6 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
   onRedo,
   canUndo,
   canRedo,
-  onFitView,
-  onTidyLayout: _onTidyLayout,
   onClearCanvas,
   onLoadTemplate,
   onExportPng,
@@ -60,7 +53,6 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
   onExportMermaid,
   onCopyImageToClipboard,
   onImportJson,
-  onNewDiagram,
   isSaved = true,
 }) => {
   const [showTemplatesMenu, setShowTemplatesMenu] = useState(false)
@@ -115,18 +107,6 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
         </Link>
 
         <div className="h-3.5 w-px bg-[var(--border-subtle)] shrink-0" />
-
-        {onNewDiagram && (
-          <button
-            type="button"
-            onClick={onNewDiagram}
-            className="notion-btn notion-btn-primary py-1 px-2 text-xs shrink-0"
-            title="Create a new diagram draft"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">New Draft</span>
-          </button>
-        )}
 
         {isEditingTitle ? (
           <input
@@ -192,16 +172,6 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
         </div>
 
         <div className="h-4 w-px bg-[var(--border-subtle)] mx-0.5" />
-
-        <button
-          type="button"
-          onClick={onFitView}
-          title="Fit diagram into view"
-          className="notion-btn notion-btn-ghost py-1 px-2 text-xs hidden sm:inline-flex"
-        >
-          <Maximize2 className="w-3.5 h-3.5" />
-          <span className="hidden lg:inline">Fit</span>
-        </button>
 
         {/* Starter Templates Menu */}
         <div ref={templatesMenuRef} className="relative">

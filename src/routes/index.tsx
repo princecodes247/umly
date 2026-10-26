@@ -99,22 +99,22 @@ function LandingPage() {
 
         {/* Hero Quick Actions */}
         <div className="flex flex-wrap items-center gap-2.5 pt-2">
+          <Link
+            to="/studio"
+            className="notion-btn notion-btn-primary flex items-center gap-2 py-2 px-4 text-xs font-semibold"
+          >
+            <PenTool className="w-4 h-4" />
+            <span>Open Studio</span>
+          </Link>
+
           <button
             type="button"
             onClick={() => setShowNewModal(true)}
-            className="notion-btn notion-btn-primary flex items-center gap-2 py-2 px-4 text-xs"
+            className="notion-btn flex items-center gap-1.5 py-2 px-3 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
           >
-            <Plus className="w-4 h-4" />
-            <span className="font-semibold">New Diagram Draft</span>
+            <Plus className="w-3.5 h-3.5" />
+            <span>New Diagram</span>
           </button>
-
-          <Link
-            to="/studio"
-            className="notion-btn flex items-center gap-1.5 py-2 px-3 text-xs"
-          >
-            <PenTool className="w-3.5 h-3.5 text-[var(--primary-btn)]" />
-            <span>Open Studio</span>
-          </Link>
 
           <Link
             to="/puzzles"
@@ -153,7 +153,7 @@ function LandingPage() {
             className="text-xs text-[var(--primary-btn)] hover:underline flex items-center gap-1 font-medium"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Create Draft</span>
+            <span>New Diagram</span>
           </button>
         </div>
 

@@ -3,7 +3,6 @@ import {
   ReactFlow,
   Background,
   Controls,
-  MiniMap,
   useNodesState,
   useEdgesState,
   addEdge,
@@ -226,12 +225,6 @@ export const UmlCanvas: React.FC<UmlCanvasProps> = ({
         <Controls
           showInteractive={false}
           className="!bg-[var(--bg-primary)] !border-[var(--border-default)] !rounded-[4px] !shadow-xs overflow-hidden"
-        />
-        <MiniMap
-          nodeStrokeWidth={2}
-          zoomable
-          pannable
-          className="!bottom-4 !right-4 !bg-[var(--bg-primary)] !border-[var(--border-default)] !rounded-[4px] !shadow-sm overflow-hidden"
         />
       </ReactFlow>
     </div>
