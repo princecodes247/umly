@@ -52,11 +52,16 @@ export function getBorderIntersectionPoint(
   targetPoint: { x: number; y: number }
 ): { x: number; y: number; position: Position } {
   const box = getNodeBox(node)
-  const dx = targetPoint.x - box.cx
-  const dy = targetPoint.y - box.cy
+
+  // For Actors, anchor lines to the stick figure icon (36x46 at top-center) rather than the wide outer label container
+  const anchorCx = box.cx
+  const anchorCy = node.type === 'actor' ? box.y + 33 : box.cy
+
+  const dx = targetPoint.x - anchorCx
+  const dy = targetPoint.y - anchorCy
 
   if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) {
-    return { x: box.cx, y: box.y, position: Position.Top }
+    return { x: anchorCx, y: box.y, position: Position.Top }
   }
 
   // Determine cardinal Position for orthogonal/bezier tangents
@@ -79,13 +84,32 @@ export function getBorderIntersectionPoint(
     const ry = box.h / 2 + 2
     const scale = 1 / Math.hypot(dx / rx, dy / ry)
     return {
-      x: box.cx + dx * scale,
-      y: box.cy + dy * scale,
+      x: anchorCx + dx * scale,
+      y: anchorCy + dy * scale,
       position,
     }
   }
 
-  // Rectangular border intersection for Actor and Note nodes
+  // Tight visual silhouette intersection for Actor stick figure (so lines meet the figure, not empty space)
+  if (node.type === 'actor') {
+    const halfW = 19
+    const topH = 25
+    // If line exits downward through the actor's label (e.g. Actor inheritance below), clear the label bottom
+    const bottomH = dy > 0 && Math.abs(dy) > Math.abs(dx) * 1.2 ? Math.max(28, box.h - 33) : 25
+    const halfH = dy >= 0 ? bottomH : topH
+
+    const scaleX = Math.abs(dx) > 0.001 ? halfW / Math.abs(dx) : Infinity
+    const scaleY = Math.abs(dy) > 0.001 ? halfH / Math.abs(dy) : Infinity
+    const scale = Math.min(scaleX, scaleY)
+
+    return {
+      x: anchorCx + dx * scale,
+      y: anchorCy + dy * scale,
+      position,
+    }
+  }
+
+  // Rectangular border intersection for Note nodes
   const halfW = box.w / 2 + 2
   const halfH = box.h / 2 + 2
   const scaleX = Math.abs(dx) > 0.001 ? halfW / Math.abs(dx) : Infinity
@@ -93,8 +117,8 @@ export function getBorderIntersectionPoint(
   const scale = Math.min(scaleX, scaleY)
 
   return {
-    x: box.cx + dx * scale,
-    y: box.cy + dy * scale,
+    x: anchorCx + dx * scale,
+    y: anchorCy + dy * scale,
     position,
   }
 }
@@ -118,19 +142,24 @@ export function getFloatingEdgeParams(
   const sBox = getNodeBox(sourceNode)
   const tBox = getNodeBox(targetNode)
 
-  const dx = tBox.cx - sBox.cx
-  const dy = tBox.cy - sBox.cy
+  const sAnchorX = sBox.cx
+  const sAnchorY = sourceNode.type === 'actor' ? sBox.y + 33 : sBox.cy
+  const tAnchorX = tBox.cx
+  const tAnchorY = targetNode.type === 'actor' ? tBox.y + 33 : tBox.cy
+
+  const dx = tAnchorX - sAnchorX
+  const dy = tAnchorY - sAnchorY
   const len = Math.hypot(dx, dy) || 1
   const nx = (-dy / len) * parallelOffset
   const ny = (dx / len) * parallelOffset
 
   const sIntersect = getBorderIntersectionPoint(sourceNode, {
-    x: tBox.cx + nx,
-    y: tBox.cy + ny,
+    x: tAnchorX + nx,
+    y: tAnchorY + ny,
   })
   const tIntersect = getBorderIntersectionPoint(targetNode, {
-    x: sBox.cx + nx,
-    y: sBox.cy + ny,
+    x: sAnchorX + nx,
+    y: sAnchorY + ny,
   })
 
   return {

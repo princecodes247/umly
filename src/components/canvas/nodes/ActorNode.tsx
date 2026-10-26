@@ -185,17 +185,19 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
         </NodeToolbar>
       )}
 
-      {/* Handles visible only on hover or selection */}
+      {/* Handles anchored tightly around the stick figure rather than the wide outer label container */}
       <Handle
         type="target"
         position={Position.Top}
         id="top"
+        style={{ top: 6 }}
         className={`!w-2.5 !h-2.5 !bg-[var(--primary-btn)] !border-2 !border-[var(--bg-primary)] ${handleVisibility} transition-opacity`}
       />
       <Handle
         type="source"
         position={Position.Top}
         id="top-source"
+        style={{ top: 6 }}
         className="!w-2.5 !h-2.5 opacity-0 !pointer-events-none"
       />
 
@@ -216,12 +218,14 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
         type="target"
         position={Position.Left}
         id="left"
+        style={{ top: 33, left: 'calc(50% - 20px)' }}
         className={`!w-2.5 !h-2.5 !bg-[var(--primary-btn)] !border-2 !border-[var(--bg-primary)] ${handleVisibility} transition-opacity`}
       />
       <Handle
         type="source"
         position={Position.Left}
         id="left-source"
+        style={{ top: 33, left: 'calc(50% - 20px)' }}
         className="!w-2.5 !h-2.5 opacity-0 !pointer-events-none"
       />
 
@@ -229,12 +233,14 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
         type="source"
         position={Position.Right}
         id="right"
+        style={{ top: 33, left: 'calc(50% + 20px)', right: 'auto' }}
         className={`!w-2.5 !h-2.5 !bg-[var(--primary-btn)] !border-2 !border-[var(--bg-primary)] ${handleVisibility} transition-opacity`}
       />
       <Handle
         type="target"
         position={Position.Right}
         id="right-target"
+        style={{ top: 33, left: 'calc(50% + 20px)', right: 'auto' }}
         className="!w-2.5 !h-2.5 opacity-0 !pointer-events-none"
       />
 

@@ -16,7 +16,6 @@ import {
   ArrowLeft,
   Plus,
   Copy,
-  Wand2,
   FileText,
 } from 'lucide-react'
 import { DIAGRAM_TEMPLATES } from '../../data/templates'
@@ -51,7 +50,7 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
   canUndo,
   canRedo,
   onFitView,
-  onTidyLayout,
+  onTidyLayout: _onTidyLayout,
   onClearCanvas,
   onLoadTemplate,
   onExportPng,
