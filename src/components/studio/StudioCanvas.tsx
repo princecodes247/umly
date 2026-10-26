@@ -692,69 +692,6 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
             return n
           })
         )
-      } else if (node.type === 'useCase' || node.type === 'note') {
-        // Item 5: Auto-grow System Boundary when dragging a Use Case near or inside its edge
-        const { w: nw, h: nh } = getNodeDimensions(node)
-        const nLeft = node.position.x
-        const nRight = node.position.x + nw
-        const nTop = node.position.y
-        const nBottom = node.position.y + nh
-        const nCx = node.position.x + nw / 2
-        const nCy = node.position.y + nh / 2
-
-        const PADDING = 36
-        const PROXIMITY = 28
-
-        setNodes((nds) =>
-          nds.map((b) => {
-            if (b.type !== 'boundary') return b
-            const bw = (b.data?.width as number) || 440
-            const bh = (b.data?.height as number) || 380
-            const bx1 = b.position.x
-            const by1 = b.position.y
-            const bx2 = bx1 + bw
-            const by2 = by1 + bh
-
-            const isNearOrInside =
-              nCx >= bx1 - PROXIMITY &&
-              nCx <= bx2 + PROXIMITY &&
-              nCy >= by1 - PROXIMITY &&
-              nCy <= by2 + PROXIMITY
-
-            if (!isNearOrInside) {
-              if (b.data?.isHoveredByDrag) {
-                return {
-                  ...b,
-                  data: { ...b.data, isHoveredByDrag: false },
-                }
-              }
-              return b
-            }
-
-            // Expand boundary if dragged useCase approaches or crosses its border
-            const newX1 = Math.min(bx1, nLeft - PADDING)
-            const newY1 = Math.min(by1, nTop - (PADDING + 18))
-            const newX2 = Math.max(bx2, nRight + PADDING)
-            const newY2 = Math.max(by2, nBottom + PADDING)
-
-            const newWidth = Math.round(newX2 - newX1)
-            const newHeight = Math.round(newY2 - newY1)
-
-            return {
-              ...b,
-              position: {
-                x: Math.round(newX1),
-                y: Math.round(newY1),
-              },
-              data: {
-                ...b.data,
-                width: newWidth,
-                height: newHeight,
-                isHoveredByDrag: true,
-              },
-            }
-          })
-        )
       }
     },
     [setNodes]
@@ -927,46 +864,10 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
         zIndex: type === 'boundary' ? 1 : 10,
       }
 
-      setNodes((nds) => {
-        const updated = nds.map((n) => {
-          // If dropping a Use Case near or inside a System Boundary, auto-grow the boundary
-          if (type === 'useCase' && n.type === 'boundary') {
-            const bw = (n.data?.width as number) || 440
-            const bh = (n.data?.height as number) || 380
-            const bx1 = n.position.x
-            const by1 = n.position.y
-            const bx2 = bx1 + bw
-            const by2 = by1 + bh
-            const cx = newNode.position.x + nodeW / 2
-            const cy = newNode.position.y + nodeH / 2
-            const PADDING = 36
-
-            if (
-              cx >= bx1 - 30 &&
-              cx <= bx2 + 30 &&
-              cy >= by1 - 30 &&
-              cy <= by2 + 30
-            ) {
-              const newX1 = Math.min(bx1, newNode.position.x - PADDING)
-              const newY1 = Math.min(by1, newNode.position.y - (PADDING + 18))
-              const newX2 = Math.max(bx2, newNode.position.x + nodeW + PADDING)
-              const newY2 = Math.max(bx2 > 0 ? by2 : by2, newNode.position.y + nodeH + PADDING)
-              return {
-                ...n,
-                selected: false,
-                position: { x: Math.round(newX1), y: Math.round(newY1) },
-                data: {
-                  ...n.data,
-                  width: Math.round(newX2 - newX1),
-                  height: Math.round(newY2 - newY1),
-                },
-              }
-            }
-          }
-          return { ...n, selected: false }
-        })
-        return [...updated, newNode]
-      })
+      setNodes((nds) => [
+        ...nds.map((n) => ({ ...n, selected: false })),
+        newNode,
+      ])
       setEdges((eds) => eds.map((e) => ({ ...e, selected: false })))
       return newNode
     },
@@ -2148,8 +2049,8 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
   )
 
   return (
-    <div className="flex-1 flex flex-col h-full w-full min-h-0 overflow-hidden p-2 sm:p-3 gap-2 bg-[var(--bg-primary)]">
-      {/* Top Toolbar */}
+    <div className="flex-1 flex flex-col h-full w-full min-h-0 overflow-hidden bg-[var(--bg-primary)]">
+      {/* Top Document Bar */}
       <StudioToolbar
         title={title}
         onTitleChange={setTitle}
@@ -2170,7 +2071,7 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
       />
 
       {/* Main Studio Workspace: Canvas + Inspector */}
-      <div className="flex-1 flex gap-2 min-h-0 overflow-hidden h-full relative">
+      <div className="flex-1 flex p-1.5 sm:p-2 gap-2 min-h-0 overflow-hidden h-full relative">
         {/* Canvas Area */}
         <div
           ref={canvasRef}

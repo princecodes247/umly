@@ -9,7 +9,7 @@ function StudioDiagramPage() {
   const { diagramId } = Route.useParams()
 
   return (
-    <main className="flex-1 w-full h-[calc(100vh-2.75rem)] min-h-[500px] flex flex-col overflow-hidden bg-[var(--bg-primary)]">
+    <main className="flex-1 w-full h-screen min-h-[500px] flex flex-col overflow-hidden bg-[var(--bg-primary)]">
       <StudioCanvas diagramId={diagramId} />
     </main>
   )

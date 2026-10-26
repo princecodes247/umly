@@ -57,7 +57,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body className="font-sans antialiased text-[var(--text-primary)] bg-[var(--bg-primary)] [overflow-wrap:anywhere] selection:bg-[var(--selection-bg)] min-h-screen flex flex-col">
-        <Header />
+        {!isStudioPage && <Header />}
         <div className="flex-1 flex flex-col min-h-0 w-full">
           {children}
         </div>
