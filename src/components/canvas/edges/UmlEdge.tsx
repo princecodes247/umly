@@ -362,7 +362,7 @@ export const UmlEdge = memo(
     }
 
     const startEndpointDrag = (
-      e: React.PointerEvent<SVGGElement>,
+      e: React.PointerEvent,
       end: 'source' | 'target'
     ) => {
       e.stopPropagation()
@@ -384,7 +384,7 @@ export const UmlEdge = memo(
             continue
           }
           const box = getNodeBox(n)
-          const pad = 14
+          const pad = 28
           if (
             flowX >= box.x - pad &&
             flowX <= box.x + box.w + pad &&
@@ -486,68 +486,54 @@ export const UmlEdge = memo(
           onMouseLeave={handleMouseLeave}
         />
 
-        {/* Interactive draggable endpoint handles on both ends of the relationship */}
-        <g
-          className="nodrag nopan"
-          style={{ pointerEvents: 'all', cursor: 'grab' }}
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
-          onPointerDown={(e) => startEndpointDrag(e, 'source')}
-        >
-          <title>Drag to reconnect source end</title>
-          <circle cx={sx} cy={sy} r={13} fill="transparent" />
-          {showActions && (
-            <circle
-              cx={sx}
-              cy={sy}
-              r={
-                draggingEnd?.end === 'source'
-                  ? 6.5
-                  : selected
-                    ? 5.5
-                    : 4.5
-              }
-              fill={
-                draggingEnd?.end === 'source'
-                  ? 'var(--primary-btn)'
-                  : 'var(--bg-primary)'
-              }
-              stroke="var(--primary-btn)"
-              strokeWidth={2}
-            />
-          )}
-        </g>
+        {/* Interactive draggable endpoint handles on both ends rendered via EdgeLabelRenderer on top of nodes */}
+        {showActions && (
+          <EdgeLabelRenderer>
+            <div
+              style={{
+                position: 'absolute',
+                transform: `translate(-50%, -50%) translate(${sx}px, ${sy}px)`,
+                pointerEvents: 'all',
+                zIndex: 100000,
+              }}
+              className="nodrag nopan flex items-center justify-center"
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+              onPointerDown={(e) => startEndpointDrag(e, 'source')}
+            >
+              <div
+                className={`w-4 h-4 rounded-full border-2 border-[var(--primary-btn)] shadow-md hover:scale-125 transition-transform cursor-grab active:cursor-grabbing flex items-center justify-center ${
+                  draggingEnd?.end === 'source'
+                    ? 'bg-[var(--primary-btn)] ring-2 ring-[var(--primary-btn)]/35'
+                    : 'bg-[var(--bg-primary)]'
+                }`}
+                title="Drag to reconnect source element"
+              />
+            </div>
 
-        <g
-          className="nodrag nopan"
-          style={{ pointerEvents: 'all', cursor: 'grab' }}
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
-          onPointerDown={(e) => startEndpointDrag(e, 'target')}
-        >
-          <title>Drag to reconnect target end</title>
-          <circle cx={tx} cy={ty} r={13} fill="transparent" />
-          {showActions && (
-            <circle
-              cx={tx}
-              cy={ty}
-              r={
-                draggingEnd?.end === 'target'
-                  ? 6.5
-                  : selected
-                    ? 5.5
-                    : 4.5
-              }
-              fill={
-                draggingEnd?.end === 'target'
-                  ? 'var(--primary-btn)'
-                  : 'var(--bg-primary)'
-              }
-              stroke="var(--primary-btn)"
-              strokeWidth={2}
-            />
-          )}
-        </g>
+            <div
+              style={{
+                position: 'absolute',
+                transform: `translate(-50%, -50%) translate(${tx}px, ${ty}px)`,
+                pointerEvents: 'all',
+                zIndex: 100000,
+              }}
+              className="nodrag nopan flex items-center justify-center"
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+              onPointerDown={(e) => startEndpointDrag(e, 'target')}
+            >
+              <div
+                className={`w-4 h-4 rounded-full border-2 border-[var(--primary-btn)] shadow-md hover:scale-125 transition-transform cursor-grab active:cursor-grabbing flex items-center justify-center ${
+                  draggingEnd?.end === 'target'
+                    ? 'bg-[var(--primary-btn)] ring-2 ring-[var(--primary-btn)]/35'
+                    : 'bg-[var(--bg-primary)]'
+                }`}
+                title="Drag to reconnect target element"
+              />
+            </div>
+          </EdgeLabelRenderer>
+        )}
 
         {/* Clean, minimal inline stereotype label & direct post-hoc type switcher */}
         {(hasVisibleLabel || showActions) && (

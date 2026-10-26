@@ -495,8 +495,10 @@ pre code {
 }
 
 /* Selected or updating edges sit above nodes so their endpoints can be grabbed and dragged */
-.react-flow__edges svg:has(.react-flow__edge.selected),
-.react-flow__edges svg:has(.react-flow__edge.updating) {
+svg.react-flow__edges:has(.react-flow__edge.selected),
+svg.react-flow__edges:has(.react-flow__edge.updating),
+.react-flow__edges:has(.react-flow__edge.selected),
+.react-flow__edges:has(.react-flow__edge.updating) {
   z-index: 60 !important;
 }
 

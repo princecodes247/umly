@@ -1415,6 +1415,79 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
     [selectedNodes, nodes, pushSnapshot, setNodes]
   )
 
+  // Direct reconnection of an edge endpoint (with smart UML 2.5 type adaptation)
+  const handleReconnectEdge = useCallback(
+    (edgeId: string, end: 'source' | 'target', newNodeId: string) => {
+      const targetEdge = edges.find((ed) => ed.id === edgeId)
+      if (!targetEdge) return
+
+      const nextSourceId = end === 'source' ? newNodeId : targetEdge.source
+      const nextTargetId = end === 'target' ? newNodeId : targetEdge.target
+
+      if (nextSourceId === nextTargetId) return
+
+      const sNode = nodes.find((n) => n.id === nextSourceId)
+      const tNode = nodes.find((n) => n.id === nextTargetId)
+      const currentRelType: UmlRelationshipType =
+        (targetEdge.data?.relationshipType as UmlRelationshipType) ||
+        'association'
+
+      const validation = validateUmlConnection(sNode, tNode, currentRelType)
+      const finalRelType: UmlRelationshipType = validation.valid
+        ? currentRelType
+        : validation.suggestedType ||
+          inferRelationshipType(sNode?.type, tNode?.type) ||
+          'association'
+
+      const recheck = validateUmlConnection(sNode, tNode, finalRelType)
+      if (!recheck.valid) {
+        showValidationWarning(
+          recheck.reason ||
+            'Invalid UML 2.5 relationship for this reconnection.'
+        )
+        return
+      }
+
+      setValidationNotice(null)
+      pushSnapshot()
+      setEdges((eds) =>
+        eds.map((ed) =>
+          ed.id === edgeId
+            ? {
+                ...ed,
+                source: nextSourceId,
+                target: nextTargetId,
+                sourceHandle: undefined,
+                targetHandle: undefined,
+                data: {
+                  ...ed.data,
+                  relationshipType: finalRelType,
+                },
+              }
+            : ed
+        )
+      )
+      setSelectedEdges((prev) =>
+        prev.map((ed) =>
+          ed.id === edgeId
+            ? {
+                ...ed,
+                source: nextSourceId,
+                target: nextTargetId,
+                sourceHandle: undefined,
+                targetHandle: undefined,
+                data: {
+                  ...ed.data,
+                  relationshipType: finalRelType,
+                },
+              }
+            : ed
+        )
+      )
+    },
+    [edges, nodes, pushSnapshot, setEdges, setSelectedEdges, showValidationWarning]
+  )
+
   // Custom events from node & edge UI buttons
   useEffect(() => {
     const handleDuplicateEvent = (e: Event) => {
@@ -1519,45 +1592,7 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
       }>
       const { edgeId, end, newNodeId } = customEvent.detail || {}
       if (!edgeId || !end || !newNodeId) return
-
-      const targetEdge = edges.find((ed) => ed.id === edgeId)
-      if (!targetEdge) return
-
-      const nextSourceId = end === 'source' ? newNodeId : targetEdge.source
-      const nextTargetId = end === 'target' ? newNodeId : targetEdge.target
-
-      if (nextSourceId === nextTargetId) return
-
-      const sNode = nodes.find((n) => n.id === nextSourceId)
-      const tNode = nodes.find((n) => n.id === nextTargetId)
-      const currentRelType: UmlRelationshipType =
-        (targetEdge.data?.relationshipType as UmlRelationshipType) ||
-        'association'
-
-      const validation = validateUmlConnection(sNode, tNode, currentRelType)
-      if (!validation.valid) {
-        showValidationWarning(
-          validation.reason ||
-            'Invalid UML 2.5 relationship — reverted to previous connection.'
-        )
-        return
-      }
-
-      setValidationNotice(null)
-      pushSnapshot()
-      setEdges((eds) =>
-        eds.map((ed) =>
-          ed.id === edgeId
-            ? {
-                ...ed,
-                source: nextSourceId,
-                target: nextTargetId,
-                sourceHandle: undefined,
-                targetHandle: undefined,
-              }
-            : ed
-        )
-      )
+      handleReconnectEdge(edgeId, end, newNodeId)
     }
 
     window.addEventListener('duplicate-node', handleDuplicateEvent)
@@ -2636,6 +2671,7 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
               onDeleteNode={handleDeleteNode}
               onDuplicateNode={handleDuplicateNode}
               onFlipEdgeDirection={handleFlipEdge}
+              onReconnectEdge={handleReconnectEdge}
               onDeleteSelected={handleDeleteSelected}
               onDuplicateSelected={handleDuplicateSelected}
               onDeselectAll={handleDeselectAll}

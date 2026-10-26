@@ -49,6 +49,7 @@ interface StudioInspectorProps {
   onDeleteNode: (id: string) => void
   onDuplicateNode: (id: string) => void
   onFlipEdgeDirection: (id: string) => void
+  onReconnectEdge?: (edgeId: string, end: 'source' | 'target', newNodeId: string) => void
   onDeleteSelected?: () => void
   onDuplicateSelected?: () => void
   onDeselectAll?: () => void
@@ -88,6 +89,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
   onDeleteNode,
   onDuplicateNode,
   onFlipEdgeDirection,
+  onReconnectEdge,
   onDeleteSelected,
   onDuplicateSelected,
   onDeselectAll,
@@ -732,6 +734,87 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                 <ArrowLeftRight className="w-3.5 h-3.5" />
                 <span>Flip Direction (Swap Ends)</span>
               </button>
+            </div>
+
+            {/* Connected Elements (Change which element this relationship connects to) */}
+            <div className="space-y-2 pt-2 border-t border-[var(--border-subtle)]">
+              <label className="text-[11px] font-medium text-[var(--text-secondary)] flex items-center justify-between">
+                <span>Connected Elements</span>
+                <span className="text-[10px] text-[var(--text-tertiary)]">Reassign ends</span>
+              </label>
+              <div className="space-y-2">
+                <div className="space-y-1">
+                  <span className="text-[10px] font-mono uppercase text-[var(--text-tertiary)] block">
+                    Source Element (From)
+                  </span>
+                  <select
+                    value={activeEdge.source}
+                    onChange={(e) => {
+                      const newSourceId = e.target.value
+                      if (newSourceId && onReconnectEdge) {
+                        onReconnectEdge(activeEdge.id, 'source', newSourceId)
+                      }
+                    }}
+                    className="w-full px-2 py-1.5 rounded-[4px] border border-[var(--border-default)] bg-[var(--bg-secondary)] text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-btn)]"
+                  >
+                    {allNodes
+                      .filter((n) => n.type !== 'boundary' && n.id !== activeEdge.target)
+                      .map((n) => {
+                        const name =
+                          (n.data?.name as string) ||
+                          (n.data?.label as string) ||
+                          'Untitled'
+                        const typeLabel =
+                          n.type === 'actor'
+                            ? 'Actor'
+                            : n.type === 'useCase'
+                              ? 'Use Case'
+                              : 'Note'
+                        return (
+                          <option key={n.id} value={n.id}>
+                            {name} ({typeLabel})
+                          </option>
+                        )
+                      })}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <span className="text-[10px] font-mono uppercase text-[var(--text-tertiary)] block">
+                    Target Element (To)
+                  </span>
+                  <select
+                    value={activeEdge.target}
+                    onChange={(e) => {
+                      const newTargetId = e.target.value
+                      if (newTargetId && onReconnectEdge) {
+                        onReconnectEdge(activeEdge.id, 'target', newTargetId)
+                      }
+                    }}
+                    className="w-full px-2 py-1.5 rounded-[4px] border border-[var(--border-default)] bg-[var(--bg-secondary)] text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-btn)]"
+                  >
+                    {allNodes
+                      .filter((n) => n.type !== 'boundary' && n.id !== activeEdge.source)
+                      .map((n) => {
+                        const name =
+                          (n.data?.name as string) ||
+                          (n.data?.label as string) ||
+                          'Untitled'
+                        const typeLabel =
+                          n.type === 'actor'
+                            ? 'Actor'
+                            : n.type === 'useCase'
+                              ? 'Use Case'
+                              : 'Note'
+                        return (
+                          <option key={n.id} value={n.id}>
+                            {name} ({typeLabel})
+                          </option>
+                        )
+                      })}
+                  </select>
+                </div>
+              </div>
             </div>
 
             {/* Extension condition or Custom Label */}
