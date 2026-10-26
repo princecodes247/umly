@@ -47,80 +47,94 @@ export function getNodeBox(node: Node): BoxMetrics {
  * Computes the intersection point on the perimeter of `sourceNode` toward the center of `targetNode`.
  * Uses exact ellipse intersection for `useCase` nodes and padded rectangle intersection for `actor` / `note` nodes.
  */
+/**
+ * Returns the 4 handle coordinates `(top, right, bottom, left)` for a node.
+ * For `actor` nodes, the handles sit directly on the stick figure body:
+ * - top: head `(cx, y + 12)`
+ * - left: left hand `(cx - 12, y + 30)`
+ * - right: right hand `(cx + 12, y + 30)`
+ * - bottom: feet `(cx, y + 53)`
+ */
+export function getNodeHandles(
+  node: Node
+): Record<Position, { x: number; y: number; position: Position }> {
+  const box = getNodeBox(node)
+
+  if (node.type === 'actor') {
+    const isSystemActor = node.data?.actorType === 'system'
+    const armHalfSpan = isSystemActor ? 18 : 12
+    return {
+      [Position.Top]: {
+        x: box.cx,
+        y: box.y + 12,
+        position: Position.Top,
+      },
+      [Position.Left]: {
+        x: box.cx - armHalfSpan,
+        y: box.y + 30,
+        position: Position.Left,
+      },
+      [Position.Right]: {
+        x: box.cx + armHalfSpan,
+        y: box.y + 30,
+        position: Position.Right,
+      },
+      [Position.Bottom]: {
+        x: box.cx,
+        y: box.y + 53,
+        position: Position.Bottom,
+      },
+    }
+  }
+
+  return {
+    [Position.Top]: {
+      x: box.cx,
+      y: box.y,
+      position: Position.Top,
+    },
+    [Position.Right]: {
+      x: box.x + box.w,
+      y: box.cy,
+      position: Position.Right,
+    },
+    [Position.Bottom]: {
+      x: box.cx,
+      y: box.y + box.h,
+      position: Position.Bottom,
+    },
+    [Position.Left]: {
+      x: box.x,
+      y: box.cy,
+      position: Position.Left,
+    },
+  }
+}
+
+/**
+ * Selects the handle on `node` that best faces `targetPoint`, so relationships always
+ * originate and terminate directly at a node handle.
+ */
 export function getBorderIntersectionPoint(
   node: Node,
   targetPoint: { x: number; y: number }
 ): { x: number; y: number; position: Position } {
   const box = getNodeBox(node)
+  const handles = getNodeHandles(node)
 
-  // For Actors, anchor lines to the stick figure icon (36x46 at top-center) rather than the wide outer label container
   const anchorCx = box.cx
-  const anchorCy = node.type === 'actor' ? box.y + 33 : box.cy
+  const anchorCy = node.type === 'actor' ? box.y + 30 : box.cy
 
   const dx = targetPoint.x - anchorCx
   const dy = targetPoint.y - anchorCy
 
-  if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) {
-    return { x: anchorCx, y: box.y, position: Position.Top }
+  // For wide Use Case ovals, weight horizontal vs vertical distance by aspect ratio so top/bottom handles are chosen naturally when above/below
+  const aspect = node.type === 'useCase' ? (box.w / Math.max(box.h, 1)) * 0.75 : 1.15
+
+  if (Math.abs(dx) >= Math.abs(dy) * aspect) {
+    return dx >= 0 ? handles[Position.Right] : handles[Position.Left]
   }
-
-  // Determine cardinal Position for orthogonal/bezier tangents
-  const angle = Math.atan2(dy, dx)
-  const deg = (angle * 180) / Math.PI
-  let position: Position = Position.Right
-  if (deg >= -45 && deg <= 45) {
-    position = Position.Right
-  } else if (deg > 45 && deg < 135) {
-    position = Position.Bottom
-  } else if (deg >= -135 && deg < -45) {
-    position = Position.Top
-  } else {
-    position = Position.Left
-  }
-
-  // Elliptical border intersection for Use Case ovals
-  if (node.type === 'useCase') {
-    const rx = box.w / 2 + 2
-    const ry = box.h / 2 + 2
-    const scale = 1 / Math.hypot(dx / rx, dy / ry)
-    return {
-      x: anchorCx + dx * scale,
-      y: anchorCy + dy * scale,
-      position,
-    }
-  }
-
-  // Tight visual silhouette intersection for Actor stick figure (so lines meet the figure, not empty space)
-  if (node.type === 'actor') {
-    const halfW = 19
-    const topH = 25
-    // If line exits downward through the actor's label (e.g. Actor inheritance below), clear the label bottom
-    const bottomH = dy > 0 && Math.abs(dy) > Math.abs(dx) * 1.2 ? Math.max(28, box.h - 33) : 25
-    const halfH = dy >= 0 ? bottomH : topH
-
-    const scaleX = Math.abs(dx) > 0.001 ? halfW / Math.abs(dx) : Infinity
-    const scaleY = Math.abs(dy) > 0.001 ? halfH / Math.abs(dy) : Infinity
-    const scale = Math.min(scaleX, scaleY)
-
-    return {
-      x: anchorCx + dx * scale,
-      y: anchorCy + dy * scale,
-      position,
-    }
-  }
-
-  // Rectangular border intersection for Note nodes
-  const halfW = box.w / 2 + 2
-  const halfH = box.h / 2 + 2
-  const scaleX = Math.abs(dx) > 0.001 ? halfW / Math.abs(dx) : Infinity
-  const scaleY = Math.abs(dy) > 0.001 ? halfH / Math.abs(dy) : Infinity
-  const scale = Math.min(scaleX, scaleY)
-
-  return {
-    x: anchorCx + dx * scale,
-    y: anchorCy + dy * scale,
-    position,
-  }
+  return dy >= 0 ? handles[Position.Bottom] : handles[Position.Top]
 }
 
 /**

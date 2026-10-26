@@ -185,67 +185,123 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
         </NodeToolbar>
       )}
 
-      {/* Handles anchored tightly around the stick figure rather than the wide outer label container */}
-      <Handle
-        type="target"
-        position={Position.Top}
-        id="top"
-        style={{ top: 6 }}
-        className={`!w-2.5 !h-2.5 !bg-[var(--primary-btn)] !border-2 !border-[var(--bg-primary)] ${handleVisibility} transition-opacity`}
-      />
-      <Handle
-        type="source"
-        position={Position.Top}
-        id="top-source"
-        style={{ top: 6 }}
-        className="!w-2.5 !h-2.5 opacity-0 !pointer-events-none"
-      />
+      {/* UML Stick Figure / System Icon with handles touching the figure body */}
+      <div
+        className="relative mb-1 flex items-center justify-center"
+        style={{ width: 36, height: 46 }}
+      >
+        {/* Top handle: touches top of head (18, 2) */}
+        <Handle
+          type="target"
+          position={Position.Top}
+          id="top"
+          style={{
+            left: 18,
+            top: 2,
+            right: 'auto',
+            bottom: 'auto',
+            transform: 'translate(-50%, -50%)',
+          }}
+          className={`!w-2.5 !h-2.5 !bg-[var(--primary-btn)] !border-2 !border-[var(--bg-primary)] ${handleVisibility} transition-opacity z-10`}
+        />
+        <Handle
+          type="source"
+          position={Position.Top}
+          id="top-source"
+          style={{
+            left: 18,
+            top: 2,
+            right: 'auto',
+            bottom: 'auto',
+            transform: 'translate(-50%, -50%)',
+          }}
+          className="!w-2.5 !h-2.5 opacity-0 !pointer-events-none"
+        />
 
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        id="bottom"
-        className={`!w-2.5 !h-2.5 !bg-[var(--primary-btn)] !border-2 !border-[var(--bg-primary)] ${handleVisibility} transition-opacity`}
-      />
-      <Handle
-        type="target"
-        position={Position.Bottom}
-        id="bottom-target"
-        className="!w-2.5 !h-2.5 opacity-0 !pointer-events-none"
-      />
+        {/* Bottom handle: touches feet (18, 43) */}
+        <Handle
+          type="source"
+          position={Position.Bottom}
+          id="bottom"
+          style={{
+            left: 18,
+            top: 43,
+            right: 'auto',
+            bottom: 'auto',
+            transform: 'translate(-50%, -50%)',
+          }}
+          className={`!w-2.5 !h-2.5 !bg-[var(--primary-btn)] !border-2 !border-[var(--bg-primary)] ${handleVisibility} transition-opacity z-10`}
+        />
+        <Handle
+          type="target"
+          position={Position.Bottom}
+          id="bottom-target"
+          style={{
+            left: 18,
+            top: 43,
+            right: 'auto',
+            bottom: 'auto',
+            transform: 'translate(-50%, -50%)',
+          }}
+          className="!w-2.5 !h-2.5 opacity-0 !pointer-events-none"
+        />
 
-      <Handle
-        type="target"
-        position={Position.Left}
-        id="left"
-        style={{ top: 33, left: 'calc(50% - 20px)' }}
-        className={`!w-2.5 !h-2.5 !bg-[var(--primary-btn)] !border-2 !border-[var(--bg-primary)] ${handleVisibility} transition-opacity`}
-      />
-      <Handle
-        type="source"
-        position={Position.Left}
-        id="left-source"
-        style={{ top: 33, left: 'calc(50% - 20px)' }}
-        className="!w-2.5 !h-2.5 opacity-0 !pointer-events-none"
-      />
+        {/* Left handle: touches left hand (6, 20) */}
+        <Handle
+          type="target"
+          position={Position.Left}
+          id="left"
+          style={{
+            left: 6,
+            top: 20,
+            right: 'auto',
+            bottom: 'auto',
+            transform: 'translate(-50%, -50%)',
+          }}
+          className={`!w-2.5 !h-2.5 !bg-[var(--primary-btn)] !border-2 !border-[var(--bg-primary)] ${handleVisibility} transition-opacity z-10`}
+        />
+        <Handle
+          type="source"
+          position={Position.Left}
+          id="left-source"
+          style={{
+            left: 6,
+            top: 20,
+            right: 'auto',
+            bottom: 'auto',
+            transform: 'translate(-50%, -50%)',
+          }}
+          className="!w-2.5 !h-2.5 opacity-0 !pointer-events-none"
+        />
 
-      <Handle
-        type="source"
-        position={Position.Right}
-        id="right"
-        style={{ top: 33, left: 'calc(50% + 20px)', right: 'auto' }}
-        className={`!w-2.5 !h-2.5 !bg-[var(--primary-btn)] !border-2 !border-[var(--bg-primary)] ${handleVisibility} transition-opacity`}
-      />
-      <Handle
-        type="target"
-        position={Position.Right}
-        id="right-target"
-        style={{ top: 33, left: 'calc(50% + 20px)', right: 'auto' }}
-        className="!w-2.5 !h-2.5 opacity-0 !pointer-events-none"
-      />
+        {/* Right handle: touches right hand (30, 20) */}
+        <Handle
+          type="source"
+          position={Position.Right}
+          id="right"
+          style={{
+            left: 30,
+            top: 20,
+            right: 'auto',
+            bottom: 'auto',
+            transform: 'translate(-50%, -50%)',
+          }}
+          className={`!w-2.5 !h-2.5 !bg-[var(--primary-btn)] !border-2 !border-[var(--bg-primary)] ${handleVisibility} transition-opacity z-10`}
+        />
+        <Handle
+          type="target"
+          position={Position.Right}
+          id="right-target"
+          style={{
+            left: 30,
+            top: 20,
+            right: 'auto',
+            bottom: 'auto',
+            transform: 'translate(-50%, -50%)',
+          }}
+          className="!w-2.5 !h-2.5 opacity-0 !pointer-events-none"
+        />
 
-      {/* UML Stick Figure / System Icon */}
-      <div className="relative mb-1 flex items-center justify-center">
         {actorType === 'system' ? (
           <div
             style={{ borderColor: strokeColor }}
