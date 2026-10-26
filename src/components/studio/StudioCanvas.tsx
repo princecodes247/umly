@@ -1445,6 +1445,19 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
             : edge
         )
       )
+      setSelectedEdges((prev) =>
+        prev.map((edge) =>
+          edge.id === edgeId
+            ? {
+                ...edge,
+                data: {
+                  ...edge.data,
+                  relationshipType,
+                },
+              }
+            : edge
+        )
+      )
     }
 
     const handleCreateNextConnected = (e: Event) => {
@@ -1465,6 +1478,18 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
       pushSnapshot()
       setEdges((eds) =>
         eds.map((edge) => {
+          if (edge.id !== edgeId) return edge
+          return {
+            ...edge,
+            source: edge.target,
+            target: edge.source,
+            sourceHandle: toSourceHandleId(edge.targetHandle),
+            targetHandle: toTargetHandleId(edge.sourceHandle),
+          }
+        })
+      )
+      setSelectedEdges((prev) =>
+        prev.map((edge) => {
           if (edge.id !== edgeId) return edge
           return {
             ...edge,
@@ -1624,8 +1649,20 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
           }
         })
       )
+      setSelectedNodes((prev) =>
+        prev.map((n) => {
+          if (n.id !== id) return n
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              ...partial,
+            },
+          }
+        })
+      )
     },
-    [pushSnapshot, reactFlowInstance, setNodes]
+    [pushSnapshot, reactFlowInstance, setNodes, setSelectedNodes]
   )
 
   // Update edge data from Inspector (with UML 2.5 validation)
@@ -1663,8 +1700,20 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
           }
         })
       )
+      setSelectedEdges((prev) =>
+        prev.map((e) => {
+          if (e.id !== id) return e
+          return {
+            ...e,
+            data: {
+              ...e.data,
+              ...partial,
+            },
+          }
+        })
+      )
     },
-    [edges, nodes, pushSnapshot, setEdges, showValidationWarning]
+    [edges, nodes, pushSnapshot, setEdges, setSelectedEdges, showValidationWarning]
   )
 
   // Template loader
@@ -2562,31 +2611,48 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
         </div>
 
         {/* Right Properties Inspector */}
-        <StudioInspector
-          selectedNode={selectedNodes.length === 1 ? selectedNodes[0] : null}
-          selectedEdge={selectedEdges.length === 1 ? selectedEdges[0] : null}
-          selectedNodes={selectedNodes}
-          selectedEdges={selectedEdges}
-          onUpdateNodeData={handleUpdateNodeData}
-          onUpdateEdgeData={handleUpdateEdgeData}
-          onDeleteNode={handleDeleteNode}
-          onDuplicateNode={handleDuplicateNode}
-          onFlipEdgeDirection={handleFlipEdge}
-          onDeleteSelected={handleDeleteSelected}
-          onDuplicateSelected={handleDuplicateSelected}
-          onDeselectAll={handleDeselectAll}
-          onAlignSelected={handleAlignSelected}
-          defaultRoutingStyle={defaultRoutingStyle}
-          onDefaultRoutingStyleChange={handleDefaultRoutingStyleChange}
-          snapshots={snapshots}
-          onSaveSnapshot={handleSaveSnapshot}
-          onRestoreSnapshot={handleRestoreSnapshot}
-          diagramTitle={title}
-          allNodes={nodes}
-          allEdges={edges}
-          isOpen={isInspectorOpen}
-          onToggleOpen={() => setIsInspectorOpen(!isInspectorOpen)}
-        />
+        {(() => {
+          const activeNode =
+            selectedNodes.length === 1
+              ? nodes.find((n) => n.id === selectedNodes[0].id) || selectedNodes[0]
+              : null
+          const activeEdge =
+            selectedEdges.length === 1
+              ? edges.find((e) => e.id === selectedEdges[0].id) || selectedEdges[0]
+              : null
+          const selNodeIds = new Set(selectedNodes.map((n) => n.id))
+          const currentNodes = nodes.filter((n) => selNodeIds.has(n.id) || n.selected)
+          const selEdgeIds = new Set(selectedEdges.map((e) => e.id))
+          const currentEdges = edges.filter((e) => selEdgeIds.has(e.id) || e.selected)
+
+          return (
+            <StudioInspector
+              selectedNode={activeNode}
+              selectedEdge={activeEdge}
+              selectedNodes={currentNodes}
+              selectedEdges={currentEdges}
+              onUpdateNodeData={handleUpdateNodeData}
+              onUpdateEdgeData={handleUpdateEdgeData}
+              onDeleteNode={handleDeleteNode}
+              onDuplicateNode={handleDuplicateNode}
+              onFlipEdgeDirection={handleFlipEdge}
+              onDeleteSelected={handleDeleteSelected}
+              onDuplicateSelected={handleDuplicateSelected}
+              onDeselectAll={handleDeselectAll}
+              onAlignSelected={handleAlignSelected}
+              defaultRoutingStyle={defaultRoutingStyle}
+              onDefaultRoutingStyleChange={handleDefaultRoutingStyleChange}
+              snapshots={snapshots}
+              onSaveSnapshot={handleSaveSnapshot}
+              onRestoreSnapshot={handleRestoreSnapshot}
+              diagramTitle={title}
+              allNodes={nodes}
+              allEdges={edges}
+              isOpen={isInspectorOpen}
+              onToggleOpen={() => setIsInspectorOpen(!isInspectorOpen)}
+            />
+          )
+        })()}
       </div>
 
       {/* Cmd+K Command Palette Modal */}

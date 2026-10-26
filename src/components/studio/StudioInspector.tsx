@@ -128,8 +128,16 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
   const boundariesCount = allNodes.filter((n) => n.type === 'boundary').length
   const edgesCount = allEdges.length
 
-  const nodeData = selectedNode?.data as unknown as UmlNodeData | undefined
-  const edgeData = selectedEdge?.data as unknown as UmlEdgeData | undefined
+  // Always resolve the freshest node and edge data from source arrays
+  const activeEdge = selectedEdge
+    ? allEdges.find((e) => e.id === selectedEdge.id) || selectedEdge
+    : null
+  const activeNode = selectedNode
+    ? allNodes.find((n) => n.id === selectedNode.id) || selectedNode
+    : null
+
+  const nodeData = activeNode?.data as unknown as UmlNodeData | undefined
+  const edgeData = activeEdge?.data as unknown as UmlEdgeData | undefined
 
   const handleCopyCode = async (kind: 'puml' | 'mermaid') => {
     const text =
@@ -590,12 +598,12 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
               </button>
             </div>
           </div>
-        ) : selectedEdge && edgeData ? (
+        ) : activeEdge && edgeData ? (
           /* CASE 2: EDGE SELECTED */
           <div className="space-y-4">
             {(() => {
-              const sNode = allNodes.find((n) => n.id === selectedEdge.source)
-              const tNode = allNodes.find((n) => n.id === selectedEdge.target)
+              const sNode = allNodes.find((n) => n.id === activeEdge.source)
+              const tNode = allNodes.find((n) => n.id === activeEdge.target)
               const allowedEdgeTypes = getAllowedRelationshipTypes(
                 sNode?.type,
                 tNode?.type
@@ -648,7 +656,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                           }
                           onClick={() => {
                             if (!isAllowed) return
-                            onUpdateEdgeData(selectedEdge.id, {
+                            onUpdateEdgeData(activeEdge.id, {
                               relationshipType: rel.id,
                             })
                           }}
@@ -693,7 +701,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                       key={rt.id}
                       type="button"
                       onClick={() =>
-                        onUpdateEdgeData(selectedEdge.id, {
+                        onUpdateEdgeData(activeEdge.id, {
                           routingStyle: rt.id,
                         })
                       }
@@ -717,7 +725,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
               </label>
               <button
                 type="button"
-                onClick={() => onFlipEdgeDirection(selectedEdge.id)}
+                onClick={() => onFlipEdgeDirection(activeEdge.id)}
                 className="w-full notion-btn flex items-center justify-center gap-2 py-1.5"
                 title="Swap source and target nodes"
               >
@@ -742,11 +750,11 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                 }
                 onChange={(e) => {
                   if (edgeData.relationshipType === 'extend') {
-                    onUpdateEdgeData(selectedEdge.id, {
+                    onUpdateEdgeData(activeEdge.id, {
                       condition: e.target.value,
                     })
                   } else {
-                    onUpdateEdgeData(selectedEdge.id, {
+                    onUpdateEdgeData(activeEdge.id, {
                       label: e.target.value,
                     })
                   }
