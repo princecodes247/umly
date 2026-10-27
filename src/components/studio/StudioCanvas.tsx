@@ -893,13 +893,13 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
       const defaultPos =
         sourceNode.type === 'actor'
           ? {
-              x: Math.round(sourceNode.position.x + sw + 130),
-              y: Math.round(sourceNode.position.y + sh / 2 - 34),
-            }
+            x: Math.round(sourceNode.position.x + sw + 130),
+            y: Math.round(sourceNode.position.y + sh / 2 - 34),
+          }
           : {
-              x: Math.round(sourceNode.position.x + sw + 110),
-              y: Math.round(sourceNode.position.y),
-            }
+            x: Math.round(sourceNode.position.x + sw + 110),
+            y: Math.round(sourceNode.position.y),
+          }
 
       const pos = flowPos
         ? { x: Math.round(flowPos.x - 70), y: Math.round(flowPos.y - 32) }
@@ -908,23 +908,23 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
       const newNodeData: UmlNodeData =
         targetType === 'actor'
           ? {
-              nodeType: 'actor',
-              label: 'Actor',
-              actorType: 'primary',
-              autoFocusEdit: true,
-            }
+            nodeType: 'actor',
+            label: 'Actor',
+            actorType: 'primary',
+            autoFocusEdit: true,
+          }
           : targetType === 'note'
             ? {
-                nodeType: 'note',
-                label: 'Note',
-                description: 'Constraint',
-                autoFocusEdit: true,
-              }
+              nodeType: 'note',
+              label: 'Note',
+              description: 'Constraint',
+              autoFocusEdit: true,
+            }
             : {
-                nodeType: 'useCase',
-                label: 'New Use Case',
-                autoFocusEdit: true,
-              }
+              nodeType: 'useCase',
+              label: 'New Use Case',
+              autoFocusEdit: true,
+            }
 
       const newNode: Node = {
         id: newNodeId,
@@ -985,12 +985,36 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
   )
 
   const connectedInLastAttemptRef = useRef(false)
+  const connectStartRef = useRef<{
+    nodeId: string | null
+    handleId: string | null
+  } | null>(null)
 
   const onConnect = useCallback(
     (params: Connection) => {
       connectedInLastAttemptRef.current = true
-      const sourceNode = nodes.find((n) => n.id === params.source)
-      const targetNode = nodes.find((n) => n.id === params.target)
+      const startNodeId = connectStartRef.current?.nodeId
+
+      // Ensure the relationship always points in the exact direction it was drawn in:
+      // Drag start -> source (tail), Drag release -> target (arrowhead)
+      let sourceId = params.source
+      let targetId = params.target
+      let sHandle = params.sourceHandle
+      let tHandle = params.targetHandle
+
+      if (startNodeId && params.target === startNodeId) {
+        // React Flow inverted source and target because connection started from a 'target' handle
+        sourceId = params.target
+        targetId = params.source
+        sHandle = params.targetHandle
+        tHandle = params.sourceHandle
+      } else if (startNodeId && params.source !== startNodeId) {
+        sourceId = startNodeId
+        targetId = params.source === startNodeId ? params.target : params.source
+      }
+
+      const sourceNode = nodes.find((n) => n.id === sourceId)
+      const targetNode = nodes.find((n) => n.id === targetId)
 
       // Infer relationship type automatically based on source and target node types
       const inferredType: UmlRelationshipType =
@@ -1016,10 +1040,10 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
       pushSnapshot()
       const newEdge: Edge = {
         id: `edge-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-        source: params.source,
-        target: params.target,
-        sourceHandle: toSourceHandleId(params.sourceHandle),
-        targetHandle: toTargetHandleId(params.targetHandle),
+        source: sourceId,
+        target: targetId,
+        sourceHandle: toSourceHandleId(sHandle),
+        targetHandle: toTargetHandleId(tHandle),
         type: 'umlEdge',
         data: {
           relationshipType: inferredType,
@@ -1039,9 +1063,16 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
   )
 
   // Drop connection line on empty canvas -> open "Create Connected Element" menu (Item 2)
-  const onConnectStart = useCallback(() => {
-    connectedInLastAttemptRef.current = false
-  }, [])
+  const onConnectStart = useCallback(
+    (_event: MouseEvent | TouchEvent, params?: { nodeId?: string | null; handleId?: string | null }) => {
+      connectedInLastAttemptRef.current = false
+      connectStartRef.current = {
+        nodeId: params?.nodeId ?? null,
+        handleId: params?.handleId ?? null,
+      }
+    },
+    []
+  )
 
   const onConnectEnd = useCallback(
     (
@@ -1114,8 +1145,8 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
       const finalRelType: UmlRelationshipType = validation.valid
         ? currentRelType
         : validation.suggestedType ||
-          inferRelationshipType(sourceNode?.type, targetNode?.type) ||
-          'association'
+        inferRelationshipType(sourceNode?.type, targetNode?.type) ||
+        'association'
 
       const recheck = validateUmlConnection(
         sourceNode,
@@ -1126,7 +1157,7 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
       if (!recheck.valid) {
         showValidationWarning(
           recheck.reason ||
-            'Invalid UML 2.5 relationship for this reconnection.'
+          'Invalid UML 2.5 relationship for this reconnection.'
         )
         return
       }
@@ -1142,14 +1173,14 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
         reconnectEdge(oldEdge, normalizedConnection, eds).map((e) =>
           e.id === oldEdge.id
             ? {
-                ...e,
-                sourceHandle: toSourceHandleId(normalizedConnection.sourceHandle),
-                targetHandle: toTargetHandleId(normalizedConnection.targetHandle),
-                data: {
-                  ...e.data,
-                  relationshipType: finalRelType,
-                },
-              }
+              ...e,
+              sourceHandle: toSourceHandleId(normalizedConnection.sourceHandle),
+              targetHandle: toTargetHandleId(normalizedConnection.targetHandle),
+              data: {
+                ...e.data,
+                relationshipType: finalRelType,
+              },
+            }
             : e
         )
       )
@@ -1436,14 +1467,14 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
       const finalRelType: UmlRelationshipType = validation.valid
         ? currentRelType
         : validation.suggestedType ||
-          inferRelationshipType(sNode?.type, tNode?.type) ||
-          'association'
+        inferRelationshipType(sNode?.type, tNode?.type) ||
+        'association'
 
       const recheck = validateUmlConnection(sNode, tNode, finalRelType)
       if (!recheck.valid) {
         showValidationWarning(
           recheck.reason ||
-            'Invalid UML 2.5 relationship for this reconnection.'
+          'Invalid UML 2.5 relationship for this reconnection.'
         )
         return
       }
@@ -1454,16 +1485,16 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
         eds.map((ed) =>
           ed.id === edgeId
             ? {
-                ...ed,
-                source: nextSourceId,
-                target: nextTargetId,
-                sourceHandle: undefined,
-                targetHandle: undefined,
-                data: {
-                  ...ed.data,
-                  relationshipType: finalRelType,
-                },
-              }
+              ...ed,
+              source: nextSourceId,
+              target: nextTargetId,
+              sourceHandle: undefined,
+              targetHandle: undefined,
+              data: {
+                ...ed.data,
+                relationshipType: finalRelType,
+              },
+            }
             : ed
         )
       )
@@ -1471,16 +1502,16 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
         prev.map((ed) =>
           ed.id === edgeId
             ? {
-                ...ed,
-                source: nextSourceId,
-                target: nextTargetId,
-                sourceHandle: undefined,
-                targetHandle: undefined,
-                data: {
-                  ...ed.data,
-                  relationshipType: finalRelType,
-                },
-              }
+              ...ed,
+              source: nextSourceId,
+              target: nextTargetId,
+              sourceHandle: undefined,
+              targetHandle: undefined,
+              data: {
+                ...ed.data,
+                relationshipType: finalRelType,
+              },
+            }
             : ed
         )
       )
@@ -1509,12 +1540,12 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
         eds.map((edge) =>
           edge.id === edgeId
             ? {
-                ...edge,
-                data: {
-                  ...edge.data,
-                  relationshipType,
-                },
-              }
+              ...edge,
+              data: {
+                ...edge.data,
+                relationshipType,
+              },
+            }
             : edge
         )
       )
@@ -1522,12 +1553,12 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
         prev.map((edge) =>
           edge.id === edgeId
             ? {
-                ...edge,
-                data: {
-                  ...edge.data,
-                  relationshipType,
-                },
-              }
+              ...edge,
+              data: {
+                ...edge.data,
+                relationshipType,
+              },
+            }
             : edge
         )
       )
@@ -2024,12 +2055,12 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
           nds.map((n) =>
             selIds.has(n.id)
               ? {
-                  ...n,
-                  position: {
-                    x: Math.round(n.position.x + dx),
-                    y: Math.round(n.position.y + dy),
-                  },
-                }
+                ...n,
+                position: {
+                  x: Math.round(n.position.x + dx),
+                  y: Math.round(n.position.y + dy),
+                },
+              }
               : n
           )
         )
@@ -2477,11 +2508,10 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
                             })
                             setEdgeContextMenu(null)
                           }}
-                          className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-[6px] transition-colors cursor-pointer ${
-                            currentRel === r.id
+                          className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-[6px] transition-colors cursor-pointer ${currentRel === r.id
                               ? 'bg-[var(--selection-bg)] text-[var(--primary-btn)] font-semibold'
                               : 'hover:bg-[var(--hover-bg)] text-[var(--text-primary)]'
-                          }`}
+                            }`}
                         >
                           <span>{r.label}</span>
                           {currentRel === r.id && (

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react'
+import React, { useCallback, useEffect, useRef } from 'react'
 import {
   ReactFlow,
   Background,
@@ -62,26 +62,55 @@ export const UmlCanvas: React.FC<UmlCanvasProps> = ({
     onDiagramChange?.(nodes, edges)
   }, [nodes, edges, onDiagramChange])
 
+  // Track connection start node to guarantee relationship points in the drawn direction
+  const connectStartRef = useRef<{ nodeId: string | null } | null>(null)
+
+  const onConnectStart = useCallback(
+    (_event: MouseEvent | TouchEvent, params?: { nodeId?: string | null }) => {
+      connectStartRef.current = {
+        nodeId: params?.nodeId ?? null,
+      }
+    },
+    []
+  )
+
   // Handle new connection created by user dragging between handles
   const onConnect = useCallback(
     (params: Connection) => {
+      const startNodeId = connectStartRef.current?.nodeId
+
+      let sourceId = params.source
+      let targetId = params.target
+      let sHandle = params.sourceHandle
+      let tHandle = params.targetHandle
+
+      if (startNodeId && params.target === startNodeId) {
+        sourceId = params.target
+        targetId = params.source
+        sHandle = params.targetHandle
+        tHandle = params.sourceHandle
+      } else if (startNodeId && params.source !== startNodeId) {
+        sourceId = startNodeId
+        targetId = params.source === startNodeId ? params.target : params.source
+      }
+
       // Prevent duplicate edges between the exact same pair in same direction
       const exists = edges.some(
         (e) =>
-          (e.source === params.source && e.target === params.target) ||
+          (e.source === sourceId && e.target === targetId) ||
           (activeRelationshipType === 'association' &&
-            e.source === params.target &&
-            e.target === params.source)
+            e.source === targetId &&
+            e.target === sourceId)
       )
 
       if (exists) return
 
       const newEdge: Edge = {
         id: `edge-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        source: params.source,
-        target: params.target,
-        sourceHandle: params.sourceHandle,
-        targetHandle: params.targetHandle,
+        source: sourceId,
+        target: targetId,
+        sourceHandle: sHandle,
+        targetHandle: tHandle,
         type: 'umlEdge',
         data: {
           relationshipType: activeRelationshipType,
@@ -207,6 +236,7 @@ export const UmlCanvas: React.FC<UmlCanvasProps> = ({
         edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
+        onConnectStart={onConnectStart}
         onConnect={onConnect}
         fitView
         fitViewOptions={{ padding: 0.2 }}
