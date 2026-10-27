@@ -49,7 +49,12 @@ interface StudioInspectorProps {
   onDeleteNode: (id: string) => void
   onDuplicateNode: (id: string) => void
   onFlipEdgeDirection: (id: string) => void
-  onReconnectEdge?: (edgeId: string, end: 'source' | 'target', newNodeId: string) => void
+  onReconnectEdge?: (
+    edgeId: string,
+    end: 'source' | 'target',
+    newNodeId: string,
+    newHandleId?: string | null
+  ) => void
   onDeleteSelected?: () => void
   onDuplicateSelected?: () => void
   onDeselectAll?: () => void
@@ -744,75 +749,139 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
               </label>
               <div className="space-y-2">
                 <div className="space-y-1">
-                  <span className="text-[10px] font-mono uppercase text-[var(--text-tertiary)] block">
-                    Source Element (From)
-                  </span>
-                  <select
-                    value={activeEdge.source}
-                    onChange={(e) => {
-                      const newSourceId = e.target.value
-                      if (newSourceId && onReconnectEdge) {
-                        onReconnectEdge(activeEdge.id, 'source', newSourceId)
-                      }
-                    }}
-                    className="w-full px-2 py-1.5 rounded-[4px] border border-[var(--border-default)] bg-[var(--bg-secondary)] text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-btn)]"
-                  >
-                    {allNodes
-                      .filter((n) => n.type !== 'boundary' && n.id !== activeEdge.target)
-                      .map((n) => {
-                        const name =
-                          (n.data?.name as string) ||
-                          (n.data?.label as string) ||
-                          'Untitled'
-                        const typeLabel =
-                          n.type === 'actor'
-                            ? 'Actor'
-                            : n.type === 'useCase'
-                              ? 'Use Case'
-                              : 'Note'
-                        return (
-                          <option key={n.id} value={n.id}>
-                            {name} ({typeLabel})
-                          </option>
-                        )
-                      })}
-                  </select>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono uppercase text-[var(--text-tertiary)] block">
+                      Source Element (From)
+                    </span>
+                    <span className="text-[10px] font-mono uppercase text-[var(--text-tertiary)] block">
+                      Port
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    <div className="col-span-2">
+                      <select
+                        value={activeEdge.source}
+                        onChange={(e) => {
+                          const newSourceId = e.target.value
+                          if (newSourceId && onReconnectEdge) {
+                            onReconnectEdge(activeEdge.id, 'source', newSourceId, activeEdge.sourceHandle)
+                          }
+                        }}
+                        className="w-full px-2 py-1.5 rounded-[4px] border border-[var(--border-default)] bg-[var(--bg-secondary)] text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-btn)]"
+                      >
+                        {allNodes
+                          .filter((n) => n.type !== 'boundary' && n.id !== activeEdge.target)
+                          .map((n) => {
+                            const name =
+                              (n.data?.name as string) ||
+                              (n.data?.label as string) ||
+                              'Untitled'
+                            const typeLabel =
+                              n.type === 'actor'
+                                ? 'Actor'
+                                : n.type === 'useCase'
+                                  ? 'Use Case'
+                                  : 'Note'
+                            return (
+                              <option key={n.id} value={n.id}>
+                                {name} ({typeLabel})
+                              </option>
+                            )
+                          })}
+                      </select>
+                    </div>
+                    <div className="col-span-1">
+                      <select
+                        value={
+                          activeEdge.sourceHandle
+                            ? activeEdge.sourceHandle.replace(/-source|-target$/, '')
+                            : 'auto'
+                        }
+                        onChange={(e) => {
+                          const val = e.target.value === 'auto' ? null : e.target.value
+                          if (onReconnectEdge) {
+                            onReconnectEdge(activeEdge.id, 'source', activeEdge.source, val)
+                          }
+                        }}
+                        className="w-full px-1.5 py-1.5 rounded-[4px] border border-[var(--border-default)] bg-[var(--bg-secondary)] text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-btn)]"
+                        title="Source connection port"
+                      >
+                        <option value="auto">Auto</option>
+                        <option value="top">Top</option>
+                        <option value="right">Right</option>
+                        <option value="bottom">Bottom</option>
+                        <option value="left">Left</option>
+                      </select>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-1">
-                  <span className="text-[10px] font-mono uppercase text-[var(--text-tertiary)] block">
-                    Target Element (To)
-                  </span>
-                  <select
-                    value={activeEdge.target}
-                    onChange={(e) => {
-                      const newTargetId = e.target.value
-                      if (newTargetId && onReconnectEdge) {
-                        onReconnectEdge(activeEdge.id, 'target', newTargetId)
-                      }
-                    }}
-                    className="w-full px-2 py-1.5 rounded-[4px] border border-[var(--border-default)] bg-[var(--bg-secondary)] text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-btn)]"
-                  >
-                    {allNodes
-                      .filter((n) => n.type !== 'boundary' && n.id !== activeEdge.source)
-                      .map((n) => {
-                        const name =
-                          (n.data?.name as string) ||
-                          (n.data?.label as string) ||
-                          'Untitled'
-                        const typeLabel =
-                          n.type === 'actor'
-                            ? 'Actor'
-                            : n.type === 'useCase'
-                              ? 'Use Case'
-                              : 'Note'
-                        return (
-                          <option key={n.id} value={n.id}>
-                            {name} ({typeLabel})
-                          </option>
-                        )
-                      })}
-                  </select>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono uppercase text-[var(--text-tertiary)] block">
+                      Target Element (To)
+                    </span>
+                    <span className="text-[10px] font-mono uppercase text-[var(--text-tertiary)] block">
+                      Port
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    <div className="col-span-2">
+                      <select
+                        value={activeEdge.target}
+                        onChange={(e) => {
+                          const newTargetId = e.target.value
+                          if (newTargetId && onReconnectEdge) {
+                            onReconnectEdge(activeEdge.id, 'target', newTargetId, activeEdge.targetHandle)
+                          }
+                        }}
+                        className="w-full px-2 py-1.5 rounded-[4px] border border-[var(--border-default)] bg-[var(--bg-secondary)] text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-btn)]"
+                      >
+                        {allNodes
+                          .filter((n) => n.type !== 'boundary' && n.id !== activeEdge.source)
+                          .map((n) => {
+                            const name =
+                              (n.data?.name as string) ||
+                              (n.data?.label as string) ||
+                              'Untitled'
+                            const typeLabel =
+                              n.type === 'actor'
+                                ? 'Actor'
+                                : n.type === 'useCase'
+                                  ? 'Use Case'
+                                  : 'Note'
+                            return (
+                              <option key={n.id} value={n.id}>
+                                {name} ({typeLabel})
+                              </option>
+                            )
+                          })}
+                      </select>
+                    </div>
+                    <div className="col-span-1">
+                      <select
+                        value={
+                          activeEdge.targetHandle
+                            ? activeEdge.targetHandle.replace(/-source|-target$/, '')
+                            : 'auto'
+                        }
+                        onChange={(e) => {
+                          const val = e.target.value === 'auto' ? null : e.target.value
+                          if (onReconnectEdge) {
+                            onReconnectEdge(activeEdge.id, 'target', activeEdge.target, val)
+                          }
+                        }}
+                        className="w-full px-1.5 py-1.5 rounded-[4px] border border-[var(--border-default)] bg-[var(--bg-secondary)] text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-btn)]"
+                        title="Target connection port"
+                      >
+                        <option value="auto">Auto</option>
+                        <option value="top">Top</option>
+                        <option value="right">Right</option>
+                        <option value="bottom">Bottom</option>
+                        <option value="left">Left</option>
+                      </select>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

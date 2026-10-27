@@ -144,7 +144,9 @@ export function getBorderIntersectionPoint(
 export function getFloatingEdgeParams(
   sourceNode: Node,
   targetNode: Node,
-  parallelOffset = 0
+  parallelOffset = 0,
+  sourceHandle?: string | null,
+  targetHandle?: string | null
 ): {
   sx: number
   sy: number
@@ -167,14 +169,37 @@ export function getFloatingEdgeParams(
   const nx = (-dy / len) * parallelOffset
   const ny = (dx / len) * parallelOffset
 
-  const sIntersect = getBorderIntersectionPoint(sourceNode, {
-    x: tAnchorX + nx,
-    y: tAnchorY + ny,
-  })
-  const tIntersect = getBorderIntersectionPoint(targetNode, {
-    x: sAnchorX + nx,
-    y: sAnchorY + ny,
-  })
+  const sHandles = getNodeHandles(sourceNode)
+  const tHandles = getNodeHandles(targetNode)
+
+  const parseHandlePosition = (handleId?: string | null): Position | null => {
+    if (!handleId || handleId === 'auto') return null
+    const clean = handleId.replace(/-source|-target$/, '')
+    if (clean === 'top') return Position.Top
+    if (clean === 'right') return Position.Right
+    if (clean === 'bottom') return Position.Bottom
+    if (clean === 'left') return Position.Left
+    return null
+  }
+
+  const sPos = parseHandlePosition(sourceHandle)
+  const tPos = parseHandlePosition(targetHandle)
+
+  const sIntersect =
+    sPos && sHandles[sPos]
+      ? sHandles[sPos]
+      : getBorderIntersectionPoint(sourceNode, {
+          x: tAnchorX + nx,
+          y: tAnchorY + ny,
+        })
+
+  const tIntersect =
+    tPos && tHandles[tPos]
+      ? tHandles[tPos]
+      : getBorderIntersectionPoint(targetNode, {
+          x: sAnchorX + nx,
+          y: sAnchorY + ny,
+        })
 
   return {
     sx: sIntersect.x,

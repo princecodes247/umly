@@ -2,6 +2,7 @@ import { memo, useState, useRef, useEffect, useMemo } from 'react'
 import {
   BaseEdge,
   EdgeLabelRenderer,
+  Position,
   getStraightPath,
   getSmoothStepPath,
   getBezierPath,
@@ -17,6 +18,7 @@ import {
   getFloatingEdgeParams,
   getBorderIntersectionPoint,
   getNodeBox,
+  getNodeHandles,
 } from '../../../lib/floatingEdges'
 import type { UmlEdgeData, UmlRelationshipType } from '../../../types/game'
 
@@ -29,6 +31,8 @@ export const UmlEdge = memo(
     id,
     source,
     target,
+    sourceHandleId,
+    targetHandleId,
     sourceX,
     sourceY,
     targetX,
@@ -48,6 +52,7 @@ export const UmlEdge = memo(
       x: number
       y: number
       hoveredNodeId: string | null
+      hoveredHandleId: string | null
     } | null>(null)
     const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -103,7 +108,13 @@ export const UmlEdge = memo(
 
         if (draggingEnd.end === 'source') {
           if (hoveredNode && hoveredNode.id !== target) {
-            return getFloatingEdgeParams(hoveredNode, targetNode, 0)
+            return getFloatingEdgeParams(
+              hoveredNode,
+              targetNode,
+              0,
+              draggingEnd.hoveredHandleId,
+              targetHandleId
+            )
           }
           const tInt = getBorderIntersectionPoint(targetNode, {
             x: draggingEnd.x,
@@ -119,7 +130,13 @@ export const UmlEdge = memo(
           }
         } else {
           if (hoveredNode && hoveredNode.id !== source) {
-            return getFloatingEdgeParams(sourceNode, hoveredNode, 0)
+            return getFloatingEdgeParams(
+              sourceNode,
+              hoveredNode,
+              0,
+              sourceHandleId,
+              draggingEnd.hoveredHandleId
+            )
           }
           const sInt = getBorderIntersectionPoint(sourceNode, {
             x: draggingEnd.x,
@@ -137,7 +154,13 @@ export const UmlEdge = memo(
       }
 
       if (sourceNode && targetNode) {
-        return getFloatingEdgeParams(sourceNode, targetNode, parallelOffset)
+        return getFloatingEdgeParams(
+          sourceNode,
+          targetNode,
+          parallelOffset,
+          sourceHandleId,
+          targetHandleId
+        )
       }
       return {
         sx: sourceX,
@@ -152,6 +175,8 @@ export const UmlEdge = memo(
       nodes,
       source,
       target,
+      sourceHandleId,
+      targetHandleId,
       sourceNode,
       targetNode,
       parallelOffset,
@@ -377,23 +402,62 @@ export const UmlEdge = memo(
         }))
       )
 
-      const findTargetNodeAt = (flowX: number, flowY: number): string | null => {
+      const findTargetHandleAt = (
+        flowX: number,
+        flowY: number
+      ): { nodeId: string; handleId: string } | null => {
         const fixedNodeId = end === 'source' ? target : source
+        let closest: { nodeId: string; handleId: string; dist: number } | null = null
+
+        for (const n of nodes) {
+          if (n.type === 'boundary' || n.hidden || n.id === fixedNodeId) {
+            continue
+          }
+          const handles = getNodeHandles(n)
+          for (const pos of [Position.Top, Position.Right, Position.Bottom, Position.Left]) {
+            const h = handles[pos]
+            if (!h) continue
+            const dist = Math.hypot(flowX - h.x, flowY - h.y)
+            if (!closest || dist < closest.dist) {
+              closest = { nodeId: n.id, handleId: pos, dist }
+            }
+          }
+        }
+
+        // Snap threshold: if within 42px of any node handle, snap directly to it
+        if (closest && closest.dist <= 42) {
+          return { nodeId: closest.nodeId, handleId: closest.handleId }
+        }
+
+        // If pointer is inside the node's bounding box + 16px padding, snap to nearest handle on that node
         for (const n of nodes) {
           if (n.type === 'boundary' || n.hidden || n.id === fixedNodeId) {
             continue
           }
           const box = getNodeBox(n)
-          const pad = 28
+          const pad = 16
           if (
             flowX >= box.x - pad &&
             flowX <= box.x + box.w + pad &&
             flowY >= box.y - pad &&
             flowY <= box.y + box.h + pad
           ) {
-            return n.id
+            const handles = getNodeHandles(n)
+            let bestPos = Position.Top
+            let bestD = Infinity
+            for (const pos of [Position.Top, Position.Right, Position.Bottom, Position.Left]) {
+              const h = handles[pos]
+              if (!h) continue
+              const d = Math.hypot(flowX - h.x, flowY - h.y)
+              if (d < bestD) {
+                bestD = d
+                bestPos = pos
+              }
+            }
+            return { nodeId: n.id, handleId: bestPos }
           }
         }
+
         return null
       }
 
@@ -402,12 +466,13 @@ export const UmlEdge = memo(
         y: e.clientY,
       })
 
-      let latestHoveredId = findTargetNodeAt(initialFlow.x, initialFlow.y)
+      let latestTarget = findTargetHandleAt(initialFlow.x, initialFlow.y)
       setDraggingEnd({
         end,
         x: initialFlow.x,
         y: initialFlow.y,
-        hoveredNodeId: latestHoveredId,
+        hoveredNodeId: latestTarget?.nodeId ?? null,
+        hoveredHandleId: latestTarget?.handleId ?? null,
       })
 
       const onPointerMove = (ev: PointerEvent) => {
@@ -415,12 +480,13 @@ export const UmlEdge = memo(
           x: ev.clientX,
           y: ev.clientY,
         })
-        latestHoveredId = findTargetNodeAt(pt.x, pt.y)
+        latestTarget = findTargetHandleAt(pt.x, pt.y)
         setDraggingEnd({
           end,
           x: pt.x,
           y: pt.y,
-          hoveredNodeId: latestHoveredId,
+          hoveredNodeId: latestTarget?.nodeId ?? null,
+          hoveredHandleId: latestTarget?.handleId ?? null,
         })
       }
 
@@ -429,18 +495,30 @@ export const UmlEdge = memo(
         window.removeEventListener('pointerup', onPointerUp)
 
         const previousNodeId = end === 'source' ? source : target
-        if (latestHoveredId && latestHoveredId !== previousNodeId) {
-          window.dispatchEvent(
-            new CustomEvent('reconnect-edge-endpoint', {
-              detail: {
-                edgeId: id,
-                end,
-                newNodeId: latestHoveredId,
-              },
-            })
-          )
+        const previousHandleId =
+          end === 'source' ? sourceHandleId : targetHandleId
+        const previousHandleClean = previousHandleId
+          ? previousHandleId.replace(/-source|-target$/, '')
+          : null
+
+        if (latestTarget) {
+          const hasNodeChanged = latestTarget.nodeId !== previousNodeId
+          const hasHandleChanged =
+            latestTarget.handleId !== previousHandleClean
+          if (hasNodeChanged || hasHandleChanged) {
+            window.dispatchEvent(
+              new CustomEvent('reconnect-edge-endpoint', {
+                detail: {
+                  edgeId: id,
+                  end,
+                  newNodeId: latestTarget.nodeId,
+                  newHandleId: latestTarget.handleId,
+                },
+              })
+            )
+          }
         }
-        // Revert visual drag state (either snaps to new node if valid, or reverts to previous node if invalid/empty)
+        // Revert visual drag state
         setDraggingEnd(null)
       }
 
@@ -489,6 +567,41 @@ export const UmlEdge = memo(
         {/* Interactive draggable endpoint handles on both ends rendered via EdgeLabelRenderer on top of nodes */}
         {showActions && (
           <EdgeLabelRenderer>
+            {/* Visual handle snap indicators shown when hovering over a node during endpoint dragging */}
+            {draggingEnd?.hoveredNodeId && (() => {
+              const hNode = nodes.find((n) => n.id === draggingEnd.hoveredNodeId)
+              if (!hNode) return null
+              const hHandles = getNodeHandles(hNode)
+              return (
+                <>
+                  {[Position.Top, Position.Right, Position.Bottom, Position.Left].map((pos) => {
+                    const h = hHandles[pos]
+                    if (!h) return null
+                    const isSnapped = draggingEnd.hoveredHandleId === pos
+                    return (
+                      <div
+                        key={`snap-port-${pos}`}
+                        style={{
+                          position: 'absolute',
+                          transform: `translate(-50%, -50%) translate(${h.x}px, ${h.y}px)`,
+                          pointerEvents: 'none',
+                          zIndex: 100001,
+                        }}
+                      >
+                        <div
+                          className={`rounded-full transition-all duration-150 ${
+                            isSnapped
+                              ? 'w-4 h-4 bg-[var(--primary-btn)] ring-4 ring-[var(--primary-btn)]/35 shadow-sm scale-110'
+                              : 'w-2.5 h-2.5 bg-[var(--bg-primary)] border-2 border-[var(--primary-btn)]/60 opacity-60'
+                          }`}
+                        />
+                      </div>
+                    )
+                  })}
+                </>
+              )
+            })()}
+
             <div
               style={{
                 position: 'absolute',

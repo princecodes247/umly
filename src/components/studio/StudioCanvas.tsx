@@ -1448,7 +1448,12 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
 
   // Direct reconnection of an edge endpoint (with smart UML 2.5 type adaptation)
   const handleReconnectEdge = useCallback(
-    (edgeId: string, end: 'source' | 'target', newNodeId: string) => {
+    (
+      edgeId: string,
+      end: 'source' | 'target',
+      newNodeId: string,
+      newHandleId?: string | null
+    ) => {
       const targetEdge = edges.find((ed) => ed.id === edgeId)
       if (!targetEdge) return
 
@@ -1479,6 +1484,16 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
         return
       }
 
+      const nextSourceHandle =
+        end === 'source'
+          ? (newHandleId !== undefined ? toSourceHandleId(newHandleId) : targetEdge.sourceHandle)
+          : targetEdge.sourceHandle
+
+      const nextTargetHandle =
+        end === 'target'
+          ? (newHandleId !== undefined ? toTargetHandleId(newHandleId) : targetEdge.targetHandle)
+          : targetEdge.targetHandle
+
       setValidationNotice(null)
       pushSnapshot()
       setEdges((eds) =>
@@ -1488,8 +1503,8 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
               ...ed,
               source: nextSourceId,
               target: nextTargetId,
-              sourceHandle: undefined,
-              targetHandle: undefined,
+              sourceHandle: nextSourceHandle,
+              targetHandle: nextTargetHandle,
               data: {
                 ...ed.data,
                 relationshipType: finalRelType,
@@ -1505,8 +1520,8 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
               ...ed,
               source: nextSourceId,
               target: nextTargetId,
-              sourceHandle: undefined,
-              targetHandle: undefined,
+              sourceHandle: nextSourceHandle,
+              targetHandle: nextTargetHandle,
               data: {
                 ...ed.data,
                 relationshipType: finalRelType,
@@ -1620,10 +1635,11 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
         edgeId: string
         end: 'source' | 'target'
         newNodeId: string
+        newHandleId?: string | null
       }>
-      const { edgeId, end, newNodeId } = customEvent.detail || {}
+      const { edgeId, end, newNodeId, newHandleId } = customEvent.detail || {}
       if (!edgeId || !end || !newNodeId) return
-      handleReconnectEdge(edgeId, end, newNodeId)
+      handleReconnectEdge(edgeId, end, newNodeId, newHandleId)
     }
 
     window.addEventListener('duplicate-node', handleDuplicateEvent)
