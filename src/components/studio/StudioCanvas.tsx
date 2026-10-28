@@ -1904,11 +1904,31 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
     showToast('Exported PlantUML (.puml)')
   }, [title, nodes, edges, showToast])
 
+  const handleCopyPlantUml = useCallback(async () => {
+    try {
+      const puml = generatePlantUml(title, nodes, edges)
+      await navigator.clipboard.writeText(puml)
+      showToast('Copied PlantUML to clipboard')
+    } catch {
+      showToast('Failed to copy PlantUML')
+    }
+  }, [title, nodes, edges, showToast])
+
   const handleExportMermaid = useCallback(() => {
     const safeTitle = title.toLowerCase().replace(/[^a-z0-9]+/g, '-')
     const mmd = generateMermaid(title, nodes, edges)
     downloadTextFile(mmd, `${safeTitle}.mmd`)
     showToast('Exported Mermaid (.mmd)')
+  }, [title, nodes, edges, showToast])
+
+  const handleCopyMermaid = useCallback(async () => {
+    try {
+      const mmd = generateMermaid(title, nodes, edges)
+      await navigator.clipboard.writeText(mmd)
+      showToast('Copied Mermaid to clipboard')
+    } catch {
+      showToast('Failed to copy Mermaid')
+    }
   }, [title, nodes, edges, showToast])
 
   const handleExportJson = useCallback(() => {
@@ -2223,7 +2243,9 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
         onCopyImageToClipboard={handleCopyPngClipboard}
         onExportSvg={handleExportSvg}
         onExportPlantUml={handleExportPlantUml}
+        onCopyPlantUml={handleCopyPlantUml}
         onExportMermaid={handleExportMermaid}
+        onCopyMermaid={handleCopyMermaid}
         onExportJson={handleExportJson}
         onImportJson={handleImportJson}
         isSaved={isSaved}
@@ -2893,11 +2915,25 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
             },
           },
           {
+            id: 'copy-puml',
+            category: 'Export & Share',
+            label: 'Copy PlantUML to Clipboard',
+            icon: <Check className="w-3.5 h-3.5" />,
+            onSelect: handleCopyPlantUml,
+          },
+          {
             id: 'export-puml',
             category: 'Export & Share',
             label: 'Export PlantUML (.puml)',
             icon: <Check className="w-3.5 h-3.5" />,
             onSelect: handleExportPlantUml,
+          },
+          {
+            id: 'copy-mermaid',
+            category: 'Export & Share',
+            label: 'Copy Mermaid to Clipboard',
+            icon: <Check className="w-3.5 h-3.5" />,
+            onSelect: handleCopyMermaid,
           },
           {
             id: 'export-mermaid',

@@ -4,12 +4,12 @@ import {
   Undo2,
   Redo2,
   Download,
-  Upload,
   Trash2,
   FolderOpen,
   ChevronDown,
   Check,
   FileCode,
+  FileCode2,
   Image as ImageIcon,
   Sparkles,
   ArrowLeft,
@@ -37,6 +37,8 @@ interface StudioToolbarProps {
   onExportJson: () => void
   onExportPlantUml?: () => void
   onExportMermaid?: () => void
+  onCopyPlantUml?: () => void
+  onCopyMermaid?: () => void
   onCopyImageToClipboard?: () => void
   onImportJson: (file: File) => void
   isSaved?: boolean
@@ -56,6 +58,8 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
   onExportJson,
   onExportPlantUml,
   onExportMermaid,
+  onCopyPlantUml,
+  onCopyMermaid,
   onCopyImageToClipboard,
   onImportJson,
   isSaved = true,
@@ -159,6 +163,22 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
                     </span>
                   </div>
                 </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowNavMenu(false)
+                    fileInputRef.current?.click()
+                  }}
+                  className="w-full text-left px-3 py-2 text-[var(--text-primary)] hover:bg-[var(--hover-bg)] transition-colors cursor-pointer flex items-center gap-2.5"
+                >
+                  <FolderOpen className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
+                  <div className="flex flex-col">
+                    <span className="font-medium">Open Project...</span>
+                    <span className="text-[10px] text-[var(--text-tertiary)]">
+                      Import .umly.json file
+                    </span>
+                  </div>
+                </button>
                 <div className="my-1 border-t border-[var(--border-subtle)]" />
                 <div className="px-3 py-2 flex items-center justify-between text-xs text-[var(--text-secondary)]">
                   <span className="font-medium">Appearance</span>
@@ -300,8 +320,24 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
 
                 <div className="my-1 border-t border-[var(--border-subtle)]" />
                 <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] font-mono">
-                  Diagram-as-Code & Project
+                  Diagram-as-Code
                 </div>
+                {onCopyPlantUml && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowExportMenu(false)
+                      onCopyPlantUml()
+                    }}
+                    className="w-full text-left px-3 py-1.5 hover:bg-[var(--hover-bg)] flex items-center justify-between gap-2 text-[var(--text-primary)] cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <FileCode2 className="w-3.5 h-3.5 text-[var(--notion-orange-text)]" />
+                      <span>Copy PlantUML</span>
+                    </span>
+                    <span className="text-[10px] font-mono text-[var(--text-tertiary)]">code</span>
+                  </button>
+                )}
                 {onExportPlantUml && (
                   <button
                     type="button"
@@ -313,6 +349,22 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
                   >
                     <FileText className="w-3.5 h-3.5 text-[var(--notion-orange-text)]" />
                     <span>Export PlantUML (.puml)</span>
+                  </button>
+                )}
+                {onCopyMermaid && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowExportMenu(false)
+                      onCopyMermaid()
+                    }}
+                    className="w-full text-left px-3 py-1.5 hover:bg-[var(--hover-bg)] flex items-center justify-between gap-2 text-[var(--text-primary)] cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <FileCode2 className="w-3.5 h-3.5 text-[var(--notion-green-text)]" />
+                      <span>Copy Mermaid</span>
+                    </span>
+                    <span className="text-[10px] font-mono text-[var(--text-tertiary)]">code</span>
                   </button>
                 )}
                 {onExportMermaid && (
@@ -328,6 +380,11 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
                     <span>Export Mermaid (.mmd)</span>
                   </button>
                 )}
+
+                <div className="my-1 border-t border-[var(--border-subtle)]" />
+                <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] font-mono">
+                  Project Backup
+                </div>
                 <button
                   type="button"
                   onClick={() => {
@@ -336,19 +393,8 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
                   }}
                   className="w-full text-left px-3 py-1.5 hover:bg-[var(--hover-bg)] flex items-center gap-2 text-[var(--text-primary)] cursor-pointer"
                 >
-                  <FolderOpen className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
+                  <Download className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
                   <span>Save Project (.umly.json)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowExportMenu(false)
-                    fileInputRef.current?.click()
-                  }}
-                  className="w-full text-left px-3 py-1.5 hover:bg-[var(--hover-bg)] flex items-center gap-2 text-[var(--text-primary)] cursor-pointer"
-                >
-                  <Upload className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
-                  <span>Open Project (.umly.json)</span>
                 </button>
               </div>
             )}
@@ -377,7 +423,7 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
                 setShowExportMenu(false)
               }}
               className="notion-btn notion-btn-ghost p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-              title="More options (Templates, Notation Guide)"
+              title="More options (Templates, Open Project, Notation Guide)"
             >
               <MoreHorizontal className="w-4 h-4" />
             </button>
@@ -398,6 +444,24 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
                     <span className="font-medium">Notation Guide</span>
                     <span className="text-[10px] text-[var(--text-tertiary)]">
                       UML 2.5 use case symbols & rules
+                    </span>
+                  </div>
+                </button>
+
+                {/* Open Project */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMoreMenu(false)
+                    fileInputRef.current?.click()
+                  }}
+                  className="w-full text-left px-3 py-2 hover:bg-[var(--hover-bg)] flex items-center gap-2.5 text-[var(--text-primary)] cursor-pointer"
+                >
+                  <FolderOpen className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
+                  <div className="flex flex-col">
+                    <span className="font-medium">Open Project...</span>
+                    <span className="text-[10px] text-[var(--text-tertiary)]">
+                      Import a .umly.json diagram file
                     </span>
                   </div>
                 </button>

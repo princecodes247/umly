@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 import type { Node, Edge } from '@xyflow/react'
 import {
   User,
@@ -24,15 +24,12 @@ import {
   History,
   RotateCcw,
   Plus,
-  FileCode2,
-  Check,
   Route,
   Palette,
 } from 'lucide-react'
 import type { AlignmentMode } from './StudioCanvas'
 import { getAllowedRelationshipTypes } from '../../lib/umlValidation'
 import type { DiagramSnapshot } from '../../lib/diagramStorage'
-import { generatePlantUml, generateMermaid } from '../../lib/exportDiagram'
 import type {
   UmlNodeData,
   UmlEdgeData,
@@ -104,16 +101,11 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
   snapshots = [],
   onSaveSnapshot,
   onRestoreSnapshot,
-  diagramTitle = 'UML Diagram',
   allNodes,
   allEdges,
   isOpen,
   onToggleOpen,
 }) => {
-  const [copiedCodeType, setCopiedCodeType] = useState<'puml' | 'mermaid' | null>(
-    null
-  )
-
   if (!isOpen) {
     return (
       <button
@@ -145,20 +137,6 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
 
   const nodeData = activeNode?.data as unknown as UmlNodeData | undefined
   const edgeData = activeEdge?.data as unknown as UmlEdgeData | undefined
-
-  const handleCopyCode = async (kind: 'puml' | 'mermaid') => {
-    const text =
-      kind === 'puml'
-        ? generatePlantUml(diagramTitle, allNodes, allEdges)
-        : generateMermaid(diagramTitle, allNodes, allEdges)
-    try {
-      await navigator.clipboard.writeText(text)
-      setCopiedCodeType(kind)
-      setTimeout(() => setCopiedCodeType(null), 1800)
-    } catch (err) {
-      console.warn('Clipboard write failed:', err)
-    }
-  }
 
   return (
     <aside className="w-76 shrink-0 h-full flex flex-col bg-[var(--bg-primary)] border-l border-[var(--border-subtle)] overflow-y-auto text-xs font-sans select-none z-20">
@@ -1022,45 +1000,6 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                     </button>
                   )
                 })}
-              </div>
-            </div>
-
-            {/* Diagram-as-Code Quick Copy */}
-            <div className="space-y-2 pt-2 border-t border-[var(--border-subtle)]">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] font-mono">
-                  Diagram-as-Code
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => handleCopyCode('puml')}
-                  className="notion-btn flex items-center justify-center gap-1.5 py-1.5 text-[11px]"
-                >
-                  {copiedCodeType === 'puml' ? (
-                    <Check className="w-3.5 h-3.5 text-[#448361]" />
-                  ) : (
-                    <FileCode2 className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
-                  )}
-                  <span>
-                    {copiedCodeType === 'puml' ? 'Copied!' : 'Copy PlantUML'}
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleCopyCode('mermaid')}
-                  className="notion-btn flex items-center justify-center gap-1.5 py-1.5 text-[11px]"
-                >
-                  {copiedCodeType === 'mermaid' ? (
-                    <Check className="w-3.5 h-3.5 text-[#448361]" />
-                  ) : (
-                    <FileCode2 className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
-                  )}
-                  <span>
-                    {copiedCodeType === 'mermaid' ? 'Copied!' : 'Copy Mermaid'}
-                  </span>
-                </button>
               </div>
             </div>
 
