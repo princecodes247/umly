@@ -11,6 +11,7 @@ import {
   type NodeTypes,
   type EdgeTypes,
   BackgroundVariant,
+  ConnectionLineType,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 
@@ -242,6 +243,11 @@ export const UmlCanvas: React.FC<UmlCanvasProps> = ({
         onEdgesChange={onEdgesChange}
         onConnectStart={onConnectStart}
         onConnect={onConnect}
+        connectionLineType={ConnectionLineType.Straight}
+        connectionLineStyle={{
+          stroke: 'var(--primary-btn)',
+          strokeWidth: 2,
+        }}
         fitView
         fitViewOptions={{ padding: 0.2 }}
         minZoom={0.4}

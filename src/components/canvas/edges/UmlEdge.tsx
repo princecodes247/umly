@@ -589,11 +589,10 @@ export const UmlEdge = memo(
                         }}
                       >
                         <div
-                          className={`rounded-full transition-all duration-150 ${
-                            isSnapped
-                              ? 'w-4 h-4 bg-[var(--primary-btn)] ring-4 ring-[var(--primary-btn)]/35 shadow-sm scale-110'
-                              : 'w-2.5 h-2.5 bg-[var(--bg-primary)] border-2 border-[var(--primary-btn)]/60 opacity-60'
-                          }`}
+                          className={`rounded-full transition-all duration-150 ${isSnapped
+                            ? 'w-4 h-4 bg-[var(--primary-btn)] ring-4 ring-[var(--primary-btn)]/35 shadow-sm scale-110'
+                            : 'w-2.5 h-2.5 bg-[var(--bg-primary)] border-2 border-[var(--primary-btn)]/60 opacity-60'
+                            }`}
                         />
                       </div>
                     )
@@ -615,11 +614,10 @@ export const UmlEdge = memo(
               onPointerDown={(e) => startEndpointDrag(e, 'source')}
             >
               <div
-                className={`w-4 h-4 rounded-full border-2 border-[var(--primary-btn)] shadow-md hover:scale-125 transition-transform cursor-grab active:cursor-grabbing flex items-center justify-center ${
-                  draggingEnd?.end === 'source'
-                    ? 'bg-[var(--primary-btn)] ring-2 ring-[var(--primary-btn)]/35'
-                    : 'bg-[var(--bg-primary)]'
-                }`}
+                className={`w-4 h-4 rounded-full border-2 border-[var(--primary-btn)] shadow-md hover:scale-125 transition-transform cursor-grab active:cursor-grabbing flex items-center justify-center ${draggingEnd?.end === 'source'
+                  ? 'bg-[var(--primary-btn)] ring-2 ring-[var(--primary-btn)]/35'
+                  : 'bg-[var(--bg-primary)]'
+                  }`}
                 title="Drag to reconnect source element"
               />
             </div>
@@ -637,11 +635,10 @@ export const UmlEdge = memo(
               onPointerDown={(e) => startEndpointDrag(e, 'target')}
             >
               <div
-                className={`w-4 h-4 rounded-full border-2 border-[var(--primary-btn)] shadow-md hover:scale-125 transition-transform cursor-grab active:cursor-grabbing flex items-center justify-center ${
-                  draggingEnd?.end === 'target'
-                    ? 'bg-[var(--primary-btn)] ring-2 ring-[var(--primary-btn)]/35'
-                    : 'bg-[var(--bg-primary)]'
-                }`}
+                className={`w-4 h-4 rounded-full border-2 border-[var(--primary-btn)] shadow-md hover:scale-125 transition-transform cursor-grab active:cursor-grabbing flex items-center justify-center ${draggingEnd?.end === 'target'
+                  ? 'bg-[var(--primary-btn)] ring-2 ring-[var(--primary-btn)]/35'
+                  : 'bg-[var(--bg-primary)]'
+                  }`}
                 title="Drag to reconnect target element"
               />
             </div>
@@ -674,11 +671,10 @@ export const UmlEdge = memo(
                     exit={{ opacity: 0, y: 3, scale: 0.94 }}
                     transition={{ type: 'spring', stiffness: 520, damping: 28 }}
                     style={{ transformOrigin: 'bottom center' }}
-                    className={`nodrag nopan ${
-                      hasVisibleLabel
-                        ? 'absolute bottom-full mb-1 left-1/2 -translate-x-1/2'
-                        : 'relative'
-                    } flex items-center gap-0.5 bg-[var(--bg-primary)] border border-[var(--border-default)] rounded-[6px] p-0.5 shadow-md z-20 whitespace-nowrap`}
+                    className={`nodrag nopan ${hasVisibleLabel
+                      ? 'absolute bottom-full mb-1 left-1/2 -translate-x-1/2'
+                      : 'relative'
+                      } flex items-center gap-0.5 bg-[var(--bg-primary)] border border-[var(--border-default)] rounded-[6px] p-0.5 shadow-md z-20 whitespace-nowrap`}
                     onPointerDown={(e) => e.stopPropagation()}
                     onMouseDown={(e) => e.stopPropagation()}
                     onClick={(e) => e.stopPropagation()}
@@ -706,11 +702,10 @@ export const UmlEdge = memo(
                                 e.stopPropagation()
                                 handleSetType(t)
                               }}
-                              className={`px-1.5 py-0.5 rounded-[4px] font-mono text-[10px] transition-colors cursor-pointer ${
-                                isCurrent
-                                  ? 'bg-[var(--selection-bg)] text-[var(--primary-btn)] font-semibold'
-                                  : 'text-[var(--text-secondary)] hover:bg-[var(--hover-bg)] hover:text-[var(--text-primary)]'
-                              }`}
+                              className={`px-1.5 py-0.5 rounded-[4px] font-mono text-[10px] transition-colors cursor-pointer ${isCurrent
+                                ? 'bg-[var(--selection-bg)] text-[var(--primary-btn)] font-semibold'
+                                : 'text-[var(--text-secondary)] hover:bg-[var(--hover-bg)] hover:text-[var(--text-primary)]'
+                                }`}
                             >
                               {label}
                             </button>
@@ -765,13 +760,12 @@ export const UmlEdge = memo(
                   style={{
                     color: selected ? 'var(--primary-btn)' : textColor,
                   }}
-                  className={`flex flex-col items-center justify-center px-1.5 py-[1px] rounded-[3px] bg-[var(--bg-secondary)] font-mono text-[10px] font-medium leading-tight tracking-tight cursor-pointer transition-colors whitespace-nowrap ${
-                    selected
-                      ? 'ring-1 ring-[var(--primary-btn)]/50'
-                      : isHovered
-                        ? 'ring-1 ring-[var(--border-default)]'
-                        : ''
-                  }`}
+                  className={`flex flex-col items-center justify-center px-1.5 py-[1px] rounded-[3px] bg-[var(--bg-secondary)] font-mono text-[10px] font-medium leading-tight tracking-tight cursor-pointer transition-colors whitespace-nowrap ${selected
+                    ? 'ring-1 ring-[var(--primary-btn)]/50'
+                    : isHovered
+                      ? 'ring-1 ring-[var(--border-default)]'
+                      : ''
+                    }`}
                   title="Click to select relationship"
                 >
                   <span>{stereotypeText}</span>

@@ -17,6 +17,7 @@ import {
   BackgroundVariant,
   SelectionMode,
   ConnectionMode,
+  ConnectionLineType,
   type Connection,
   type Edge,
   type Node,
@@ -2632,6 +2633,17 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
             onPaneClick={onPaneClick}
             onEdgeContextMenu={onEdgeContextMenu}
             edgesReconnectable
+            connectionLineType={
+              defaultRoutingStyle === 'orthogonal'
+                ? ConnectionLineType.SmoothStep
+                : defaultRoutingStyle === 'bezier'
+                  ? ConnectionLineType.Bezier
+                  : ConnectionLineType.Straight
+            }
+            connectionLineStyle={{
+              stroke: 'var(--primary-btn)',
+              strokeWidth: 2,
+            }}
             reconnectRadius={14}
             elevateEdgesOnSelect
             connectionMode={ConnectionMode.Loose}
