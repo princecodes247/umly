@@ -10,7 +10,6 @@ import {
   Controls,
   useNodesState,
   useEdgesState,
-  addEdge,
   reconnectEdge,
   useReactFlow,
   ReactFlowProvider,
@@ -1045,19 +1044,47 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
         sourceHandle: toSourceHandleId(sHandle),
         targetHandle: toTargetHandleId(tHandle),
         type: 'umlEdge',
+        selected: true,
         data: {
           relationshipType: inferredType,
           routingStyle: defaultRoutingStyle,
         },
       }
 
-      setEdges((eds) => addEdge(newEdge, eds))
+      // Deselect all previous selections; select the newly drawn relationship line
+      setNodes((nds) => nds.map((n) => ({ ...n, selected: false })))
+      setSelectedNodes([])
+      setEdges((eds) => [
+        ...eds.map((ed) => ({ ...ed, selected: false })),
+        newEdge,
+      ])
+      setSelectedEdges([newEdge])
+
+      // React Flow may process handle mouseup in the same tick; ensure edge remains the only selected element
+      requestAnimationFrame(() => {
+        setNodes((nds) =>
+          nds.some((n) => n.selected)
+            ? nds.map((n) => ({ ...n, selected: false }))
+            : nds
+        )
+        setEdges((eds) =>
+          eds.map((ed) => ({
+            ...ed,
+            selected: ed.id === newEdge.id,
+          }))
+        )
+        setSelectedNodes([])
+        setSelectedEdges([newEdge])
+      })
     },
     [
       nodes,
       defaultRoutingStyle,
       pushSnapshot,
       setEdges,
+      setNodes,
+      setSelectedNodes,
+      setSelectedEdges,
       showValidationWarning,
     ]
   )
@@ -2257,12 +2284,35 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
                           sourceHandle: conn.sourceHandle,
                           targetHandle: conn.targetHandle,
                           type: 'umlEdge',
+                          selected: true,
                           data: {
                             relationshipType: suggested,
                             routingStyle: defaultRoutingStyle,
                           },
                         }
-                        setEdges((eds) => addEdge(newEdge, eds))
+                        setNodes((nds) => nds.map((n) => ({ ...n, selected: false })))
+                        setSelectedNodes([])
+                        setEdges((eds) => [
+                          ...eds.map((ed) => ({ ...ed, selected: false })),
+                          newEdge,
+                        ])
+                        setSelectedEdges([newEdge])
+
+                        requestAnimationFrame(() => {
+                          setNodes((nds) =>
+                            nds.some((n) => n.selected)
+                              ? nds.map((n) => ({ ...n, selected: false }))
+                              : nds
+                          )
+                          setEdges((eds) =>
+                            eds.map((ed) => ({
+                              ...ed,
+                              selected: ed.id === newEdge.id,
+                            }))
+                          )
+                          setSelectedNodes([])
+                          setSelectedEdges([newEdge])
+                        })
                       }}
                       className="px-2 py-1 rounded-[5px] bg-[var(--primary-btn)] text-white font-medium text-[11px] whitespace-nowrap hover:bg-[var(--primary-btn-hover)] transition-colors cursor-pointer shrink-0"
                     >

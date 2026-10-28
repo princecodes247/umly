@@ -5,7 +5,6 @@ import {
   Controls,
   useNodesState,
   useEdgesState,
-  addEdge,
   type Connection,
   type Edge,
   type Node,
@@ -112,14 +111,19 @@ export const UmlCanvas: React.FC<UmlCanvasProps> = ({
         sourceHandle: sHandle,
         targetHandle: tHandle,
         type: 'umlEdge',
+        selected: true,
         data: {
           relationshipType: activeRelationshipType,
         },
       }
 
-      setEdges((eds) => addEdge(newEdge, eds))
+      setNodes((nds) => nds.map((n) => ({ ...n, selected: false })))
+      setEdges((eds) => [
+        ...eds.map((ed) => ({ ...ed, selected: false })),
+        newEdge,
+      ])
     },
-    [edges, activeRelationshipType, setEdges]
+    [edges, activeRelationshipType, setEdges, setNodes]
   )
 
   // Listen to custom events from edge UI buttons (cycle type, flip direction, delete)
