@@ -43,8 +43,8 @@ interface StudioInspectorProps {
   selectedEdges?: Edge[]
   onUpdateNodeData: (id: string, data: Partial<UmlNodeData>) => void
   onUpdateEdgeData: (id: string, data: Partial<UmlEdgeData>) => void
-  onDeleteNode: (id: string) => void
-  onDuplicateNode: (id: string) => void
+  onDeleteNode?: (id: string) => void
+  onDuplicateNode?: (id: string) => void
   onFlipEdgeDirection: (id: string) => void
   onReconnectEdge?: (
     edgeId: string,
@@ -88,8 +88,6 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
   selectedEdges: _selectedEdges = [],
   onUpdateNodeData,
   onUpdateEdgeData,
-  onDeleteNode,
-  onDuplicateNode,
   onFlipEdgeDirection,
   onReconnectEdge,
   onDeleteSelected,
@@ -321,36 +319,31 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
           /* CASE 1: SINGLE NODE SELECTED */
           <div className="space-y-4">
             {/* Node Type Pill */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {selectedNode.type === 'actor' && (
-                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-[var(--selection-bg)] text-[var(--primary-btn)] font-semibold text-xs">
-                    <User className="w-3.5 h-3.5" />
-                    <span>Actor</span>
-                  </div>
-                )}
-                {selectedNode.type === 'useCase' && (
-                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-[var(--notion-blue-bg)] text-[var(--notion-blue-text)] font-semibold text-xs">
-                    <CircleDot className="w-3.5 h-3.5" />
-                    <span>Use Case</span>
-                  </div>
-                )}
-                {selectedNode.type === 'boundary' && (
-                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-[var(--notion-purple-bg)] text-[var(--notion-purple-text)] font-semibold text-xs">
-                    <SquareDashed className="w-3.5 h-3.5" />
-                    <span>System Boundary</span>
-                  </div>
-                )}
-                {selectedNode.type === 'note' && (
-                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-[var(--notion-yellow-bg)] text-[var(--notion-yellow-text)] font-semibold text-xs">
-                    <StickyNote className="w-3.5 h-3.5" />
-                    <span>Note</span>
-                  </div>
-                )}
-              </div>
-              <span className="text-[10px] text-[var(--text-tertiary)] font-mono">
-                Enter to rename · Tab to branch
-              </span>
+            <div className="flex items-center">
+              {selectedNode.type === 'actor' && (
+                <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-[var(--selection-bg)] text-[var(--primary-btn)] font-semibold text-xs whitespace-nowrap">
+                  <User className="w-3.5 h-3.5" />
+                  <span>Actor</span>
+                </div>
+              )}
+              {selectedNode.type === 'useCase' && (
+                <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-[var(--notion-blue-bg)] text-[var(--notion-blue-text)] font-semibold text-xs whitespace-nowrap">
+                  <CircleDot className="w-3.5 h-3.5" />
+                  <span>Use Case</span>
+                </div>
+              )}
+              {selectedNode.type === 'boundary' && (
+                <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-[var(--notion-purple-bg)] text-[var(--notion-purple-text)] font-semibold text-xs whitespace-nowrap">
+                  <SquareDashed className="w-3.5 h-3.5" />
+                  <span>System Boundary</span>
+                </div>
+              )}
+              {selectedNode.type === 'note' && (
+                <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-[var(--notion-yellow-bg)] text-[var(--notion-yellow-text)] font-semibold text-xs whitespace-nowrap">
+                  <StickyNote className="w-3.5 h-3.5" />
+                  <span>Note</span>
+                </div>
+              )}
             </div>
 
             {/* Name / Label Input */}
@@ -561,27 +554,6 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                 </p>
               </div>
             )}
-
-            {/* Quick Actions */}
-            <div className="pt-2 border-t border-[var(--border-subtle)] flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => onDuplicateNode(selectedNode.id)}
-                className="flex-1 notion-btn flex items-center justify-center gap-1.5"
-              >
-                <Copy className="w-3.5 h-3.5" />
-                <span>Duplicate</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onDeleteNode(selectedNode.id)}
-                className="notion-btn text-[var(--notion-red-text)] hover:bg-[var(--notion-red-bg)] flex items-center gap-1.5"
-                title="Delete Node"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>Delete</span>
-              </button>
-            </div>
           </div>
         ) : activeEdge && edgeData ? (
           /* CASE 2: EDGE SELECTED */

@@ -6,7 +6,7 @@ import {
   useReactFlow,
   type NodeProps,
 } from '@xyflow/react'
-import { Trash2, Copy } from 'lucide-react'
+import { Trash2, Copy, Pencil } from 'lucide-react'
 import type { UmlNodeData, NodeAccentColor } from '../../../types/game'
 
 const ACCENT_STYLES: Record<
@@ -165,6 +165,17 @@ export const UseCaseNode = memo(({ id, data, selected }: NodeProps) => {
           offset={16}
           className="nodrag nopan flex items-center gap-0.5 bg-[var(--bg-primary)] border border-[var(--border-default)] p-0.5 rounded-[5px] shadow-lg z-[99999] text-xs"
         >
+          <button
+            type="button"
+            title="Rename (Enter)"
+            onClick={(e) => {
+              e.stopPropagation()
+              setIsEditing(true)
+            }}
+            className="p-1 rounded-[3px] hover:bg-[var(--hover-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
+          >
+            <Pencil className="w-3 h-3" />
+          </button>
           <button
             type="button"
             title="Duplicate (Cmd+D)"
