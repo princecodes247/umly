@@ -242,18 +242,27 @@ export const BoundaryNode = memo(({ id, data, selected }: NodeProps) => {
         />
 
         {isEditing ? (
-          <input
-            ref={inputRef}
-            type="text"
-            value={titleValue}
-            onChange={(e) => setTitleValue(e.target.value)}
-            onBlur={handleFinishEditing}
-            onKeyDown={handleKeyDown}
-            className="nodrag nopan w-36 text-xs font-semibold px-1 py-0.5 rounded-[2px] border border-[var(--primary-btn)] bg-[var(--bg-secondary)] text-[var(--text-primary)] focus:outline-none"
-          />
+          <div className="inline-grid items-center">
+            <span
+              className="col-start-1 row-start-1 invisible whitespace-pre font-semibold text-xs text-[var(--text-primary)] px-0.5 select-none pointer-events-none"
+              aria-hidden="true"
+            >
+              {titleValue ? `${titleValue} ` : 'System Boundary '}
+            </span>
+            <input
+              ref={inputRef}
+              type="text"
+              value={titleValue}
+              onChange={(e) => setTitleValue(e.target.value)}
+              onBlur={handleFinishEditing}
+              onKeyDown={handleKeyDown}
+              className="nodrag nopan col-start-1 row-start-1 w-full font-semibold text-xs text-[var(--text-primary)] bg-transparent border-0 outline-none p-0 m-0 px-0.5 caret-[var(--primary-btn)] focus:ring-0 shadow-none selection:bg-[var(--selection-bg)]"
+              spellCheck={false}
+            />
+          </div>
         ) : (
           <span
-            className="font-semibold text-xs text-[var(--text-primary)] cursor-pointer hover:underline"
+            className="font-semibold text-xs text-[var(--text-primary)] cursor-pointer hover:underline px-0.5"
             onDoubleClick={(e) => {
               e.stopPropagation()
               if (!isLocked) setIsEditing(true)

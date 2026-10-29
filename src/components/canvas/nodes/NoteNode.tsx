@@ -205,27 +205,42 @@ export const NoteNode = memo(({ id, data, selected }: NodeProps) => {
       {/* Content */}
       <div className="text-[11px] leading-snug font-sans break-words pr-2">
         {isEditing ? (
-          <textarea
-            ref={textareaRef}
-            rows={3}
-            value={textValue}
-            onChange={(e) => setTextValue(e.target.value)}
-            onBlur={handleFinishEditing}
-            onKeyDown={(e) => {
-              if (e.key === 'Escape') {
-                e.preventDefault()
-                e.stopPropagation()
-                setIsEditing(false)
-              } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                e.preventDefault()
-                e.stopPropagation()
-                handleFinishEditing()
-              }
-            }}
-            className="nodrag nopan w-full text-[11px] p-1 rounded-[2px] bg-transparent border border-[var(--primary-btn)] focus:outline-none resize-none"
-          />
+          <div className="grid w-full">
+            {/* Mirror element for zero-shift auto-height matching the display div */}
+            <span
+              className="col-start-1 row-start-1 invisible whitespace-pre-wrap break-words text-[11px] leading-snug font-sans pointer-events-none select-none"
+              aria-hidden="true"
+            >
+              {textValue ? `${textValue}\n` : 'Note \n'}
+            </span>
+            <textarea
+              ref={textareaRef}
+              value={textValue}
+              onChange={(e) => setTextValue(e.target.value)}
+              onBlur={handleFinishEditing}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  setIsEditing(false)
+                } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  handleFinishEditing()
+                }
+              }}
+              placeholder="Add note text..."
+              className="nodrag nopan col-start-1 row-start-1 w-full h-full resize-none overflow-hidden bg-transparent border-0 outline-none p-0 m-0 text-[11px] leading-snug font-sans text-[var(--text-primary)] caret-[var(--primary-btn)] focus:ring-0 shadow-none whitespace-pre-wrap break-words selection:bg-[var(--selection-bg)]"
+              spellCheck={false}
+            />
+          </div>
         ) : (
-          <div className="whitespace-pre-wrap">{textValue}</div>
+          <div
+            className="whitespace-pre-wrap cursor-text"
+            title={!isLocked ? 'Double-click to edit note' : undefined}
+          >
+            {textValue || 'Note'}
+          </div>
         )}
       </div>
     </div>

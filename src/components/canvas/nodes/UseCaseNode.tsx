@@ -46,7 +46,7 @@ export const UseCaseNode = memo(({ id, data, selected }: NodeProps) => {
 
   const [isEditing, setIsEditing] = useState(Boolean(nodeData.autoFocusEdit))
   const [labelValue, setLabelValue] = useState(nodeData.label || 'Use Case')
-  const inputRef = useRef<HTMLInputElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     setLabelValue(nodeData.label || 'Use Case')
@@ -62,8 +62,8 @@ export const UseCaseNode = memo(({ id, data, selected }: NodeProps) => {
   useEffect(() => {
     if (isEditing) {
       requestAnimationFrame(() => {
-        inputRef.current?.focus()
-        inputRef.current?.select()
+        textareaRef.current?.focus()
+        textareaRef.current?.select()
       })
     }
   }, [isEditing])
@@ -97,8 +97,8 @@ export const UseCaseNode = memo(({ id, data, selected }: NodeProps) => {
     }
   }, [selected, isEditing, id, labelValue, updateNodeData])
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       e.stopPropagation()
       handleFinishEditing()
@@ -255,23 +255,33 @@ export const UseCaseNode = memo(({ id, data, selected }: NodeProps) => {
       )}
 
       {/* Use Case Label */}
-      <div className="text-center font-medium text-xs text-[var(--text-primary)] max-w-[148px] leading-snug px-1 font-sans">
+      <div className="relative text-center font-medium text-xs text-[var(--text-primary)] max-w-[148px] min-w-[70px] leading-snug px-1 font-sans">
         {isEditing ? (
-          <input
-            ref={inputRef}
-            type="text"
-            value={labelValue}
-            onChange={(e) => setLabelValue(e.target.value)}
-            onBlur={handleFinishEditing}
-            onKeyDown={handleKeyDown}
-            className="nodrag nopan w-32 text-center text-xs font-medium px-1.5 py-0.5 rounded-[3px] border border-[var(--primary-btn)] bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none"
-          />
+          <div className="inline-grid w-full items-center justify-center">
+            {/* Invisible mirror that auto-sizes the container identically without layout shift */}
+            <span
+              className="col-start-1 row-start-1 invisible whitespace-pre-wrap break-words text-center font-medium text-xs leading-snug font-sans px-0.5 py-0 select-none pointer-events-none"
+              aria-hidden="true"
+            >
+              {labelValue ? `${labelValue} ` : 'Use Case '}
+            </span>
+            <textarea
+              ref={textareaRef}
+              rows={1}
+              value={labelValue}
+              onChange={(e) => setLabelValue(e.target.value)}
+              onBlur={handleFinishEditing}
+              onKeyDown={handleKeyDown}
+              className="nodrag nopan col-start-1 row-start-1 w-full h-full resize-none overflow-hidden bg-transparent border-0 outline-none p-0 text-center font-medium text-xs leading-snug font-sans text-[var(--text-primary)] caret-[var(--primary-btn)] focus:ring-0 shadow-none m-0 px-0.5 py-0 selection:bg-[var(--selection-bg)]"
+              spellCheck={false}
+            />
+          </div>
         ) : (
           <div
-            className="cursor-text break-words"
+            className="cursor-text break-words px-0.5 py-0 whitespace-pre-wrap"
             title={!isLocked ? 'Double-click or press Enter to rename' : undefined}
           >
-            {nodeData.label}
+            {nodeData.label || 'Use Case'}
           </div>
         )}
       </div>

@@ -360,18 +360,27 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
         </div>
 
         {isEditing ? (
-          <input
-            ref={inputRef}
-            type="text"
-            value={labelValue}
-            onChange={(e) => setLabelValue(e.target.value)}
-            onBlur={handleFinishEditing}
-            onKeyDown={handleKeyDown}
-            className="nodrag nopan w-28 text-center text-xs font-semibold px-1 py-0.5 rounded-[3px] border border-[var(--primary-btn)] bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none"
-          />
+          <div className="inline-grid w-full items-center justify-center mt-0.5">
+            <span
+              className="col-start-1 row-start-1 invisible whitespace-pre-wrap break-words font-semibold text-xs leading-tight font-sans text-center px-0.5 py-0 select-none pointer-events-none"
+              aria-hidden="true"
+            >
+              {labelValue ? `${labelValue} ` : 'Actor '}
+            </span>
+            <input
+              ref={inputRef}
+              type="text"
+              value={labelValue}
+              onChange={(e) => setLabelValue(e.target.value)}
+              onBlur={handleFinishEditing}
+              onKeyDown={handleKeyDown}
+              className="nodrag nopan col-start-1 row-start-1 w-full text-center font-semibold text-xs leading-tight font-sans text-[var(--text-primary)] bg-transparent border-0 outline-none p-0 m-0 px-0.5 py-0 caret-[var(--primary-btn)] focus:ring-0 shadow-none selection:bg-[var(--selection-bg)]"
+              spellCheck={false}
+            />
+          </div>
         ) : (
           <div
-            className="font-semibold text-xs text-[var(--text-primary)] mt-0.5 break-words cursor-text"
+            className="font-semibold text-xs text-[var(--text-primary)] mt-0.5 break-words cursor-text px-0.5 py-0"
             title={!isLocked ? 'Double-click or press Enter to rename' : undefined}
           >
             {nodeData.label}
