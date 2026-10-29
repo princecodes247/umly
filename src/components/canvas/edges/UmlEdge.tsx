@@ -9,6 +9,7 @@ import {
   useNodes,
   useEdges,
   useReactFlow,
+  useViewport,
   type EdgeProps,
 } from '@xyflow/react'
 import { motion, AnimatePresence } from 'motion/react'
@@ -45,6 +46,7 @@ export const UmlEdge = memo(
     const nodes = useNodes()
     const edges = useEdges()
     const { setEdges, setNodes, screenToFlowPosition } = useReactFlow()
+    const { zoom } = useViewport()
 
     const [isHovered, setIsHovered] = useState(false)
     const [draggingEnd, setDraggingEnd] = useState<{
@@ -667,92 +669,106 @@ export const UmlEdge = memo(
               {/* Floating Quick Actions & Post-Hoc Relationship Type Switcher */}
               <AnimatePresence>
                 {showActions && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 4, scale: 0.92 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 3, scale: 0.94 }}
-                    transition={{ type: 'spring', stiffness: 520, damping: 28 }}
-                    style={{ transformOrigin: 'bottom center' }}
-                    className={`nodrag nopan ${hasVisibleLabel
-                      ? 'absolute bottom-full mb-1 left-1/2 -translate-x-1/2'
-                      : 'relative'
-                      } flex items-center gap-0.5 bg-[var(--bg-primary)] border border-[var(--border-default)] rounded-[6px] p-0.5 shadow-md z-20 whitespace-nowrap`}
+                  <div
+                    style={{
+                      position: hasVisibleLabel ? 'absolute' : 'relative',
+                      bottom: hasVisibleLabel ? '100%' : 'auto',
+                      marginBottom: hasVisibleLabel ? `${8 * (1 / zoom)}px` : 0,
+                      left: hasVisibleLabel ? '50%' : 'auto',
+                      transform: hasVisibleLabel
+                        ? `translateX(-50%) scale(${1 / zoom})`
+                        : `scale(${1 / zoom})`,
+                      transformOrigin: hasVisibleLabel
+                        ? 'bottom center'
+                        : 'center center',
+                      zIndex: 20,
+                    }}
+                    className="nodrag nopan pointer-events-auto"
                     onPointerDown={(e) => e.stopPropagation()}
                     onMouseDown={(e) => e.stopPropagation()}
                     onClick={(e) => e.stopPropagation()}
                   >
-                    {/* Direct relationship type pills when multiple valid types exist (e.g. UseCase <-> UseCase) */}
-                    {allowedTypes.length > 1 && (
-                      <>
-                        {allowedTypes.map((t) => {
-                          const isCurrent = relationshipType === t
-                          const label =
-                            t === 'include'
-                              ? '«include»'
-                              : t === 'extend'
-                                ? '«extend»'
-                                : t === 'generalization'
-                                  ? 'Inherit'
-                                  : 'Assoc'
-                          return (
-                            <button
-                              key={t}
-                              type="button"
-                              onPointerDown={(e) => e.stopPropagation()}
-                              onMouseDown={(e) => e.stopPropagation()}
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleSetType(t)
-                              }}
-                              className={`px-1.5 py-0.5 rounded-[4px] font-mono text-[10px] transition-colors cursor-pointer ${isCurrent
-                                ? 'bg-[var(--selection-bg)] text-[var(--primary-btn)] font-semibold'
-                                : 'text-[var(--text-secondary)] hover:bg-[var(--hover-bg)] hover:text-[var(--text-primary)]'
-                                }`}
-                            >
-                              {label}
-                            </button>
+                    <motion.div
+                      initial={{ opacity: 0, y: 4, scale: 0.92 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 3, scale: 0.94 }}
+                      transition={{ type: 'spring', stiffness: 520, damping: 28 }}
+                      style={{ transformOrigin: 'bottom center' }}
+                      className="nodrag nopan flex items-center gap-0.5 bg-[var(--bg-primary)] border border-[var(--border-default)] rounded-[6px] p-0.5 shadow-md whitespace-nowrap"
+                    >
+                      {/* Direct relationship type pills when multiple valid types exist (e.g. UseCase <-> UseCase) */}
+                      {allowedTypes.length > 1 && (
+                        <>
+                          {allowedTypes.map((t) => {
+                            const isCurrent = relationshipType === t
+                            const label =
+                              t === 'include'
+                                ? '«include»'
+                                : t === 'extend'
+                                  ? '«extend»'
+                                  : t === 'generalization'
+                                    ? 'Inherit'
+                                    : 'Assoc'
+                            return (
+                              <button
+                                key={t}
+                                type="button"
+                                onPointerDown={(e) => e.stopPropagation()}
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleSetType(t)
+                                }}
+                                className={`px-1.5 py-0.5 rounded-[4px] font-mono text-[10px] transition-colors cursor-pointer ${isCurrent
+                                  ? 'bg-[var(--selection-bg)] text-[var(--primary-btn)] font-semibold'
+                                  : 'text-[var(--text-secondary)] hover:bg-[var(--hover-bg)] hover:text-[var(--text-primary)]'
+                                  }`}
+                              >
+                                {label}
+                              </button>
+                            )
+                          })}
+                          <div className="h-3.5 w-px bg-[var(--border-subtle)] mx-0.5" />
+                        </>
+                      )}
+
+                      <button
+                        type="button"
+                        title="Flip connection direction (swap source & target)"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          window.dispatchEvent(
+                            new CustomEvent('flip-edge-direction', {
+                              detail: { edgeId: id },
+                            })
                           )
-                        })}
-                        <div className="h-3.5 w-px bg-[var(--border-subtle)] mx-0.5" />
-                      </>
-                    )}
+                        }}
+                        className="p-1 rounded-[4px] hover:bg-[var(--hover-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+                      >
+                        <ArrowLeftRight className="w-3 h-3" />
+                      </button>
 
-                    <button
-                      type="button"
-                      title="Flip connection direction (swap source & target)"
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onMouseDown={(e) => e.stopPropagation()}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        window.dispatchEvent(
-                          new CustomEvent('flip-edge-direction', {
-                            detail: { edgeId: id },
-                          })
-                        )
-                      }}
-                      className="p-1 rounded-[4px] hover:bg-[var(--hover-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
-                    >
-                      <ArrowLeftRight className="w-3 h-3" />
-                    </button>
-
-                    <button
-                      type="button"
-                      title="Delete connection"
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onMouseDown={(e) => e.stopPropagation()}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        window.dispatchEvent(
-                          new CustomEvent('delete-edge', {
-                            detail: { edgeId: id },
-                          })
-                        )
-                      }}
-                      className="p-1 rounded-[4px] hover:bg-[var(--notion-red-bg)] text-[var(--text-secondary)] hover:text-[var(--notion-red-text)] transition-colors cursor-pointer"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                  </motion.div>
+                      <button
+                        type="button"
+                        title="Delete connection"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          window.dispatchEvent(
+                            new CustomEvent('delete-edge', {
+                              detail: { edgeId: id },
+                            })
+                          )
+                        }}
+                        className="p-1 rounded-[4px] hover:bg-[var(--notion-red-bg)] text-[var(--text-secondary)] hover:text-[var(--notion-red-text)] transition-colors cursor-pointer"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </motion.div>
+                  </div>
                 )}
               </AnimatePresence>
 
