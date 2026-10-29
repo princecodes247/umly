@@ -267,13 +267,15 @@ export const UmlEdge = memo(
 
     const strokeColor = selected
       ? 'var(--primary-btn)'
-      : relationshipType === 'include'
-        ? 'var(--notion-blue-text)'
-        : relationshipType === 'extend'
-          ? 'var(--notion-yellow-text)'
-          : relationshipType === 'generalization'
-            ? 'var(--notion-green-text)'
-            : 'var(--text-secondary)'
+      : isHovered
+        ? 'var(--primary-btn)'
+        : relationshipType === 'include'
+          ? 'var(--notion-blue-text)'
+          : relationshipType === 'extend'
+            ? 'var(--notion-yellow-text)'
+            : relationshipType === 'generalization'
+              ? 'var(--notion-green-text)'
+              : 'var(--text-secondary)'
 
     // Stagger along the line segment if another edge midpoint or node overlaps the exact center
     const { resolvedX, resolvedY } = useMemo(() => {
@@ -760,10 +762,10 @@ export const UmlEdge = memo(
                   style={{
                     color: selected ? 'var(--primary-btn)' : textColor,
                   }}
-                  className={`flex flex-col items-center justify-center px-1.5 py-[1px] rounded-[3px] bg-[var(--bg-secondary)] font-mono text-[10px] font-medium leading-tight tracking-tight cursor-pointer transition-colors whitespace-nowrap ${selected
-                    ? 'ring-1 ring-[var(--primary-btn)]/50'
+                  className={`flex flex-col items-center justify-center px-2 py-0.5 rounded-[4px] bg-[var(--bg-primary)] border border-[var(--border-subtle)] font-mono text-[10px] font-medium leading-tight tracking-tight cursor-pointer transition-all whitespace-nowrap shadow-xs ${selected
+                    ? 'ring-2 ring-[var(--primary-btn)]/35 border-[var(--primary-btn)]'
                     : isHovered
-                      ? 'ring-1 ring-[var(--border-default)]'
+                      ? 'border-[var(--border-strong)]'
                       : ''
                     }`}
                   title="Click to select relationship"

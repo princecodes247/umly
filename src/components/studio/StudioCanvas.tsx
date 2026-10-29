@@ -2758,7 +2758,7 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
               gap={20}
               size={1}
               color="currentColor"
-              className="text-[var(--text-tertiary)] opacity-35"
+              className="text-[var(--text-tertiary)] opacity-45"
             />
             <Controls
               showInteractive={false}

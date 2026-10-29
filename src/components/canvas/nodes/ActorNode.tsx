@@ -330,23 +330,22 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
             <line x1="18" y1="30" x2="28" y2="43" />
           </svg>
         )}
-
-        {actorType === 'secondary' && (
-          <span className="absolute -top-1 -right-3 notion-tag notion-tag-orange text-[9px] uppercase font-mono px-1 py-0 font-semibold shadow-xs">
-            Sec
-          </span>
-        )}
-        {actorType === 'system' && (
-          <span className="absolute -top-1 -right-3 notion-tag notion-tag-purple text-[9px] uppercase font-mono px-1 py-0 font-semibold shadow-xs">
-            Sys
-          </span>
-        )}
       </div>
 
       {/* Actor Label */}
       <div className="text-center text-xs tracking-tight text-[var(--text-primary)] max-w-[130px] leading-tight font-sans">
-        <div className="text-[10px] text-[var(--text-tertiary)] font-mono">
-          {stereotypeLabel}
+        <div className="text-[10px] text-[var(--text-tertiary)] font-mono flex items-center justify-center gap-1">
+          <span>{stereotypeLabel}</span>
+          {actorType === 'secondary' && (
+            <span className="notion-tag notion-tag-orange text-[8.5px] uppercase font-mono px-1 py-0 font-semibold shadow-2xs">
+              Sec
+            </span>
+          )}
+          {actorType === 'system' && (
+            <span className="notion-tag notion-tag-purple text-[8.5px] uppercase font-mono px-1 py-0 font-semibold shadow-2xs">
+              Sys
+            </span>
+          )}
         </div>
 
         {isEditing ? (

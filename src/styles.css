@@ -11,48 +11,48 @@
 /* Notion Light Palette */
 :root {
   --bg-primary: #ffffff;
-  --bg-secondary: #f7f6f3;
-  --bg-tertiary: #f1f1ef;
-  --bg-sidebar: #f7f6f3;
+  --bg-secondary: #f6f7fa;
+  --bg-tertiary: #eff1f5;
+  --bg-sidebar: #fbfbfc;
   --bg-modal: #ffffff;
   
-  --text-primary: #37352f;
-  --text-secondary: #787774;
-  --text-tertiary: #9b9a97;
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
+  --text-tertiary: #64748b;
   
-  --border-subtle: rgba(55, 53, 47, 0.09);
-  --border-default: rgba(55, 53, 47, 0.16);
-  --border-strong: rgba(55, 53, 47, 0.32);
+  --border-subtle: rgba(15, 23, 42, 0.08);
+  --border-default: rgba(15, 23, 42, 0.14);
+  --border-strong: rgba(15, 23, 42, 0.42);
   
-  --hover-bg: rgba(55, 53, 47, 0.04);
-  --hover-bg-strong: rgba(55, 53, 47, 0.08);
-  --active-bg: rgba(55, 53, 47, 0.08);
-  --selection-bg: rgba(35, 131, 226, 0.18);
+  --hover-bg: rgba(15, 23, 42, 0.04);
+  --hover-bg-strong: rgba(15, 23, 42, 0.08);
+  --active-bg: rgba(15, 23, 42, 0.09);
+  --selection-bg: rgba(35, 131, 226, 0.16);
   
   /* Notion Accent Colors */
-  --notion-default-bg: #f1f1ef;
-  --notion-default-text: #787774;
-  --notion-gray-bg: #ebeced;
-  --notion-gray-text: #787774;
-  --notion-brown-bg: #f4eeee;
-  --notion-brown-text: #976d57;
+  --notion-default-bg: #f1f3f7;
+  --notion-default-text: #475569;
+  --notion-gray-bg: #eef1f5;
+  --notion-gray-text: #475569;
+  --notion-brown-bg: #f5eeea;
+  --notion-brown-text: #8c5b3e;
   --notion-orange-bg: #faece3;
-  --notion-orange-text: #d9730d;
-  --notion-yellow-bg: #fbf3db;
-  --notion-yellow-text: #cb912f;
-  --notion-green-bg: #edf3ec;
-  --notion-green-text: #448361;
-  --notion-blue-bg: #e7f3f8;
-  --notion-blue-text: #337ea9;
-  --notion-purple-bg: #f4f0f7;
-  --notion-purple-text: #9065b0;
-  --notion-pink-bg: #fbf1f5;
-  --notion-pink-text: #c14c8a;
-  --notion-red-bg: #fdebec;
-  --notion-red-text: #d44c47;
+  --notion-orange-text: #c25e00;
+  --notion-yellow-bg: #fdf6e2;
+  --notion-yellow-text: #a16207;
+  --notion-green-bg: #edf6ef;
+  --notion-green-text: #1b7a46;
+  --notion-blue-bg: #e6f2fb;
+  --notion-blue-text: #026aa7;
+  --notion-purple-bg: #f3eef8;
+  --notion-purple-text: #7c3aed;
+  --notion-pink-bg: #faeef4;
+  --notion-pink-text: #be185d;
+  --notion-red-bg: #fceeed;
+  --notion-red-text: #dc2626;
   
-  --primary-btn: #2383e2;
-  --primary-btn-hover: #1b6fc2;
+  --primary-btn: #0284c7;
+  --primary-btn-hover: #0369a1;
   --primary-btn-text: #ffffff;
 }
 

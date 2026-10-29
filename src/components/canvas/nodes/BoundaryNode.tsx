@@ -137,7 +137,7 @@ export const BoundaryNode = memo(({ id, data, selected }: NodeProps) => {
           ? 'bg-[var(--hover-bg)]'
           : isHoveredByDrag
             ? 'bg-[var(--selection-bg)]/40 ring-2 ring-[var(--primary-btn)]/35'
-            : 'bg-transparent'
+            : 'bg-[var(--bg-primary)]/45'
       }`}
       style={{
         width,

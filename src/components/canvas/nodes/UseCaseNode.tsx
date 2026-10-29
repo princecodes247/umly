@@ -143,7 +143,7 @@ export const UseCaseNode = memo(({ id, data, selected }: NodeProps) => {
       className={`group relative flex flex-col items-center justify-center px-5 py-3 transition-all duration-150 select-none border-[1.5px] ${
         selected
           ? 'ring-2 ring-[var(--primary-btn)] shadow-md'
-          : 'hover:border-[var(--text-primary)] shadow-xs'
+          : 'hover:border-[var(--text-primary)] shadow-sm'
       }`}
       style={{
         minWidth: 144,
