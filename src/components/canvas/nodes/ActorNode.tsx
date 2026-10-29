@@ -24,12 +24,7 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
   const isLocked = Boolean(nodeData.isLocked)
 
   const [isEditing, setIsEditing] = useState(Boolean(nodeData.autoFocusEdit))
-  const [labelValue, setLabelValue] = useState(nodeData.label || 'Actor')
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    setLabelValue(nodeData.label || 'Actor')
-  }, [nodeData.label])
+  const editRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (nodeData.autoFocusEdit) {
@@ -39,13 +34,21 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
   }, [id, nodeData.autoFocusEdit, updateNodeData])
 
   useEffect(() => {
-    if (isEditing) {
-      requestAnimationFrame(() => {
-        inputRef.current?.focus()
-        inputRef.current?.select()
-      })
+    if (isEditing && editRef.current) {
+      editRef.current.focus()
+      const selection = window.getSelection()
+      const range = document.createRange()
+      range.selectNodeContents(editRef.current)
+      selection?.removeAllRanges()
+      selection?.addRange(range)
     }
   }, [isEditing])
+
+  useEffect(() => {
+    if (!isEditing && editRef.current) {
+      editRef.current.innerText = nodeData.label || 'Actor'
+    }
+  }, [nodeData.label, isEditing])
 
   useEffect(() => {
     const handleStartEdit = (e: Event) => {
@@ -60,22 +63,22 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
 
   const handleFinishEditing = () => {
     setIsEditing(false)
-    const trimmed = labelValue.trim() || 'Actor'
-    setLabelValue(trimmed)
+    const raw = editRef.current?.innerText ?? ''
+    const trimmed = raw.trim() || 'Actor'
+    if (editRef.current) {
+      editRef.current.innerText = trimmed
+    }
     updateNodeData(id, { label: trimmed, autoFocusEdit: false })
   }
 
   // Exit edit mode automatically whenever the node is deselected
   useEffect(() => {
     if (!selected && isEditing) {
-      setIsEditing(false)
-      const trimmed = labelValue.trim() || 'Actor'
-      setLabelValue(trimmed)
-      updateNodeData(id, { label: trimmed, autoFocusEdit: false })
+      handleFinishEditing()
     }
-  }, [selected, isEditing, id, labelValue, updateNodeData])
+  }, [selected, isEditing])
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault()
       e.stopPropagation()
@@ -92,9 +95,17 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
     } else if (e.key === 'Escape') {
       e.preventDefault()
       e.stopPropagation()
-      setLabelValue(nodeData.label || 'Actor')
+      if (editRef.current) {
+        editRef.current.innerText = nodeData.label || 'Actor'
+      }
       setIsEditing(false)
     }
+  }
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    const text = e.clipboardData.getData('text/plain')
+    document.execCommand('insertText', false, text)
   }
 
   const handleDuplicate = (e: React.MouseEvent) => {
@@ -359,33 +370,20 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
           )}
         </div>
 
-        {isEditing ? (
-          <div className="inline-grid w-full items-center justify-center mt-0.5">
-            <span
-              className="col-start-1 row-start-1 invisible whitespace-pre-wrap break-words font-semibold text-xs leading-tight font-sans text-center px-0.5 py-0 select-none pointer-events-none"
-              aria-hidden="true"
-            >
-              {labelValue ? `${labelValue} ` : 'Actor '}
-            </span>
-            <input
-              ref={inputRef}
-              type="text"
-              value={labelValue}
-              onChange={(e) => setLabelValue(e.target.value)}
-              onBlur={handleFinishEditing}
-              onKeyDown={handleKeyDown}
-              className="nodrag nopan col-start-1 row-start-1 w-full text-center font-semibold text-xs leading-tight font-sans text-[var(--text-primary)] bg-transparent border-0 outline-none p-0 m-0 px-0.5 py-0 caret-[var(--primary-btn)] focus:ring-0 shadow-none selection:bg-[var(--selection-bg)]"
-              spellCheck={false}
-            />
-          </div>
-        ) : (
-          <div
-            className="font-semibold text-xs text-[var(--text-primary)] mt-0.5 break-words cursor-text px-0.5 py-0"
-            title={!isLocked ? 'Double-click or press Enter to rename' : undefined}
-          >
-            {nodeData.label}
-          </div>
-        )}
+        <div
+          ref={editRef}
+          contentEditable={!isLocked && isEditing}
+          suppressContentEditableWarning
+          onBlur={handleFinishEditing}
+          onKeyDown={handleKeyDown}
+          onPaste={handlePaste}
+          className={`font-semibold text-xs text-[var(--text-primary)] mt-0.5 break-words cursor-text px-0.5 py-0 whitespace-pre-wrap outline-none caret-[var(--primary-btn)] ${
+            isEditing ? 'nodrag nopan select-text' : ''
+          }`}
+          title={!isLocked && !isEditing ? 'Double-click or press Enter to rename' : undefined}
+        >
+          {nodeData.label || 'Actor'}
+        </div>
       </div>
     </div>
   )

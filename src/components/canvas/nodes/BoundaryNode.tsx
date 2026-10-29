@@ -42,14 +42,7 @@ export const BoundaryNode = memo(({ id, data, selected }: NodeProps) => {
   }
 
   const [isEditing, setIsEditing] = useState(Boolean(nodeData.autoFocusEdit))
-  const [titleValue, setTitleValue] = useState(
-    nodeData.boundaryTitle || nodeData.label || 'System Boundary'
-  )
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    setTitleValue(nodeData.boundaryTitle || nodeData.label || 'System Boundary')
-  }, [nodeData.boundaryTitle, nodeData.label])
+  const editRef = useRef<HTMLSpanElement>(null)
 
   useEffect(() => {
     if (nodeData.autoFocusEdit) {
@@ -59,13 +52,22 @@ export const BoundaryNode = memo(({ id, data, selected }: NodeProps) => {
   }, [id, nodeData.autoFocusEdit, updateNodeData])
 
   useEffect(() => {
-    if (isEditing) {
-      requestAnimationFrame(() => {
-        inputRef.current?.focus()
-        inputRef.current?.select()
-      })
+    if (isEditing && editRef.current) {
+      editRef.current.focus()
+      const selection = window.getSelection()
+      const range = document.createRange()
+      range.selectNodeContents(editRef.current)
+      selection?.removeAllRanges()
+      selection?.addRange(range)
     }
   }, [isEditing])
+
+  useEffect(() => {
+    if (!isEditing && editRef.current) {
+      editRef.current.innerText =
+        nodeData.boundaryTitle || nodeData.label || 'System Boundary'
+    }
+  }, [nodeData.boundaryTitle, nodeData.label, isEditing])
 
   useEffect(() => {
     const handleStartEdit = (e: Event) => {
@@ -80,8 +82,11 @@ export const BoundaryNode = memo(({ id, data, selected }: NodeProps) => {
 
   const handleFinishEditing = () => {
     setIsEditing(false)
-    const trimmed = titleValue.trim() || 'System Boundary'
-    setTitleValue(trimmed)
+    const raw = editRef.current?.innerText ?? ''
+    const trimmed = raw.trim() || 'System Boundary'
+    if (editRef.current) {
+      editRef.current.innerText = trimmed
+    }
     updateNodeData(id, {
       boundaryTitle: trimmed,
       label: trimmed,
@@ -92,18 +97,11 @@ export const BoundaryNode = memo(({ id, data, selected }: NodeProps) => {
   // Exit edit mode automatically whenever the node is deselected
   useEffect(() => {
     if (!selected && isEditing) {
-      setIsEditing(false)
-      const trimmed = titleValue.trim() || 'System Boundary'
-      setTitleValue(trimmed)
-      updateNodeData(id, {
-        boundaryTitle: trimmed,
-        label: trimmed,
-        autoFocusEdit: false,
-      })
+      handleFinishEditing()
     }
-  }, [selected, isEditing, id, titleValue, updateNodeData])
+  }, [selected, isEditing])
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLSpanElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault()
       e.stopPropagation()
@@ -111,11 +109,18 @@ export const BoundaryNode = memo(({ id, data, selected }: NodeProps) => {
     } else if (e.key === 'Escape') {
       e.preventDefault()
       e.stopPropagation()
-      setTitleValue(
-        nodeData.boundaryTitle || nodeData.label || 'System Boundary'
-      )
+      if (editRef.current) {
+        editRef.current.innerText =
+          nodeData.boundaryTitle || nodeData.label || 'System Boundary'
+      }
       setIsEditing(false)
     }
+  }
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLSpanElement>) => {
+    e.preventDefault()
+    const text = e.clipboardData.getData('text/plain')
+    document.execCommand('insertText', false, text)
   }
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -241,37 +246,24 @@ export const BoundaryNode = memo(({ id, data, selected }: NodeProps) => {
           }}
         />
 
-        {isEditing ? (
-          <div className="inline-grid items-center">
-            <span
-              className="col-start-1 row-start-1 invisible whitespace-pre font-semibold text-xs text-[var(--text-primary)] px-0.5 select-none pointer-events-none"
-              aria-hidden="true"
-            >
-              {titleValue ? `${titleValue} ` : 'System Boundary '}
-            </span>
-            <input
-              ref={inputRef}
-              type="text"
-              value={titleValue}
-              onChange={(e) => setTitleValue(e.target.value)}
-              onBlur={handleFinishEditing}
-              onKeyDown={handleKeyDown}
-              className="nodrag nopan col-start-1 row-start-1 w-full font-semibold text-xs text-[var(--text-primary)] bg-transparent border-0 outline-none p-0 m-0 px-0.5 caret-[var(--primary-btn)] focus:ring-0 shadow-none selection:bg-[var(--selection-bg)]"
-              spellCheck={false}
-            />
-          </div>
-        ) : (
-          <span
-            className="font-semibold text-xs text-[var(--text-primary)] cursor-pointer hover:underline px-0.5"
-            onDoubleClick={(e) => {
-              e.stopPropagation()
-              if (!isLocked) setIsEditing(true)
-            }}
-            title={!isLocked ? 'Double-click or press Enter to rename' : undefined}
-          >
-            {titleValue}
-          </span>
-        )}
+        <span
+          ref={editRef}
+          contentEditable={!isLocked && isEditing}
+          suppressContentEditableWarning
+          onBlur={handleFinishEditing}
+          onKeyDown={handleKeyDown}
+          onPaste={handlePaste}
+          className={`font-semibold text-xs text-[var(--text-primary)] cursor-pointer px-0.5 outline-none caret-[var(--primary-btn)] ${
+            isEditing ? 'nodrag nopan select-text' : 'hover:underline'
+          }`}
+          onDoubleClick={(e) => {
+            e.stopPropagation()
+            if (!isLocked) setIsEditing(true)
+          }}
+          title={!isLocked && !isEditing ? 'Double-click or press Enter to rename' : undefined}
+        >
+          {nodeData.boundaryTitle || nodeData.label || 'System Boundary'}
+        </span>
       </div>
     </div>
   )
