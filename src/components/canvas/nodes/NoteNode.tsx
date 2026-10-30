@@ -3,6 +3,7 @@ import {
   Handle,
   Position,
   NodeToolbar,
+  NodeResizer,
   useReactFlow,
   type NodeProps,
 } from '@xyflow/react'
@@ -11,7 +12,7 @@ import type { UmlNodeData } from '../../../types/game'
 
 export const NoteNode = memo(({ id, data, selected }: NodeProps) => {
   const nodeData = data as unknown as UmlNodeData
-  const { updateNodeData, deleteElements } = useReactFlow()
+  const { updateNode, updateNodeData, deleteElements } = useReactFlow()
   const isLocked = Boolean(nodeData.isLocked)
 
   const [isEditing, setIsEditing] = useState(Boolean(nodeData.autoFocusEdit))
@@ -94,23 +95,53 @@ export const NoteNode = memo(({ id, data, selected }: NodeProps) => {
     ? 'opacity-100'
     : 'opacity-0 group-hover:opacity-100'
 
+  const customW =
+    typeof nodeData.width === 'number' ? nodeData.width : undefined
+  const customH =
+    typeof nodeData.height === 'number' ? nodeData.height : undefined
+
   return (
     <div
-      className={`group relative p-3 rounded-[4px] bg-[var(--notion-yellow-bg)] text-[var(--text-primary)] border transition-all select-none shadow-xs ${
+      className={`group relative p-3 rounded-[4px] bg-[var(--notion-yellow-bg)] text-[var(--text-primary)] border transition-colors select-none shadow-xs ${
         selected
           ? 'border-[var(--primary-btn)] ring-2 ring-[var(--primary-btn)]'
           : 'border-[#e6d59c] dark:border-[#5c512c]'
       }`}
       style={{
-        minWidth: 150,
-        maxWidth: 220,
-        minHeight: 68,
+        width: customW,
+        height: customH,
+        minWidth: 120,
+        minHeight: 56,
+        maxWidth: customW ? undefined : 240,
       }}
       onDoubleClick={(e) => {
         e.stopPropagation()
         if (!isLocked) setIsEditing(true)
       }}
     >
+      {/* NodeResizer for freeform note resizing */}
+      {!isLocked && (
+        <NodeResizer
+          isVisible={selected}
+          minWidth={120}
+          minHeight={56}
+          lineClassName="!border-[var(--primary-btn)] pointer-events-auto"
+          handleClassName="!w-2.5 !h-2.5 !bg-[var(--bg-primary)] !border-2 !border-[var(--primary-btn)] !rounded-[2px] pointer-events-auto"
+          onResize={(_, params) => {
+            updateNode(id, (node) => ({
+              position: {
+                x: Math.round(params.x),
+                y: Math.round(params.y),
+              },
+              data: {
+                ...node.data,
+                width: Math.round(params.width),
+                height: Math.round(params.height),
+              },
+            }))
+          }}
+        />
+      )}
       {/* Folded corner effect */}
       <div className="absolute top-0 right-0 w-3 h-3 bg-[#e6d59c] dark:bg-[#5c512c] rounded-bl-[3px]" />
 

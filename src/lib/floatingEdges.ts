@@ -12,23 +12,30 @@ interface BoxMetrics {
 }
 
 export function getNodeBox(node: Node): BoxMetrics {
+  const customW =
+    typeof node.data?.width === 'number' ? node.data.width : undefined
+  const customH =
+    typeof node.data?.height === 'number' ? node.data.height : undefined
+
   const w =
+    customW ??
     node.measured?.width ??
     (node.type === 'actor'
       ? 88
       : node.type === 'useCase'
         ? 148
         : node.type === 'boundary'
-          ? (node.data?.width as number) || 440
+          ? 440
           : 150)
   const h =
+    customH ??
     node.measured?.height ??
     (node.type === 'actor'
       ? 108
       : node.type === 'useCase'
         ? 64
         : node.type === 'boundary'
-          ? (node.data?.height as number) || 380
+          ? 380
           : 76)
 
   const x = node.position.x
@@ -62,26 +69,35 @@ export function getNodeHandles(
 
   if (node.type === 'actor') {
     const isSystemActor = node.data?.actorType === 'system'
-    const armHalfSpan = isSystemActor ? 18 : 12
+    const customW =
+      typeof node.data?.width === 'number' ? node.data.width : undefined
+    const customH =
+      typeof node.data?.height === 'number' ? node.data.height : undefined
+    const scale = Math.max(
+      0.65,
+      Math.min((customW ?? 88) / 88, (customH ?? 108) / 108)
+    )
+    const armHalfSpan = (isSystemActor ? 18 : 12) * scale
+    const figureCenterY = box.y + 10 + 23 * scale
     return {
       [Position.Top]: {
         x: box.cx,
-        y: box.y + 12,
+        y: figureCenterY - 21 * scale,
         position: Position.Top,
       },
       [Position.Left]: {
         x: box.cx - armHalfSpan,
-        y: box.y + 30,
+        y: figureCenterY - 3 * scale,
         position: Position.Left,
       },
       [Position.Right]: {
         x: box.cx + armHalfSpan,
-        y: box.y + 30,
+        y: figureCenterY - 3 * scale,
         position: Position.Right,
       },
       [Position.Bottom]: {
         x: box.cx,
-        y: box.y + 53,
+        y: figureCenterY + 20 * scale,
         position: Position.Bottom,
       },
     }

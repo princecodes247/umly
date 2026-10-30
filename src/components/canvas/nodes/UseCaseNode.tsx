@@ -3,6 +3,7 @@ import {
   Handle,
   Position,
   NodeToolbar,
+  NodeResizer,
   useReactFlow,
   type NodeProps,
 } from '@xyflow/react'
@@ -41,7 +42,7 @@ const ACCENT_STYLES: Record<
 
 export const UseCaseNode = memo(({ id, data, selected }: NodeProps) => {
   const nodeData = data as unknown as UmlNodeData
-  const { updateNodeData, deleteElements } = useReactFlow()
+  const { updateNode, updateNodeData, deleteElements } = useReactFlow()
   const isLocked = Boolean(nodeData.isLocked)
 
   const [isEditing, setIsEditing] = useState(Boolean(nodeData.autoFocusEdit))
@@ -149,16 +150,23 @@ export const UseCaseNode = memo(({ id, data, selected }: NodeProps) => {
     ? 'opacity-100'
     : 'opacity-0 group-hover:opacity-100'
 
+  const customW =
+    typeof nodeData.width === 'number' ? nodeData.width : undefined
+  const customH =
+    typeof nodeData.height === 'number' ? nodeData.height : undefined
+
   return (
     <div
-      className={`group relative flex flex-col items-center justify-center px-5 py-3 transition-all duration-150 select-none border-[1.5px] ${
+      className={`group relative flex flex-col items-center justify-center px-4 py-2 transition-colors select-none border-[1.5px] ${
         selected
           ? 'ring-2 ring-[var(--primary-btn)] shadow-md'
           : 'hover:border-[var(--text-primary)] shadow-sm'
       }`}
       style={{
-        minWidth: 144,
-        minHeight: 58,
+        width: customW,
+        height: customH,
+        minWidth: 110,
+        minHeight: 48,
         borderRadius: '50% / 50%',
         borderColor: selected ? 'var(--primary-btn)' : accent.border,
         backgroundColor: selected ? 'var(--selection-bg)' : accent.bg,
@@ -168,6 +176,30 @@ export const UseCaseNode = memo(({ id, data, selected }: NodeProps) => {
         if (!isLocked) setIsEditing(true)
       }}
     >
+      {/* NodeResizer for freeform sizing of the Use Case oval */}
+      {!isLocked && (
+        <NodeResizer
+          isVisible={selected}
+          minWidth={110}
+          minHeight={48}
+          lineClassName="!border-[var(--primary-btn)] pointer-events-auto"
+          handleClassName="!w-2.5 !h-2.5 !bg-[var(--bg-primary)] !border-2 !border-[var(--primary-btn)] !rounded-[2px] pointer-events-auto"
+          onResize={(_, params) => {
+            updateNode(id, (node) => ({
+              position: {
+                x: Math.round(params.x),
+                y: Math.round(params.y),
+              },
+              data: {
+                ...node.data,
+                width: Math.round(params.width),
+                height: Math.round(params.height),
+              },
+            }))
+          }}
+        />
+      )}
+
       {/* Compact toolbar positioned well clear of the selection ring */}
       {selected && !isLocked && !isEditing && (
         <NodeToolbar
@@ -266,7 +298,7 @@ export const UseCaseNode = memo(({ id, data, selected }: NodeProps) => {
       )}
 
       {/* Use Case Label */}
-      <div className="text-center font-medium text-xs text-[var(--text-primary)] max-w-[148px] leading-snug font-sans">
+      <div className="text-center font-medium text-xs text-[var(--text-primary)] max-w-[85%] leading-snug font-sans">
         <div
           ref={editRef}
           contentEditable={!isLocked && isEditing}

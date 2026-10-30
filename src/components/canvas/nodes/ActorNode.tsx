@@ -3,6 +3,7 @@ import {
   Handle,
   Position,
   NodeToolbar,
+  NodeResizer,
   useReactFlow,
   type NodeProps,
 } from '@xyflow/react'
@@ -20,7 +21,7 @@ const ACTOR_ACCENT_COLOR: Record<NodeAccentColor, string> = {
 
 export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
   const nodeData = data as unknown as UmlNodeData
-  const { updateNodeData, deleteElements } = useReactFlow()
+  const { updateNode, updateNodeData, deleteElements } = useReactFlow()
   const isLocked = Boolean(nodeData.isLocked)
 
   const [isEditing, setIsEditing] = useState(Boolean(nodeData.autoFocusEdit))
@@ -148,19 +149,57 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
       ? '«system»'
       : '«actor»'
 
+  const customW =
+    typeof nodeData.width === 'number' ? nodeData.width : undefined
+  const customH =
+    typeof nodeData.height === 'number' ? nodeData.height : undefined
+  const actorScale = Math.max(
+    0.65,
+    Math.min((customW ?? 88) / 88, (customH ?? 108) / 108)
+  )
+
   return (
     <div
-      className={`group relative flex flex-col items-center justify-center p-2.5 rounded-[6px] transition-all duration-150 select-none ${
+      className={`group relative flex flex-col items-center justify-center p-2.5 rounded-[6px] transition-colors select-none ${
         selected
           ? 'ring-2 ring-[var(--primary-btn)] bg-[var(--selection-bg)] shadow-xs'
           : 'hover:bg-[var(--hover-bg)]'
       }`}
-      style={{ minWidth: 88 }}
+      style={{
+        width: customW,
+        height: customH,
+        minWidth: 72,
+        minHeight: 88,
+      }}
       onDoubleClick={(e) => {
         e.stopPropagation()
         if (!isLocked) setIsEditing(true)
       }}
     >
+      {/* NodeResizer for freeform actor resizing */}
+      {!isLocked && (
+        <NodeResizer
+          isVisible={selected}
+          minWidth={72}
+          minHeight={88}
+          lineClassName="!border-[var(--primary-btn)] pointer-events-auto"
+          handleClassName="!w-2.5 !h-2.5 !bg-[var(--bg-primary)] !border-2 !border-[var(--primary-btn)] !rounded-[2px] pointer-events-auto"
+          onResize={(_, params) => {
+            updateNode(id, (node) => ({
+              position: {
+                x: Math.round(params.x),
+                y: Math.round(params.y),
+              },
+              data: {
+                ...node.data,
+                width: Math.round(params.width),
+                height: Math.round(params.height),
+              },
+            }))
+          }}
+        />
+      )}
+
       {/* Compact toolbar positioned clear of the selection ring */}
       {selected && !isLocked && !isEditing && (
         <NodeToolbar
@@ -209,8 +248,12 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
 
       {/* UML Stick Figure / System Icon with handles touching the figure body */}
       <div
-        className="relative mb-1 flex items-center justify-center"
-        style={{ width: 36, height: 46 }}
+        className="relative mb-1 flex items-center justify-center origin-center transition-transform"
+        style={{
+          width: 36,
+          height: 46,
+          transform: `scale(${actorScale})`,
+        }}
       >
         {/* Top handle: touches top of head (18, 2) */}
         <Handle

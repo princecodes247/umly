@@ -137,13 +137,12 @@ export const BoundaryNode = memo(({ id, data, selected }: NodeProps) => {
 
   return (
     <div
-      className={`relative rounded-[8px] border-2 border-dashed transition-colors select-none pointer-events-none ${
-        selected
-          ? 'bg-[var(--hover-bg)]'
-          : isHoveredByDrag
-            ? 'bg-[var(--selection-bg)]/40 ring-2 ring-[var(--primary-btn)]/35'
-            : 'bg-[var(--bg-primary)]/45'
-      }`}
+      className={`relative rounded-[8px] border-2 border-dashed transition-colors select-none pointer-events-none ${selected
+        ? 'bg-[var(--hover-bg)]'
+        : isHoveredByDrag
+          ? 'bg-[var(--selection-bg)]/40 ring-2 ring-[var(--primary-btn)]/35'
+          : 'bg-[var(--bg-primary)]/45'
+        }`}
       style={{
         width,
         height,
@@ -236,7 +235,7 @@ export const BoundaryNode = memo(({ id, data, selected }: NodeProps) => {
         onClick={handleSelectBoundary}
         className="boundary-interactive absolute top-2.5 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] bg-[var(--bg-primary)] border border-[var(--border-default)] shadow-xs text-xs pointer-events-auto cursor-pointer z-10"
       >
-        <span
+        {/* <span
           className="w-2 h-2 rounded-full shrink-0"
           style={{
             backgroundColor:
@@ -244,7 +243,7 @@ export const BoundaryNode = memo(({ id, data, selected }: NodeProps) => {
                 ? customBorderColor
                 : 'var(--notion-blue-text)',
           }}
-        />
+        /> */}
 
         <span
           ref={editRef}
@@ -253,9 +252,8 @@ export const BoundaryNode = memo(({ id, data, selected }: NodeProps) => {
           onBlur={handleFinishEditing}
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
-          className={`font-semibold text-xs text-[var(--text-primary)] cursor-pointer px-0.5 outline-none caret-[var(--primary-btn)] ${
-            isEditing ? 'nodrag nopan select-text' : 'hover:underline'
-          }`}
+          className={`font-semibold text-xs text-[var(--text-primary)] cursor-pointer px-0.5 outline-none caret-[var(--primary-btn)] ${isEditing ? 'nodrag nopan select-text' : 'hover:underline'
+            }`}
           onDoubleClick={(e) => {
             e.stopPropagation()
             if (!isLocked) setIsEditing(true)
