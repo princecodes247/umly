@@ -530,26 +530,27 @@ export const UmlEdge = memo(
       const activeCursor = isH ? 'ns-resize' : 'ew-resize'
       document.body.style.cursor = activeCursor
 
-      const onPointerMove = (moveEvt: PointerEvent) => {
-        moveEvt.preventDefault()
-        const flowPos = screenToFlowPosition({
-          x: moveEvt.clientX,
-          y: moveEvt.clientY,
-        })
-        const isShift = moveEvt.shiftKey
+      let rafId: number | null = null
+      let latestEvent: PointerEvent | null = null
 
-        let targetCoord = isH ? flowPos.y : flowPos.x
-        if (!isShift) {
-          targetCoord = Math.round(targetCoord / 16) * 16
-        }
+      const processDrag = () => {
+        rafId = null
+        if (!latestEvent) return
+        const flowPos = screenToFlowPosition({
+          x: latestEvent.clientX,
+          y: latestEvent.clientY,
+        })
+        const isShift = latestEvent.shiftKey
+        const rawTarget = isH ? flowPos.y : flowPos.x
 
         const { points: newPts, activeSegIndex: newActiveIdx } =
           dragOrthogonalSegment(
             livePoints,
             currentActiveSeg,
-            targetCoord,
+            rawTarget,
             sourcePos,
-            targetPos
+            targetPos,
+            isShift
           )
 
         livePoints = newPts
@@ -572,7 +573,19 @@ export const UmlEdge = memo(
         )
       }
 
+      const onPointerMove = (moveEvt: PointerEvent) => {
+        moveEvt.preventDefault()
+        latestEvent = moveEvt
+        if (rafId === null) {
+          rafId = requestAnimationFrame(processDrag)
+        }
+      }
+
       const onPointerUp = () => {
+        if (rafId !== null) {
+          cancelAnimationFrame(rafId)
+          rafId = null
+        }
         setActiveDragSegIndex(null)
         setIsDraggingAdjustment(false)
         document.body.style.cursor = ''
@@ -615,26 +628,36 @@ export const UmlEdge = memo(
         y: curveOffset?.y ?? 0,
       }
 
-      const onPointerMove = (moveEvt: PointerEvent) => {
-        moveEvt.preventDefault()
+      let rafId: number | null = null
+      let latestEvent: PointerEvent | null = null
+
+      const processCurveDrag = () => {
+        rafId = null
+        if (!latestEvent) return
         const flowPos = screenToFlowPosition({
-          x: moveEvt.clientX,
-          y: moveEvt.clientY,
+          x: latestEvent.clientX,
+          y: latestEvent.clientY,
         })
-        const isShift = moveEvt.shiftKey
+        const isShift = latestEvent.shiftKey
         const dx = flowPos.x - startFlowPos.x
         const dy = flowPos.y - startFlowPos.y
 
         let targetX = chordMidX + initialCurveOffset.x + dx
         let targetY = chordMidY + initialCurveOffset.y + dy
+
+        // Soft magnetic snap within 5px
         if (!isShift) {
-          targetX = Math.round(targetX / 16) * 16
-          targetY = Math.round(targetY / 16) * 16
+          const nearestGridX = Math.round(targetX / 16) * 16
+          const nearestGridY = Math.round(targetY / 16) * 16
+          if (Math.abs(targetX - nearestGridX) <= 5) targetX = nearestGridX
+          if (Math.abs(targetY - nearestGridY) <= 5) targetY = nearestGridY
         }
+
         const offset = {
           x: Math.round(targetX - chordMidX),
           y: Math.round(targetY - chordMidY),
         }
+
         setEdges((eds) =>
           eds.map((edge) =>
             edge.id === id
@@ -650,7 +673,19 @@ export const UmlEdge = memo(
         )
       }
 
+      const onPointerMove = (moveEvt: PointerEvent) => {
+        moveEvt.preventDefault()
+        latestEvent = moveEvt
+        if (rafId === null) {
+          rafId = requestAnimationFrame(processCurveDrag)
+        }
+      }
+
       const onPointerUp = () => {
+        if (rafId !== null) {
+          cancelAnimationFrame(rafId)
+          rafId = null
+        }
         setIsDraggingAdjustment(false)
         document.body.style.cursor = ''
         window.removeEventListener('pointermove', onPointerMove)
@@ -1110,16 +1145,12 @@ export const UmlEdge = memo(
                 {showActions && (
                   <div
                     style={{
-                      position: hasVisibleLabel ? 'absolute' : 'relative',
-                      bottom: hasVisibleLabel ? '100%' : 'auto',
-                      marginBottom: hasVisibleLabel ? `${8 * (1 / zoom)}px` : 0,
-                      left: hasVisibleLabel ? '50%' : 'auto',
-                      transform: hasVisibleLabel
-                        ? `translateX(-50%) scale(${1 / zoom})`
-                        : `scale(${1 / zoom})`,
-                      transformOrigin: hasVisibleLabel
-                        ? 'bottom center'
-                        : 'center center',
+                      position: 'absolute',
+                      bottom: hasVisibleLabel ? '100%' : '0',
+                      marginBottom: `${(hasVisibleLabel ? 10 : 20) * (1 / zoom)}px`,
+                      left: '50%',
+                      transform: `translateX(-50%) scale(${1 / zoom})`,
+                      transformOrigin: 'bottom center',
                       zIndex: 20,
                     }}
                     className="nodrag nopan pointer-events-auto"
