@@ -4,7 +4,6 @@ import {
   EdgeLabelRenderer,
   Position,
   getStraightPath,
-  getSmoothStepPath,
   getBezierPath,
   useNodes,
   useEdges,
@@ -21,6 +20,13 @@ import {
   getNodeBox,
   getNodeHandles,
 } from '../../../lib/floatingEdges'
+import {
+  getOrthogonalPoints,
+  getOrthogonalSegments,
+  pointsToSmoothSvgPath,
+  dragOrthogonalSegment,
+  simplifyPoints,
+} from '../../../lib/orthogonalRouting'
 import type { UmlEdgeData, UmlRelationshipType } from '../../../types/game'
 
 interface UmlEdgeProps extends EdgeProps {
@@ -191,20 +197,14 @@ export const UmlEdge = memo(
     ])
 
     const routingStyle = data?.routingStyle || 'straight'
+    const rawWaypoints = data?.waypoints
     const orthogonalOffset = data?.orthogonalOffset
     const curveOffset = data?.curveOffset
     const hasManualOverride =
-      (routingStyle === 'orthogonal' && orthogonalOffset !== undefined) ||
+      (routingStyle === 'orthogonal' &&
+        ((rawWaypoints && rawWaypoints.length > 0) ||
+          orthogonalOffset !== undefined)) ||
       (routingStyle === 'bezier' && curveOffset !== undefined)
-
-    // Determine orthogonal segment orientation
-    const isOrthogonalVerticalMiddle =
-      sourcePos === Position.Left || sourcePos === Position.Right
-    const defaultOrthogonalSplit = isOrthogonalVerticalMiddle
-      ? (sx + tx) / 2
-      : (sy + ty) / 2
-    const currentOrthogonalSplit =
-      defaultOrthogonalSplit + (orthogonalOffset ?? 0)
 
     // Compute bezier bend apex
     const chordMidX = (sx + tx) / 2
@@ -212,19 +212,47 @@ export const UmlEdge = memo(
     const bezierApexX = chordMidX + (curveOffset?.x ?? 0)
     const bezierApexY = chordMidY + (curveOffset?.y ?? 0)
 
+    // Compute full orthogonal polyline points
+    const orthogonalPoints = useMemo(() => {
+      if (routingStyle !== 'orthogonal') return []
+      return getOrthogonalPoints(
+        { x: sx, y: sy },
+        { x: tx, y: ty },
+        sourcePos,
+        targetPos,
+        rawWaypoints,
+        orthogonalOffset
+      )
+    }, [
+      routingStyle,
+      sx,
+      sy,
+      tx,
+      ty,
+      sourcePos,
+      targetPos,
+      rawWaypoints,
+      orthogonalOffset,
+    ])
+
+    const orthogonalSegments = useMemo(() => {
+      if (routingStyle !== 'orthogonal' || orthogonalPoints.length < 2) return []
+      return getOrthogonalSegments(orthogonalPoints)
+    }, [routingStyle, orthogonalPoints])
+
     const [edgePath, labelX, labelY, guideLinePath] = useMemo(() => {
       if (routingStyle === 'orthogonal') {
-        const [path, lx, ly] = getSmoothStepPath({
-          sourceX: sx,
-          sourceY: sy,
-          sourcePosition: sourcePos,
-          targetX: tx,
-          targetY: ty,
-          targetPosition: targetPos,
-          borderRadius: 8,
-          centerX: isOrthogonalVerticalMiddle ? currentOrthogonalSplit : undefined,
-          centerY: isOrthogonalVerticalMiddle ? undefined : currentOrthogonalSplit,
-        })
+        const path = pointsToSmoothSvgPath(orthogonalPoints, 8)
+        let lx = (sx + tx) / 2
+        let ly = (sy + ty) / 2
+        if (orthogonalSegments.length > 0) {
+          let longest = orthogonalSegments[0]
+          for (const seg of orthogonalSegments) {
+            if (seg.length > longest.length) longest = seg
+          }
+          lx = longest.mid.x
+          ly = longest.mid.y
+        }
         return [path, lx, ly, null]
       }
       if (routingStyle === 'bezier') {
@@ -262,45 +290,9 @@ export const UmlEdge = memo(
       ty,
       sourcePos,
       targetPos,
-      isOrthogonalVerticalMiddle,
-      currentOrthogonalSplit,
+      orthogonalPoints,
+      orthogonalSegments,
       curveOffset,
-      bezierApexX,
-      bezierApexY,
-    ])
-
-    const adjustmentHandle = useMemo(() => {
-      if (!selected) return null
-      if (routingStyle === 'orthogonal') {
-        return {
-          x: isOrthogonalVerticalMiddle
-            ? currentOrthogonalSplit
-            : (sx + tx) / 2,
-          y: isOrthogonalVerticalMiddle
-            ? (sy + ty) / 2
-            : currentOrthogonalSplit,
-          type: 'orthogonal' as const,
-          cursor: isOrthogonalVerticalMiddle ? 'ew-resize' : 'ns-resize',
-        }
-      }
-      if (routingStyle === 'bezier') {
-        return {
-          x: bezierApexX,
-          y: bezierApexY,
-          type: 'bezier' as const,
-          cursor: 'grab',
-        }
-      }
-      return null
-    }, [
-      selected,
-      routingStyle,
-      isOrthogonalVerticalMiddle,
-      currentOrthogonalSplit,
-      sx,
-      tx,
-      sy,
-      ty,
       bezierApexX,
       bezierApexY,
     ])
@@ -473,12 +465,70 @@ export const UmlEdge = memo(
       )
     }
 
+    const [activeDragSegIndex, setActiveDragSegIndex] = useState<number | null>(
+      null
+    )
+    const [hoveredSegIndex, setHoveredSegIndex] = useState<number | null>(null)
     const [isDraggingAdjustment, setIsDraggingAdjustment] = useState(false)
 
-    const handleStartAdjustmentDrag = (e: React.PointerEvent) => {
+    // Interactive adjustment handles for each segment or curve apex
+    const handles = useMemo(() => {
+      if (!selected) return []
+      if (routingStyle === 'orthogonal') {
+        return orthogonalSegments
+          .filter((s) => s.length >= 14)
+          .map((s) => ({
+            id: `seg-${s.index}`,
+            segIndex: s.index,
+            x: s.mid.x,
+            y: s.mid.y,
+            cursor: s.isHorizontal ? 'ns-resize' : 'ew-resize',
+            title: s.isHorizontal
+              ? 'Drag to slide segment up/down (Shift for smooth) · Double-click to reset'
+              : 'Drag to slide segment left/right (Shift for smooth) · Double-click to reset',
+            type: 'orthogonal' as const,
+          }))
+      }
+      if (routingStyle === 'bezier') {
+        return [
+          {
+            id: 'curve-apex',
+            segIndex: -1,
+            x: bezierApexX,
+            y: bezierApexY,
+            cursor: isDraggingAdjustment ? 'grabbing' : 'grab',
+            title:
+              'Drag to bend curve (Shift for smooth) · Double-click to reset',
+            type: 'bezier' as const,
+          },
+        ]
+      }
+      return []
+    }, [
+      selected,
+      routingStyle,
+      orthogonalSegments,
+      bezierApexX,
+      bezierApexY,
+      isDraggingAdjustment,
+    ])
+
+    const handleStartSegmentDrag = (
+      segIndex: number,
+      e: React.PointerEvent
+    ) => {
       e.stopPropagation()
       e.preventDefault()
+      setActiveDragSegIndex(segIndex)
       setIsDraggingAdjustment(true)
+
+      let livePoints = [...orthogonalPoints]
+      let currentActiveSeg = segIndex
+
+      const seg = orthogonalSegments.find((s) => s.index === segIndex)
+      const isH = seg ? seg.isHorizontal : false
+      const activeCursor = isH ? 'ns-resize' : 'ew-resize'
+      document.body.style.cursor = activeCursor
 
       const onPointerMove = (moveEvt: PointerEvent) => {
         moveEvt.preventDefault()
@@ -488,75 +538,121 @@ export const UmlEdge = memo(
         })
         const isShift = moveEvt.shiftKey
 
-        if (routingStyle === 'orthogonal') {
-          if (isOrthogonalVerticalMiddle) {
-            let targetX = flowPos.x
-            if (!isShift) {
-              targetX = Math.round(targetX / 16) * 16
-            }
-            const offset = Math.round(targetX - defaultOrthogonalSplit)
-            setEdges((eds) =>
-              eds.map((edge) =>
-                edge.id === id
-                  ? {
-                      ...edge,
-                      data: {
-                        ...edge.data,
-                        orthogonalOffset: offset,
-                      },
-                    }
-                  : edge
-              )
-            )
-          } else {
-            let targetY = flowPos.y
-            if (!isShift) {
-              targetY = Math.round(targetY / 16) * 16
-            }
-            const offset = Math.round(targetY - defaultOrthogonalSplit)
-            setEdges((eds) =>
-              eds.map((edge) =>
-                edge.id === id
-                  ? {
-                      ...edge,
-                      data: {
-                        ...edge.data,
-                        orthogonalOffset: offset,
-                      },
-                    }
-                  : edge
-              )
-            )
-          }
-        } else if (routingStyle === 'bezier') {
-          let targetX = flowPos.x
-          let targetY = flowPos.y
-          if (!isShift) {
-            targetX = Math.round(targetX / 16) * 16
-            targetY = Math.round(targetY / 16) * 16
-          }
-          const offset = {
-            x: Math.round(targetX - chordMidX),
-            y: Math.round(targetY - chordMidY),
-          }
-          setEdges((eds) =>
-            eds.map((edge) =>
-              edge.id === id
-                ? {
-                    ...edge,
-                    data: {
-                      ...edge.data,
-                      curveOffset: offset,
-                    },
-                  }
-                : edge
-            )
-          )
+        let targetCoord = isH ? flowPos.y : flowPos.x
+        if (!isShift) {
+          targetCoord = Math.round(targetCoord / 16) * 16
         }
+
+        const { points: newPts, activeSegIndex: newActiveIdx } =
+          dragOrthogonalSegment(
+            livePoints,
+            currentActiveSeg,
+            targetCoord,
+            sourcePos,
+            targetPos
+          )
+
+        livePoints = newPts
+        currentActiveSeg = newActiveIdx
+
+        const nextWaypoints = newPts.slice(1, -1)
+        setEdges((eds) =>
+          eds.map((edge) =>
+            edge.id === id
+              ? {
+                  ...edge,
+                  data: {
+                    ...edge.data,
+                    waypoints: nextWaypoints,
+                    orthogonalOffset: undefined,
+                  },
+                }
+              : edge
+          )
+        )
+      }
+
+      const onPointerUp = () => {
+        setActiveDragSegIndex(null)
+        setIsDraggingAdjustment(false)
+        document.body.style.cursor = ''
+        window.removeEventListener('pointermove', onPointerMove)
+        window.removeEventListener('pointerup', onPointerUp)
+
+        // Simplify redundant colinear points on release
+        const simplifiedWaypoints = simplifyPoints(livePoints).slice(1, -1)
+        setEdges((eds) =>
+          eds.map((edge) =>
+            edge.id === id
+              ? {
+                  ...edge,
+                  data: {
+                    ...edge.data,
+                    waypoints: simplifiedWaypoints,
+                  },
+                }
+              : edge
+          )
+        )
+      }
+
+      window.addEventListener('pointermove', onPointerMove)
+      window.addEventListener('pointerup', onPointerUp)
+    }
+
+    const handleStartCurveDrag = (e: React.PointerEvent) => {
+      e.stopPropagation()
+      e.preventDefault()
+      setIsDraggingAdjustment(true)
+      document.body.style.cursor = 'grabbing'
+
+      const startFlowPos = screenToFlowPosition({
+        x: e.clientX,
+        y: e.clientY,
+      })
+      const initialCurveOffset = {
+        x: curveOffset?.x ?? 0,
+        y: curveOffset?.y ?? 0,
+      }
+
+      const onPointerMove = (moveEvt: PointerEvent) => {
+        moveEvt.preventDefault()
+        const flowPos = screenToFlowPosition({
+          x: moveEvt.clientX,
+          y: moveEvt.clientY,
+        })
+        const isShift = moveEvt.shiftKey
+        const dx = flowPos.x - startFlowPos.x
+        const dy = flowPos.y - startFlowPos.y
+
+        let targetX = chordMidX + initialCurveOffset.x + dx
+        let targetY = chordMidY + initialCurveOffset.y + dy
+        if (!isShift) {
+          targetX = Math.round(targetX / 16) * 16
+          targetY = Math.round(targetY / 16) * 16
+        }
+        const offset = {
+          x: Math.round(targetX - chordMidX),
+          y: Math.round(targetY - chordMidY),
+        }
+        setEdges((eds) =>
+          eds.map((edge) =>
+            edge.id === id
+              ? {
+                  ...edge,
+                  data: {
+                    ...edge.data,
+                    curveOffset: offset,
+                  },
+                }
+              : edge
+          )
+        )
       }
 
       const onPointerUp = () => {
         setIsDraggingAdjustment(false)
+        document.body.style.cursor = ''
         window.removeEventListener('pointermove', onPointerMove)
         window.removeEventListener('pointerup', onPointerUp)
       }
@@ -572,6 +668,7 @@ export const UmlEdge = memo(
           const nextData = { ...edge.data }
           delete nextData.orthogonalOffset
           delete nextData.curveOffset
+          delete nextData.waypoints
           return {
             ...edge,
             data: nextData,
@@ -771,6 +868,82 @@ export const UmlEdge = memo(
           onMouseLeave={handleMouseLeave}
         />
 
+        {/* Visual glow on segments when hovering or dragging */}
+        {selected &&
+          routingStyle === 'orthogonal' &&
+          orthogonalSegments.map((s) => (
+            <path
+              key={`glow-${s.index}`}
+              d={`M ${s.start.x} ${s.start.y} L ${s.end.x} ${s.end.y}`}
+              fill="none"
+              stroke="var(--primary-btn)"
+              strokeWidth={
+                activeDragSegIndex === s.index
+                  ? 4
+                  : hoveredSegIndex === s.index
+                    ? 3
+                    : 0
+              }
+              strokeOpacity={activeDragSegIndex === s.index ? 0.6 : 0.3}
+              strokeLinecap="round"
+              className="pointer-events-none transition-all duration-150"
+            />
+          ))}
+
+        {/* Draggable segment hit areas covering every orthogonal segment */}
+        {selected &&
+          routingStyle === 'orthogonal' &&
+          orthogonalSegments.map((s) => (
+            <path
+              key={`hit-${s.index}`}
+              d={`M ${s.start.x} ${s.start.y} L ${s.end.x} ${s.end.y}`}
+              fill="none"
+              stroke="transparent"
+              strokeWidth={24}
+              className="react-flow__edge-interaction nodrag"
+              style={{
+                cursor: s.isHorizontal ? 'ns-resize' : 'ew-resize',
+              }}
+              onMouseEnter={() => setHoveredSegIndex(s.index)}
+              onMouseLeave={() => setHoveredSegIndex(null)}
+              onPointerDown={(e) => handleStartSegmentDrag(s.index, e)}
+              onDoubleClick={(e) => {
+                e.stopPropagation()
+                handleResetRouting()
+              }}
+            >
+              <title>
+                {s.isHorizontal
+                  ? 'Drag to slide segment up/down (Shift for smooth) · Double-click to reset'
+                  : 'Drag to slide segment left/right (Shift for smooth) · Double-click to reset'}
+              </title>
+            </path>
+          ))}
+
+        {/* Draggable curve hit area covering the entire curve when selected */}
+        {selected && routingStyle === 'bezier' && (
+          <path
+            d={edgePath}
+            fill="none"
+            stroke="transparent"
+            strokeWidth={24}
+            className="react-flow__edge-interaction nodrag"
+            style={{
+              cursor: isDraggingAdjustment ? 'grabbing' : 'grab',
+            }}
+            onPointerDown={handleStartCurveDrag}
+            onDoubleClick={(e) => {
+              e.stopPropagation()
+              handleResetRouting()
+            }}
+          >
+            <title>
+              Drag anywhere on this curve to bend (Hold Shift to disable snap) ·
+              Double-click to reset
+            </title>
+          </path>
+        )}
+
         {/* Interactive draggable endpoint handles on both ends rendered via EdgeLabelRenderer on top of nodes */}
         {showActions && (
           <EdgeLabelRenderer>
@@ -852,51 +1025,68 @@ export const UmlEdge = memo(
           </EdgeLabelRenderer>
         )}
 
-        {/* Interactive midpoint segment / bend adjustment handle */}
-        {adjustmentHandle && selected && (
-          <EdgeLabelRenderer>
-            <div
-              style={{
-                position: 'absolute',
-                transform: `translate(-50%, -50%) translate(${adjustmentHandle.x}px, ${adjustmentHandle.y}px)`,
-                pointerEvents: 'all',
-                zIndex: 100002,
-              }}
-              className="nodrag nopan flex items-center justify-center"
-              onPointerDown={handleStartAdjustmentDrag}
-              onDoubleClick={(e) => {
-                e.stopPropagation()
-                handleResetRouting()
-              }}
-            >
-              <div
-                style={{
-                  transform: `scale(${1 / zoom})`,
-                  transformOrigin: 'center center',
-                  cursor: adjustmentHandle.cursor,
-                }}
-                className={`w-3.5 h-3.5 rounded-full bg-[var(--bg-primary)] border-2 border-[var(--primary-btn)] shadow-md hover:scale-125 transition-transform flex items-center justify-center ${
-                  isDraggingAdjustment
-                    ? 'ring-4 ring-[var(--primary-btn)]/35 bg-[var(--primary-btn)]'
-                    : ''
-                }`}
-                title={
-                  adjustmentHandle.type === 'orthogonal'
-                    ? 'Drag to slide segment (Hold Shift to disable snap) · Double-click to reset'
-                    : 'Drag to bend curve (Hold Shift to disable snap) · Double-click to reset'
-                }
-              >
+        {/* Interactive midpoint segment & curve adjustment handles */}
+        {selected &&
+          handles.map((h) => {
+            const isSegmentActive =
+              (h.type === 'orthogonal' &&
+                (activeDragSegIndex === h.segIndex ||
+                  hoveredSegIndex === h.segIndex)) ||
+              (h.type === 'bezier' && isDraggingAdjustment)
+
+            return (
+              <EdgeLabelRenderer key={h.id}>
                 <div
-                  className={`w-1 h-1 rounded-full ${
-                    isDraggingAdjustment
-                      ? 'bg-white'
-                      : 'bg-[var(--primary-btn)]'
-                  }`}
-                />
-              </div>
-            </div>
-          </EdgeLabelRenderer>
-        )}
+                  style={{
+                    position: 'absolute',
+                    transform: `translate(-50%, -50%) translate(${h.x}px, ${h.y}px)`,
+                    pointerEvents: 'all',
+                    zIndex: 100002,
+                  }}
+                  className="nodrag nopan flex items-center justify-center"
+                  onMouseEnter={() => {
+                    if (h.type === 'orthogonal') setHoveredSegIndex(h.segIndex)
+                  }}
+                  onMouseLeave={() => {
+                    if (h.type === 'orthogonal') setHoveredSegIndex(null)
+                  }}
+                  onPointerDown={(e) => {
+                    if (h.type === 'orthogonal') {
+                      handleStartSegmentDrag(h.segIndex, e)
+                    } else {
+                      handleStartCurveDrag(e)
+                    }
+                  }}
+                  onDoubleClick={(e) => {
+                    e.stopPropagation()
+                    handleResetRouting()
+                  }}
+                >
+                  <div
+                    style={{
+                      transform: `scale(${1 / zoom})`,
+                      transformOrigin: 'center center',
+                      cursor: h.cursor,
+                    }}
+                    className={`w-3.5 h-3.5 rounded-full bg-[var(--bg-primary)] border-2 border-[var(--primary-btn)] shadow-md hover:scale-125 transition-transform flex items-center justify-center ${
+                      isSegmentActive
+                        ? 'ring-4 ring-[var(--primary-btn)]/35 bg-[var(--primary-btn)] scale-110'
+                        : ''
+                    }`}
+                    title={h.title}
+                  >
+                    <div
+                      className={`w-1 h-1 rounded-full ${
+                        isSegmentActive
+                          ? 'bg-white'
+                          : 'bg-[var(--primary-btn)]'
+                      }`}
+                    />
+                  </div>
+                </div>
+              </EdgeLabelRenderer>
+            )
+          })}
 
         {/* Clean, minimal inline stereotype label & direct post-hoc type switcher */}
         {(hasVisibleLabel || showActions) && (

@@ -33,6 +33,7 @@ export interface UmlEdgeData {
   routingStyle?: 'straight' | 'orthogonal' | 'bezier'
   orthogonalOffset?: number
   curveOffset?: { x: number; y: number }
+  waypoints?: Array<{ x: number; y: number }>
   [key: string]: unknown
 }
 
