@@ -24,7 +24,8 @@ import {
   getOrthogonalPoints,
   getOrthogonalSegments,
   pointsToSmoothSvgPath,
-  dragOrthogonalSegment,
+  prepareDragTopology,
+  applySegmentDrag,
   simplifyPoints,
 } from '../../../lib/orthogonalRouting'
 import type { UmlEdgeData, UmlRelationshipType } from '../../../types/game'
@@ -522,8 +523,15 @@ export const UmlEdge = memo(
       setActiveDragSegIndex(segIndex)
       setIsDraggingAdjustment(true)
 
-      let livePoints = [...orthogonalPoints]
-      let currentActiveSeg = segIndex
+      // Initialize stable baseline topology once at drag start (prevents back-and-forth topology oscillation/jitter)
+      const { points: baselinePoints, activeSegIndex } = prepareDragTopology(
+        orthogonalPoints,
+        segIndex,
+        sourcePos,
+        targetPos
+      )
+
+      let lastAppliedPoints = baselinePoints
 
       const seg = orthogonalSegments.find((s) => s.index === segIndex)
       const isH = seg ? seg.isHorizontal : false
@@ -543,18 +551,14 @@ export const UmlEdge = memo(
         const isShift = latestEvent.shiftKey
         const rawTarget = isH ? flowPos.y : flowPos.x
 
-        const { points: newPts, activeSegIndex: newActiveIdx } =
-          dragOrthogonalSegment(
-            livePoints,
-            currentActiveSeg,
-            rawTarget,
-            sourcePos,
-            targetPos,
-            isShift
-          )
+        const newPts = applySegmentDrag(
+          baselinePoints,
+          activeSegIndex,
+          rawTarget,
+          isShift
+        )
 
-        livePoints = newPts
-        currentActiveSeg = newActiveIdx
+        lastAppliedPoints = newPts
 
         const nextWaypoints = newPts.slice(1, -1)
         setEdges((eds) =>
@@ -592,8 +596,8 @@ export const UmlEdge = memo(
         window.removeEventListener('pointermove', onPointerMove)
         window.removeEventListener('pointerup', onPointerUp)
 
-        // Simplify redundant colinear points on release
-        const simplifiedWaypoints = simplifyPoints(livePoints).slice(1, -1)
+        // Simplify redundant colinear points & merge aligned segments on release
+        const simplifiedWaypoints = simplifyPoints(lastAppliedPoints).slice(1, -1)
         setEdges((eds) =>
           eds.map((edge) =>
             edge.id === id
@@ -921,7 +925,7 @@ export const UmlEdge = memo(
               }
               strokeOpacity={activeDragSegIndex === s.index ? 0.6 : 0.3}
               strokeLinecap="round"
-              className="pointer-events-none transition-all duration-150"
+              className="pointer-events-none transition-opacity duration-150"
             />
           ))}
 

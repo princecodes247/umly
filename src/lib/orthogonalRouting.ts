@@ -58,7 +58,6 @@ export function mergeColinearPoints(points: Point[]): Point[] {
     if (Math.hypot(last.x - prev.x, last.y - prev.y) >= 1.5 || res.length <= 1) {
       res.push(last)
     } else {
-      // Last point overlapped with prev, keep last
       res[res.length - 1] = last
       changed = true
     }
@@ -195,156 +194,138 @@ export function getOrthogonalSegments(points: Point[]): OrthogonalSegment[] {
 }
 
 /**
- * Magnetic snap helper: snaps to parallel segments, endpoints, or subtle grid
+ * Establish stable baseline polyline topology once when a drag session begins
  */
-export function snapOrthogonalCoord(
-  rawCoord: number,
-  isH: boolean,
+export function prepareDragTopology(
   points: Point[],
-  currentSegIdx: number,
-  isShift: boolean
-): number {
-  if (isShift) return rawCoord
-
-  // 1. Magnetic snap to other parallel segments in the route (threshold: 8px)
-  let bestTarget: number | null = null
-  let minDiff = 8.5
-
-  for (let i = 0; i < points.length - 1; i++) {
-    if (i === currentSegIdx) continue
-    const p1 = points[i]
-    const p2 = points[i + 1]
-    const segIsH = Math.abs(p1.y - p2.y) < Math.abs(p1.x - p2.x)
-    if (segIsH === isH) {
-      const segCoord = isH ? p1.y : p1.x
-      const diff = Math.abs(rawCoord - segCoord)
-      if (diff < minDiff) {
-        minDiff = diff
-        bestTarget = segCoord
-      }
-    }
-  }
-
-  if (bestTarget !== null) {
-    return bestTarget
-  }
-
-  // 2. Soft snap to 16px grid within 4px magnetic threshold
-  const nearestGrid = Math.round(rawCoord / 16) * 16
-  if (Math.abs(rawCoord - nearestGrid) <= 4) {
-    return nearestGrid
-  }
-
-  // 3. Otherwise, buttery-smooth 1:1 movement
-  return rawCoord
-}
-
-/**
- * Drag a segment, auto-split on endpoints, magnetically snap & auto-merge aligned segments
- */
-export function dragOrthogonalSegment(
-  currentPoints: Point[],
   segIndex: number,
-  rawTargetCoord: number,
   sourcePos: Position,
-  targetPos: Position,
-  isShift = false
+  targetPos: Position
 ): { points: Point[]; activeSegIndex: number } {
-  const n = currentPoints.length - 1
+  const n = points.length - 1
   if (segIndex < 0 || segIndex >= n) {
-    return { points: currentPoints, activeSegIndex: segIndex }
+    return { points: points.map((p) => ({ ...p })), activeSegIndex: segIndex }
   }
 
-  const pStart = currentPoints[segIndex]
-  const pEnd = currentPoints[segIndex + 1]
-  const isH = Math.abs(pStart.y - pEnd.y) < Math.abs(pStart.x - pEnd.x)
-
-  const targetCoord = snapOrthogonalCoord(
-    rawTargetCoord,
-    isH,
-    currentPoints,
-    segIndex,
-    isShift
-  )
-
-  let nextPoints: Point[] = []
-
-  // Interior segment: shift the segment's coordinate
+  // Interior segment: keep topology as-is
   if (segIndex > 0 && segIndex < n - 1) {
-    const pts = currentPoints.map((p) => ({ ...p }))
-    if (isH) {
-      pts[segIndex].y = targetCoord
-      pts[segIndex + 1].y = targetCoord
-    } else {
-      pts[segIndex].x = targetCoord
-      pts[segIndex + 1].x = targetCoord
-    }
-    nextPoints = pts
-  } else if (segIndex === 0) {
-    // Segment 0: connected to source node, split to introduce stub & elbow
-    const pts = currentPoints.map((p) => ({ ...p }))
+    return { points: points.map((p) => ({ ...p })), activeSegIndex: segIndex }
+  }
+
+  // Segment 0: split into stub + elbow + dragged segment
+  if (segIndex === 0) {
+    const pts = points.map((p) => ({ ...p }))
+    const isH = Math.abs(pts[0].y - pts[1].y) < Math.abs(pts[0].x - pts[1].x)
     if (isH) {
       const dir = sourcePos === Position.Left ? -1 : 1
       const stubLen = Math.min(28, Math.max(16, Math.abs(pts[1].x - pts[0].x) / 3))
       const stubX = pts[0].x + dir * stubLen
       const A = { x: stubX, y: pts[0].y }
-      const B = { x: stubX, y: targetCoord }
-      pts[1].y = targetCoord
-      nextPoints = [pts[0], A, B, ...pts.slice(1)]
+      const B = { x: stubX, y: pts[1].y }
+      return {
+        points: [pts[0], A, B, ...pts.slice(1)],
+        activeSegIndex: 2,
+      }
     } else {
       const dir = sourcePos === Position.Top ? -1 : 1
       const stubLen = Math.min(28, Math.max(16, Math.abs(pts[1].y - pts[0].y) / 3))
       const stubY = pts[0].y + dir * stubLen
       const A = { x: pts[0].x, y: stubY }
-      const B = { x: targetCoord, y: stubY }
-      pts[1].x = targetCoord
-      nextPoints = [pts[0], A, B, ...pts.slice(1)]
-    }
-  } else {
-    // Segment n - 1: connected to target node, split to introduce stub & elbow
-    const pts = currentPoints.map((p) => ({ ...p }))
-    if (isH) {
-      const dir = targetPos === Position.Right ? 1 : -1
-      const stubLen = Math.min(28, Math.max(16, Math.abs(pts[n].x - pts[n - 1].x) / 3))
-      const stubX = pts[n].x + dir * stubLen
-      pts[n - 1].y = targetCoord
-      const B = { x: stubX, y: targetCoord }
-      const A = { x: stubX, y: pts[n].y }
-      nextPoints = [...pts.slice(0, n), B, A, pts[n]]
-    } else {
-      const dir = targetPos === Position.Bottom ? 1 : -1
-      const stubLen = Math.min(28, Math.max(16, Math.abs(pts[n].y - pts[n - 1].y) / 3))
-      const stubY = pts[n].y + dir * stubLen
-      pts[n - 1].x = targetCoord
-      const B = { x: targetCoord, y: stubY }
-      const A = { x: pts[n].x, y: stubY }
-      nextPoints = [...pts.slice(0, n), B, A, pts[n]]
-    }
-  }
-
-  // Merge any aligned parallel segments automatically
-  const merged = mergeColinearPoints(nextPoints)
-
-  // Find which segment in the merged array corresponds to the segment being dragged
-  let activeIdx = 0
-  let found = false
-  for (let i = 0; i < merged.length - 1; i++) {
-    const s1 = merged[i]
-    const s2 = merged[i + 1]
-    const segIsH = Math.abs(s1.y - s2.y) < Math.abs(s1.x - s2.x)
-    if (segIsH === isH) {
-      const coord = isH ? s1.y : s1.x
-      if (Math.abs(coord - targetCoord) < 1.5) {
-        activeIdx = i
-        found = true
-        break
+      const B = { x: pts[1].x, y: stubY }
+      return {
+        points: [pts[0], A, B, ...pts.slice(1)],
+        activeSegIndex: 2,
       }
     }
   }
 
-  if (!found) {
-    activeIdx = Math.min(segIndex, merged.length - 2)
+  // Segment n - 1: split into dragged segment + elbow + stub
+  if (segIndex === n - 1) {
+    const pts = points.map((p) => ({ ...p }))
+    const isH = Math.abs(pts[n - 1].y - pts[n].y) < Math.abs(pts[n - 1].x - pts[n].x)
+    if (isH) {
+      const dir = targetPos === Position.Right ? 1 : -1
+      const stubLen = Math.min(28, Math.max(16, Math.abs(pts[n].x - pts[n - 1].x) / 3))
+      const stubX = pts[n].x + dir * stubLen
+      const B = { x: stubX, y: pts[n - 1].y }
+      const A = { x: stubX, y: pts[n].y }
+      return {
+        points: [...pts.slice(0, n), B, A, pts[n]],
+        activeSegIndex: segIndex,
+      }
+    } else {
+      const dir = targetPos === Position.Bottom ? 1 : -1
+      const stubLen = Math.min(28, Math.max(16, Math.abs(pts[n].y - pts[n - 1].y) / 3))
+      const stubY = pts[n].y + dir * stubLen
+      const B = { x: pts[n - 1].x, y: stubY }
+      const A = { x: pts[n].x, y: stubY }
+      return {
+        points: [...pts.slice(0, n), B, A, pts[n]],
+        activeSegIndex: segIndex,
+      }
+    }
   }
 
-  return { points: merged, activeSegIndex: activeIdx }
+  return { points: points.map((p) => ({ ...p })), activeSegIndex: segIndex }
+}
+
+/**
+ * Apply live dragging to baseline topology with magnetic snapping.
+ * Maintains fixed array length throughout the gesture to completely prevent oscillation/jitter.
+ */
+export function applySegmentDrag(
+  baselinePoints: Point[],
+  activeSegIndex: number,
+  rawTargetCoord: number,
+  isShift = false
+): Point[] {
+  const pts = baselinePoints.map((p) => ({ ...p }))
+  const p1 = pts[activeSegIndex]
+  const p2 = pts[activeSegIndex + 1]
+  if (!p1 || !p2) return pts
+
+  const isH = Math.abs(p1.y - p2.y) < Math.abs(p1.x - p2.x)
+
+  let targetCoord = rawTargetCoord
+
+  if (!isShift) {
+    let minDiff = 8.5
+    let bestSnap: number | null = null
+
+    // Magnetic alignment snap to other parallel segments
+    for (let i = 0; i < pts.length - 1; i++) {
+      if (i === activeSegIndex) continue
+      const s1 = pts[i]
+      const s2 = pts[i + 1]
+      const segIsH = Math.abs(s1.y - s2.y) < Math.abs(s1.x - s2.x)
+      if (segIsH === isH) {
+        const segCoord = isH ? s1.y : s1.x
+        const diff = Math.abs(rawTargetCoord - segCoord)
+        if (diff < minDiff) {
+          minDiff = diff
+          bestSnap = segCoord
+        }
+      }
+    }
+
+    if (bestSnap !== null) {
+      targetCoord = bestSnap
+    } else {
+      // Soft magnetic snap to 16px grid within 4px
+      const nearestGrid = Math.round(rawTargetCoord / 16) * 16
+      if (Math.abs(rawTargetCoord - nearestGrid) <= 4) {
+        targetCoord = nearestGrid
+      }
+    }
+  }
+
+  if (isH) {
+    p1.y = targetCoord
+    p2.y = targetCoord
+  } else {
+    p1.x = targetCoord
+    p2.x = targetCoord
+  }
+
+  return pts
 }
