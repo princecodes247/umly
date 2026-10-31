@@ -31,6 +31,8 @@ export interface UmlEdgeData {
   label?: string
   condition?: string
   routingStyle?: 'straight' | 'orthogonal' | 'bezier'
+  orthogonalOffset?: number
+  curveOffset?: { x: number; y: number }
   [key: string]: unknown
 }
 

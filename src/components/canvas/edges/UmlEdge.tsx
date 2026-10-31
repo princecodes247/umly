@@ -13,7 +13,7 @@ import {
   type EdgeProps,
 } from '@xyflow/react'
 import { motion, AnimatePresence } from 'motion/react'
-import { Trash2, ArrowLeftRight } from 'lucide-react'
+import { Trash2, ArrowLeftRight, RotateCcw } from 'lucide-react'
 import { getAllowedRelationshipTypes } from '../../../lib/umlValidation'
 import {
   getFloatingEdgeParams,
@@ -191,10 +191,30 @@ export const UmlEdge = memo(
     ])
 
     const routingStyle = data?.routingStyle || 'straight'
+    const orthogonalOffset = data?.orthogonalOffset
+    const curveOffset = data?.curveOffset
+    const hasManualOverride =
+      (routingStyle === 'orthogonal' && orthogonalOffset !== undefined) ||
+      (routingStyle === 'bezier' && curveOffset !== undefined)
 
-    const [edgePath, labelX, labelY] = useMemo(() => {
+    // Determine orthogonal segment orientation
+    const isOrthogonalVerticalMiddle =
+      sourcePos === Position.Left || sourcePos === Position.Right
+    const defaultOrthogonalSplit = isOrthogonalVerticalMiddle
+      ? (sx + tx) / 2
+      : (sy + ty) / 2
+    const currentOrthogonalSplit =
+      defaultOrthogonalSplit + (orthogonalOffset ?? 0)
+
+    // Compute bezier bend apex
+    const chordMidX = (sx + tx) / 2
+    const chordMidY = (sy + ty) / 2
+    const bezierApexX = chordMidX + (curveOffset?.x ?? 0)
+    const bezierApexY = chordMidY + (curveOffset?.y ?? 0)
+
+    const [edgePath, labelX, labelY, guideLinePath] = useMemo(() => {
       if (routingStyle === 'orthogonal') {
-        return getSmoothStepPath({
+        const [path, lx, ly] = getSmoothStepPath({
           sourceX: sx,
           sourceY: sy,
           sourcePosition: sourcePos,
@@ -202,10 +222,22 @@ export const UmlEdge = memo(
           targetY: ty,
           targetPosition: targetPos,
           borderRadius: 8,
+          centerX: isOrthogonalVerticalMiddle ? currentOrthogonalSplit : undefined,
+          centerY: isOrthogonalVerticalMiddle ? undefined : currentOrthogonalSplit,
         })
+        return [path, lx, ly, null]
       }
       if (routingStyle === 'bezier') {
-        return getBezierPath({
+        if (curveOffset) {
+          const cp1x = sx + (bezierApexX - sx) * 0.72
+          const cp1y = sy + (bezierApexY - sy) * 0.72
+          const cp2x = tx + (bezierApexX - tx) * 0.72
+          const cp2y = ty + (bezierApexY - ty) * 0.72
+          const path = `M ${sx} ${sy} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${tx} ${ty}`
+          const guide = `M ${sx} ${sy} L ${bezierApexX} ${bezierApexY} L ${tx} ${ty}`
+          return [path, bezierApexX, bezierApexY, guide]
+        }
+        const [path, lx, ly] = getBezierPath({
           sourceX: sx,
           sourceY: sy,
           sourcePosition: sourcePos,
@@ -213,14 +245,65 @@ export const UmlEdge = memo(
           targetY: ty,
           targetPosition: targetPos,
         })
+        return [path, lx, ly, null]
       }
-      return getStraightPath({
+      const [path, lx, ly] = getStraightPath({
         sourceX: sx,
         sourceY: sy,
         targetX: tx,
         targetY: ty,
       })
-    }, [routingStyle, sx, sy, tx, ty, sourcePos, targetPos])
+      return [path, lx, ly, null]
+    }, [
+      routingStyle,
+      sx,
+      sy,
+      tx,
+      ty,
+      sourcePos,
+      targetPos,
+      isOrthogonalVerticalMiddle,
+      currentOrthogonalSplit,
+      curveOffset,
+      bezierApexX,
+      bezierApexY,
+    ])
+
+    const adjustmentHandle = useMemo(() => {
+      if (!selected) return null
+      if (routingStyle === 'orthogonal') {
+        return {
+          x: isOrthogonalVerticalMiddle
+            ? currentOrthogonalSplit
+            : (sx + tx) / 2,
+          y: isOrthogonalVerticalMiddle
+            ? (sy + ty) / 2
+            : currentOrthogonalSplit,
+          type: 'orthogonal' as const,
+          cursor: isOrthogonalVerticalMiddle ? 'ew-resize' : 'ns-resize',
+        }
+      }
+      if (routingStyle === 'bezier') {
+        return {
+          x: bezierApexX,
+          y: bezierApexY,
+          type: 'bezier' as const,
+          cursor: 'grab',
+        }
+      }
+      return null
+    }, [
+      selected,
+      routingStyle,
+      isOrthogonalVerticalMiddle,
+      currentOrthogonalSplit,
+      sx,
+      tx,
+      sy,
+      ty,
+      bezierApexX,
+      bezierApexY,
+    ])
 
     const allowedTypes = useMemo(
       () => getAllowedRelationshipTypes(sourceNode?.type, targetNode?.type),
@@ -390,6 +473,113 @@ export const UmlEdge = memo(
       )
     }
 
+    const [isDraggingAdjustment, setIsDraggingAdjustment] = useState(false)
+
+    const handleStartAdjustmentDrag = (e: React.PointerEvent) => {
+      e.stopPropagation()
+      e.preventDefault()
+      setIsDraggingAdjustment(true)
+
+      const onPointerMove = (moveEvt: PointerEvent) => {
+        moveEvt.preventDefault()
+        const flowPos = screenToFlowPosition({
+          x: moveEvt.clientX,
+          y: moveEvt.clientY,
+        })
+        const isShift = moveEvt.shiftKey
+
+        if (routingStyle === 'orthogonal') {
+          if (isOrthogonalVerticalMiddle) {
+            let targetX = flowPos.x
+            if (!isShift) {
+              targetX = Math.round(targetX / 16) * 16
+            }
+            const offset = Math.round(targetX - defaultOrthogonalSplit)
+            setEdges((eds) =>
+              eds.map((edge) =>
+                edge.id === id
+                  ? {
+                      ...edge,
+                      data: {
+                        ...edge.data,
+                        orthogonalOffset: offset,
+                      },
+                    }
+                  : edge
+              )
+            )
+          } else {
+            let targetY = flowPos.y
+            if (!isShift) {
+              targetY = Math.round(targetY / 16) * 16
+            }
+            const offset = Math.round(targetY - defaultOrthogonalSplit)
+            setEdges((eds) =>
+              eds.map((edge) =>
+                edge.id === id
+                  ? {
+                      ...edge,
+                      data: {
+                        ...edge.data,
+                        orthogonalOffset: offset,
+                      },
+                    }
+                  : edge
+              )
+            )
+          }
+        } else if (routingStyle === 'bezier') {
+          let targetX = flowPos.x
+          let targetY = flowPos.y
+          if (!isShift) {
+            targetX = Math.round(targetX / 16) * 16
+            targetY = Math.round(targetY / 16) * 16
+          }
+          const offset = {
+            x: Math.round(targetX - chordMidX),
+            y: Math.round(targetY - chordMidY),
+          }
+          setEdges((eds) =>
+            eds.map((edge) =>
+              edge.id === id
+                ? {
+                    ...edge,
+                    data: {
+                      ...edge.data,
+                      curveOffset: offset,
+                    },
+                  }
+                : edge
+            )
+          )
+        }
+      }
+
+      const onPointerUp = () => {
+        setIsDraggingAdjustment(false)
+        window.removeEventListener('pointermove', onPointerMove)
+        window.removeEventListener('pointerup', onPointerUp)
+      }
+
+      window.addEventListener('pointermove', onPointerMove)
+      window.addEventListener('pointerup', onPointerUp)
+    }
+
+    const handleResetRouting = () => {
+      setEdges((eds) =>
+        eds.map((edge) => {
+          if (edge.id !== id) return edge
+          const nextData = { ...edge.data }
+          delete nextData.orthogonalOffset
+          delete nextData.curveOffset
+          return {
+            ...edge,
+            data: nextData,
+          }
+        })
+      )
+    }
+
     const startEndpointDrag = (
       e: React.PointerEvent,
       end: 'source' | 'target'
@@ -545,6 +735,19 @@ export const UmlEdge = memo(
           />
         )}
 
+        {/* Faint dashed guide lines when dragging or selecting a curved bend handle */}
+        {guideLinePath && selected && (
+          <path
+            d={guideLinePath}
+            fill="none"
+            stroke="var(--primary-btn)"
+            strokeWidth={1}
+            strokeDasharray="3 3"
+            strokeOpacity={0.35}
+            className="pointer-events-none"
+          />
+        )}
+
         {/* The visual edge */}
         <BaseEdge
           id={id}
@@ -649,6 +852,52 @@ export const UmlEdge = memo(
           </EdgeLabelRenderer>
         )}
 
+        {/* Interactive midpoint segment / bend adjustment handle */}
+        {adjustmentHandle && selected && (
+          <EdgeLabelRenderer>
+            <div
+              style={{
+                position: 'absolute',
+                transform: `translate(-50%, -50%) translate(${adjustmentHandle.x}px, ${adjustmentHandle.y}px)`,
+                pointerEvents: 'all',
+                zIndex: 100002,
+              }}
+              className="nodrag nopan flex items-center justify-center"
+              onPointerDown={handleStartAdjustmentDrag}
+              onDoubleClick={(e) => {
+                e.stopPropagation()
+                handleResetRouting()
+              }}
+            >
+              <div
+                style={{
+                  transform: `scale(${1 / zoom})`,
+                  transformOrigin: 'center center',
+                  cursor: adjustmentHandle.cursor,
+                }}
+                className={`w-3.5 h-3.5 rounded-full bg-[var(--bg-primary)] border-2 border-[var(--primary-btn)] shadow-md hover:scale-125 transition-transform flex items-center justify-center ${
+                  isDraggingAdjustment
+                    ? 'ring-4 ring-[var(--primary-btn)]/35 bg-[var(--primary-btn)]'
+                    : ''
+                }`}
+                title={
+                  adjustmentHandle.type === 'orthogonal'
+                    ? 'Drag to slide segment (Hold Shift to disable snap) · Double-click to reset'
+                    : 'Drag to bend curve (Hold Shift to disable snap) · Double-click to reset'
+                }
+              >
+                <div
+                  className={`w-1 h-1 rounded-full ${
+                    isDraggingAdjustment
+                      ? 'bg-white'
+                      : 'bg-[var(--primary-btn)]'
+                  }`}
+                />
+              </div>
+            </div>
+          </EdgeLabelRenderer>
+        )}
+
         {/* Clean, minimal inline stereotype label & direct post-hoc type switcher */}
         {(hasVisibleLabel || showActions) && (
           <EdgeLabelRenderer>
@@ -749,6 +998,22 @@ export const UmlEdge = memo(
                       >
                         <ArrowLeftRight className="w-3 h-3" />
                       </button>
+
+                      {hasManualOverride && (
+                        <button
+                          type="button"
+                          title="Reset manual routing to auto"
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleResetRouting()
+                          }}
+                          className="p-1 rounded-[4px] hover:bg-[var(--hover-bg)] text-[var(--primary-btn)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+                        >
+                          <RotateCcw className="w-3 h-3" />
+                        </button>
+                      )}
 
                       <button
                         type="button"
