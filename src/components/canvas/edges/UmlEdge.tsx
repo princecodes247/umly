@@ -19,6 +19,7 @@ import {
   getBorderIntersectionPoint,
   getNodeBox,
   getNodeHandles,
+  parseHandlePosition,
 } from '../../../lib/floatingEdges'
 import {
   getOrthogonalPoints,
@@ -116,6 +117,24 @@ export const UmlEdge = memo(
       return (idx - (pairEdges.length - 1) / 2) * 18
     }, [edges, source, target, id])
 
+    const routingStyle = data?.routingStyle || 'straight'
+    const rawWaypoints = data?.waypoints
+    const orthogonalOffset = data?.orthogonalOffset
+    const curveOffset = data?.curveOffset
+    const hasManualOverride =
+      (routingStyle === 'orthogonal' &&
+        ((rawWaypoints && rawWaypoints.length > 0) ||
+          orthogonalOffset !== undefined)) ||
+      (routingStyle === 'bezier' &&
+        ((rawWaypoints && rawWaypoints.length > 0) ||
+          curveOffset !== undefined))
+
+    // Track established handle positions and node positions to prevent disorienting auto-shifting
+    const establishedSourcePosRef = useRef<Position | null>(null)
+    const establishedTargetPosRef = useRef<Position | null>(null)
+    const prevSourcePosRef = useRef<{ x: number; y: number } | null>(null)
+    const prevTargetPosRef = useRef<{ x: number; y: number } | null>(null)
+
     // Compute floating border intersection coordinates so lines connect to the nearest border point
     const { sx, sy, tx, ty, sourcePos, targetPos } = useMemo(() => {
       if (draggingEnd && sourceNode && targetNode) {
@@ -130,13 +149,23 @@ export const UmlEdge = memo(
               targetNode,
               0,
               draggingEnd.hoveredHandleId,
-              targetHandleId
+              targetHandleId || establishedTargetPosRef.current,
+              rawWaypoints,
+              establishedTargetPosRef.current,
+              null
             )
           }
-          const tInt = getBorderIntersectionPoint(targetNode, {
-            x: draggingEnd.x,
-            y: draggingEnd.y,
-          })
+          const tPosToUse =
+            parseHandlePosition(targetHandleId) ||
+            establishedTargetPosRef.current
+          const tHandles = getNodeHandles(targetNode)
+          const tInt =
+            tPosToUse && tHandles[tPosToUse]
+              ? tHandles[tPosToUse]
+              : getBorderIntersectionPoint(targetNode, {
+                  x: draggingEnd.x,
+                  y: draggingEnd.y,
+                })
           return {
             sx: draggingEnd.x,
             sy: draggingEnd.y,
@@ -151,14 +180,24 @@ export const UmlEdge = memo(
               sourceNode,
               hoveredNode,
               0,
-              sourceHandleId,
-              draggingEnd.hoveredHandleId
+              sourceHandleId || establishedSourcePosRef.current,
+              draggingEnd.hoveredHandleId,
+              rawWaypoints,
+              null,
+              establishedSourcePosRef.current
             )
           }
-          const sInt = getBorderIntersectionPoint(sourceNode, {
-            x: draggingEnd.x,
-            y: draggingEnd.y,
-          })
+          const sPosToUse =
+            parseHandlePosition(sourceHandleId) ||
+            establishedSourcePosRef.current
+          const sHandles = getNodeHandles(sourceNode)
+          const sInt =
+            sPosToUse && sHandles[sPosToUse]
+              ? sHandles[sPosToUse]
+              : getBorderIntersectionPoint(sourceNode, {
+                  x: draggingEnd.x,
+                  y: draggingEnd.y,
+                })
           return {
             sx: sInt.x,
             sy: sInt.y,
@@ -171,14 +210,64 @@ export const UmlEdge = memo(
       }
 
       if (sourceNode && targetNode) {
-        return getFloatingEdgeParams(
+        const sCur = sourceNode.position
+        const tCur = targetNode.position
+        const prevS = prevSourcePosRef.current
+        const prevT = prevTargetPosRef.current
+
+        const sMoved = Boolean(
+          prevS &&
+            (Math.abs(prevS.x - sCur.x) > 0.5 ||
+              Math.abs(prevS.y - sCur.y) > 0.5)
+        )
+        const tMoved = Boolean(
+          prevT &&
+            (Math.abs(prevT.x - tCur.x) > 0.5 ||
+              Math.abs(prevT.y - tCur.y) > 0.5)
+        )
+
+        const isSourceShifting =
+          Boolean(sourceNode.dragging) || (sMoved && !tMoved)
+        const isTargetShifting =
+          Boolean(targetNode.dragging) || (tMoved && !sMoved)
+
+        let lockedTargetPos: Position | null = null
+        let lockedSourcePos: Position | null = null
+
+        if (isSourceShifting && !isTargetShifting) {
+          // Source is shifting: pin the other end (target) so it never auto-shifts
+          lockedTargetPos = establishedTargetPosRef.current
+        } else if (isTargetShifting && !isSourceShifting) {
+          // Target is shifting: pin the other end (source) so it never auto-shifts
+          lockedSourcePos = establishedSourcePosRef.current
+        } else if (
+          establishedTargetPosRef.current &&
+          establishedSourcePosRef.current
+        ) {
+          // Idle or both moving together: keep established handles locked
+          lockedTargetPos = establishedTargetPosRef.current
+          lockedSourcePos = establishedSourcePosRef.current
+        }
+
+        const params = getFloatingEdgeParams(
           sourceNode,
           targetNode,
           parallelOffset,
           sourceHandleId,
-          targetHandleId
+          targetHandleId,
+          rawWaypoints,
+          lockedTargetPos,
+          lockedSourcePos
         )
+
+        establishedSourcePosRef.current = params.sourcePos
+        establishedTargetPosRef.current = params.targetPos
+        prevSourcePosRef.current = { x: sCur.x, y: sCur.y }
+        prevTargetPosRef.current = { x: tCur.x, y: tCur.y }
+
+        return params
       }
+
       return {
         sx: sourceX,
         sy: sourceY,
@@ -203,19 +292,8 @@ export const UmlEdge = memo(
       targetY,
       sourcePosition,
       targetPosition,
+      rawWaypoints,
     ])
-
-    const routingStyle = data?.routingStyle || 'straight'
-    const rawWaypoints = data?.waypoints
-    const orthogonalOffset = data?.orthogonalOffset
-    const curveOffset = data?.curveOffset
-    const hasManualOverride =
-      (routingStyle === 'orthogonal' &&
-        ((rawWaypoints && rawWaypoints.length > 0) ||
-          orthogonalOffset !== undefined)) ||
-      (routingStyle === 'bezier' &&
-        ((rawWaypoints && rawWaypoints.length > 0) ||
-          curveOffset !== undefined))
 
     // Compute full curve points & segments
     const curvePoints = useMemo(() => {

@@ -153,16 +153,33 @@ export function getBorderIntersectionPoint(
   return dy >= 0 ? handles[Position.Bottom] : handles[Position.Top]
 }
 
+export function parseHandlePosition(
+  handleId?: string | null
+): Position | null {
+  if (!handleId || handleId === 'auto') return null
+  const clean = handleId.replace(/-source|-target$/, '')
+  if (clean === 'top') return Position.Top
+  if (clean === 'right') return Position.Right
+  if (clean === 'bottom') return Position.Bottom
+  if (clean === 'left') return Position.Left
+  return null
+}
+
 /**
  * Returns floating edge endpoints `(sx, sy, tx, ty, sourcePos, targetPos)` between two nodes.
  * Applies a small parallel offset if multiple edges connect the same pair of nodes.
+ * When waypoints exist, endpoints face the nearest waypoint.
+ * When shifting one node, lockedTargetPos or lockedSourcePos prevents the other end from auto-shifting.
  */
 export function getFloatingEdgeParams(
   sourceNode: Node,
   targetNode: Node,
   parallelOffset = 0,
   sourceHandle?: string | null,
-  targetHandle?: string | null
+  targetHandle?: string | null,
+  waypoints?: Array<{ x: number; y: number }>,
+  lockedTargetPos?: Position | null,
+  lockedSourcePos?: Position | null
 ): {
   sx: number
   sy: number
@@ -188,34 +205,28 @@ export function getFloatingEdgeParams(
   const sHandles = getNodeHandles(sourceNode)
   const tHandles = getNodeHandles(targetNode)
 
-  const parseHandlePosition = (handleId?: string | null): Position | null => {
-    if (!handleId || handleId === 'auto') return null
-    const clean = handleId.replace(/-source|-target$/, '')
-    if (clean === 'top') return Position.Top
-    if (clean === 'right') return Position.Right
-    if (clean === 'bottom') return Position.Bottom
-    if (clean === 'left') return Position.Left
-    return null
-  }
+  const sPos = parseHandlePosition(sourceHandle) || lockedSourcePos || null
+  const tPos = parseHandlePosition(targetHandle) || lockedTargetPos || null
 
-  const sPos = parseHandlePosition(sourceHandle)
-  const tPos = parseHandlePosition(targetHandle)
+  const sTargetPt =
+    waypoints && waypoints.length > 0
+      ? waypoints[0]
+      : { x: tAnchorX + nx, y: tAnchorY + ny }
+
+  const tSourcePt =
+    waypoints && waypoints.length > 0
+      ? waypoints[waypoints.length - 1]
+      : { x: sAnchorX + nx, y: sAnchorY + ny }
 
   const sIntersect =
     sPos && sHandles[sPos]
       ? sHandles[sPos]
-      : getBorderIntersectionPoint(sourceNode, {
-          x: tAnchorX + nx,
-          y: tAnchorY + ny,
-        })
+      : getBorderIntersectionPoint(sourceNode, sTargetPt)
 
   const tIntersect =
     tPos && tHandles[tPos]
       ? tHandles[tPos]
-      : getBorderIntersectionPoint(targetNode, {
-          x: sAnchorX + nx,
-          y: sAnchorY + ny,
-        })
+      : getBorderIntersectionPoint(targetNode, tSourcePt)
 
   return {
     sx: sIntersect.x,

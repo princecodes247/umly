@@ -78,7 +78,11 @@ import {
   validateUmlConnection,
 } from '../../lib/umlValidation'
 import { computeTidyLayout } from '../../lib/tidyLayout'
-import { toSourceHandleId, toTargetHandleId } from '../../lib/floatingEdges'
+import {
+  toSourceHandleId,
+  toTargetHandleId,
+  getFloatingEdgeParams,
+} from '../../lib/floatingEdges'
 import type {
   UmlRelationshipType,
   UmlNodeData,
@@ -935,10 +939,13 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
         zIndex: 10,
       }
 
+      const initialParams = getFloatingEdgeParams(sourceNode, newNode)
       const newEdge: Edge = {
         id: `edge-${timestamp}`,
         source: sourceNodeId,
         target: newNodeId,
+        sourceHandle: toSourceHandleId(initialParams.sourcePos),
+        targetHandle: toTargetHandleId(initialParams.targetPos),
         type: 'umlEdge',
         data: {
           relationshipType,
@@ -1038,6 +1045,13 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
 
       setValidationNotice(null)
       pushSnapshot()
+
+      if ((!sHandle || !tHandle) && sourceNode && targetNode) {
+        const initialParams = getFloatingEdgeParams(sourceNode, targetNode)
+        if (!sHandle) sHandle = initialParams.sourcePos
+        if (!tHandle) tHandle = initialParams.targetPos
+      }
+
       const newEdge: Edge = {
         id: `edge-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
         source: sourceId,
