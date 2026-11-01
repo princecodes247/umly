@@ -18,8 +18,12 @@ import {
   BookOpen,
   MoreHorizontal,
   Puzzle,
+  History,
+  RotateCcw,
+  Plus,
 } from 'lucide-react'
 import { DIAGRAM_TEMPLATES } from '../../data/templates'
+import type { DiagramSnapshot } from '../../lib/diagramStorage'
 import ThemeToggle from '../ThemeToggle'
 import { UmlCheatsheetModal } from '../game/UmlCheatsheetModal'
 
@@ -42,6 +46,9 @@ interface StudioToolbarProps {
   onCopyImageToClipboard?: () => void
   onImportJson: (file: File) => void
   isSaved?: boolean
+  snapshots?: DiagramSnapshot[]
+  onSaveSnapshot?: (label?: string) => void
+  onRestoreSnapshot?: (snapshot: DiagramSnapshot) => void
 }
 
 export const StudioToolbar: React.FC<StudioToolbarProps> = ({
@@ -63,10 +70,14 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
   onCopyImageToClipboard,
   onImportJson,
   isSaved = true,
+  snapshots = [],
+  onSaveSnapshot,
+  onRestoreSnapshot,
 }) => {
   const [showNavMenu, setShowNavMenu] = useState(false)
   const [showExportMenu, setShowExportMenu] = useState(false)
   const [showMoreMenu, setShowMoreMenu] = useState(false)
+  const [showHistoryMenu, setShowHistoryMenu] = useState(false)
   const [showCheatsheet, setShowCheatsheet] = useState(false)
   const [isEditingTitle, setIsEditingTitle] = useState(false)
   const [titleInput, setTitleInput] = useState(title)
@@ -75,6 +86,7 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
   const navMenuRef = useRef<HTMLDivElement>(null)
   const exportMenuRef = useRef<HTMLDivElement>(null)
   const moreMenuRef = useRef<HTMLDivElement>(null)
+  const historyMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setTitleInput(title)
@@ -92,6 +104,9 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
       }
       if (moreMenuRef.current && !moreMenuRef.current.contains(target)) {
         setShowMoreMenu(false)
+      }
+      if (historyMenuRef.current && !historyMenuRef.current.contains(target)) {
+        setShowHistoryMenu(false)
       }
     }
     document.addEventListener('pointerdown', handleOutside, true)
@@ -233,7 +248,7 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
 
         {/* Right: Undo/Redo, Export, and ⋯ Menu (Templates & Notation Guide) */}
         <div className="flex items-center gap-1 shrink-0">
-          {/* Undo / Redo */}
+          {/* Undo / Redo / Version History */}
           <div className="flex items-center gap-0.5">
             <button
               type="button"
@@ -253,6 +268,104 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
             >
               <Redo2 className="w-3.5 h-3.5" />
             </button>
+            <div ref={historyMenuRef} className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowHistoryMenu(!showHistoryMenu)
+                  setShowExportMenu(false)
+                  setShowMoreMenu(false)
+                }}
+                title="Version History & Snapshots"
+                className={`notion-btn notion-btn-ghost p-1.5 ${
+                  showHistoryMenu
+                    ? 'bg-[var(--hover-bg)] text-[var(--text-primary)]'
+                    : ''
+                }`}
+              >
+                <History className="w-3.5 h-3.5" />
+              </button>
+
+              {/* Version History Popover */}
+              {showHistoryMenu && (
+                <div className="absolute right-0 top-full mt-1.5 z-50 w-76 bg-[var(--bg-primary)] border border-[var(--border-subtle)] rounded-[8px] shadow-xl p-3 space-y-2.5">
+                  <div className="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)]">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--text-primary)]">
+                      <History className="w-3.5 h-3.5 text-[var(--primary-btn)]" />
+                      <span>Version History</span>
+                    </div>
+                    {onSaveSnapshot && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onSaveSnapshot('Manual Checkpoint')
+                        }}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-[4px] text-[10px] font-medium bg-[var(--primary-btn)] text-white hover:opacity-90 transition-opacity cursor-pointer shadow-xs"
+                        title="Create a restore point snapshot"
+                      >
+                        <Plus className="w-3 h-3" />
+                        <span>Save Snapshot</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {snapshots.length === 0 ? (
+                    <div className="py-4 text-center space-y-1">
+                      <p className="text-xs text-[var(--text-secondary)] font-medium">
+                        No snapshots saved yet
+                      </p>
+                      <p className="text-[11px] text-[var(--text-tertiary)]">
+                        Click <strong>Save Snapshot</strong> to pin a restore point.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5 max-h-64 overflow-y-auto pr-0.5">
+                      {snapshots.map((snap) => {
+                        const date = new Date(snap.timestamp)
+                        const timeStr = date.toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          second: '2-digit',
+                        })
+                        const dateStr = date.toLocaleDateString([], {
+                          month: 'short',
+                          day: 'numeric',
+                        })
+                        return (
+                          <div
+                            key={snap.id}
+                            className="group flex items-center justify-between p-2 rounded-[6px] border border-[var(--border-subtle)] bg-[var(--bg-secondary)]/50 hover:bg-[var(--hover-bg)] transition-colors"
+                          >
+                            <div className="min-w-0 pr-2">
+                              <div className="text-xs font-medium text-[var(--text-primary)] truncate">
+                                {snap.label}
+                              </div>
+                              <div className="text-[10px] font-mono text-[var(--text-tertiary)]">
+                                {dateStr} at {timeStr} · {snap.nodes.length} nodes
+                              </div>
+                            </div>
+                            {onRestoreSnapshot && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  onRestoreSnapshot(snap)
+                                  setShowHistoryMenu(false)
+                                }}
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded-[4px] bg-[var(--bg-primary)] border border-[var(--border-default)] text-[10px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--text-secondary)] transition-all cursor-pointer shrink-0 shadow-2xs"
+                                title="Restore this version (with Undo support)"
+                              >
+                                <RotateCcw className="w-2.5 h-2.5" />
+                                <span>Restore</span>
+                              </button>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="h-4 w-px bg-[var(--border-subtle)] mx-0.5" />
