@@ -42,6 +42,140 @@ export const UmlMarkers: React.FC = () => {
             strokeLinejoin="round"
           />
         </marker>
+
+        {/* ER Crow's Foot Markers (Information Engineering notation) */}
+        {/* One (single bar) */}
+        <marker
+          id="er-one"
+          viewBox="0 0 24 16"
+          refX="23"
+          refY="8"
+          markerWidth="18"
+          markerHeight="12"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M 16 2 L 16 14"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+        </marker>
+
+        {/* Mandatory One / One and only one (double bar) */}
+        <marker
+          id="er-one-only"
+          viewBox="0 0 24 16"
+          refX="23"
+          refY="8"
+          markerWidth="18"
+          markerHeight="12"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M 12 2 L 12 14 M 17 2 L 17 14"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+        </marker>
+
+        {/* Optional One / Zero or one (circle + bar) */}
+        <marker
+          id="er-zero-or-one"
+          viewBox="0 0 24 16"
+          refX="23"
+          refY="8"
+          markerWidth="18"
+          markerHeight="12"
+          orient="auto-start-reverse"
+        >
+          <circle
+            cx="9"
+            cy="8"
+            r="3.5"
+            fill="var(--bg-primary, #ffffff)"
+            stroke="currentColor"
+            strokeWidth="1.7"
+          />
+          <path
+            d="M 17 2 L 17 14"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+        </marker>
+
+        {/* Many (crow's foot) */}
+        <marker
+          id="er-many"
+          viewBox="0 0 24 16"
+          refX="23"
+          refY="8"
+          markerWidth="18"
+          markerHeight="12"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M 11 8 L 23 2 M 11 8 L 23 14"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </marker>
+
+        {/* Mandatory Many / One or many (bar + crow's foot) */}
+        <marker
+          id="er-one-or-many"
+          viewBox="0 0 24 16"
+          refX="23"
+          refY="8"
+          markerWidth="18"
+          markerHeight="12"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M 9 2 L 9 14 M 13 8 L 23 2 M 13 8 L 23 14"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </marker>
+
+        {/* Optional Many / Zero or many (circle + crow's foot) */}
+        <marker
+          id="er-zero-or-many"
+          viewBox="0 0 24 16"
+          refX="23"
+          refY="8"
+          markerWidth="18"
+          markerHeight="12"
+          orient="auto-start-reverse"
+        >
+          <circle
+            cx="8"
+            cy="8"
+            r="3.5"
+            fill="var(--bg-primary, #ffffff)"
+            stroke="currentColor"
+            strokeWidth="1.7"
+          />
+          <path
+            d="M 13 8 L 23 2 M 13 8 L 23 14"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </marker>
       </defs>
     </svg>
   )

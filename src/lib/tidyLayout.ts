@@ -9,6 +9,64 @@ import type { UmlNodeData, UmlEdgeData } from '../types/game'
 export function computeTidyLayout(nodes: Node[], edges: Edge[]): Node[] {
   if (nodes.length === 0) return nodes
 
+  const erEntities = nodes.filter((n) => n.type === 'erEntity')
+  if (erEntities.length > 0) {
+    const boundaries = nodes.filter((n) => n.type === 'boundary')
+    const notes = nodes.filter((n) => n.type === 'note')
+    const cols = Math.max(1, Math.min(3, Math.ceil(Math.sqrt(erEntities.length))))
+    const colGap = 320
+    const rowGap = 230
+    const startX = 120
+    const startY = 120
+
+    const sorted = [...erEntities].sort((a, b) =>
+      a.position.y === b.position.y
+        ? a.position.x - b.position.x
+        : a.position.y - b.position.y
+    )
+
+    const positionedEntities = sorted.map((n, idx) => {
+      const col = idx % cols
+      const row = Math.floor(idx / cols)
+      return {
+        ...n,
+        position: {
+          x: Math.round(startX + col * colGap),
+          y: Math.round(startY + row * rowGap),
+        },
+      }
+    })
+
+    const rows = Math.ceil(sorted.length / cols)
+    const contentW = cols * colGap - 60
+    const contentH = rows * rowGap - 40
+
+    const positionedBoundaries = boundaries.map((b, idx) => ({
+      ...b,
+      position: { x: startX - 50 + idx * 20, y: startY - 60 + idx * 20 },
+      data: {
+        ...b.data,
+        width: Math.max(440, contentW + 100),
+        height: Math.max(320, contentH + 110),
+      },
+    }))
+
+    const positionedNotes = notes.map((n, idx) => ({
+      ...n,
+      position: {
+        x: Math.round(startX + cols * colGap),
+        y: Math.round(startY + idx * 110),
+      },
+    }))
+
+    const posMap = new Map(
+      [...positionedEntities, ...positionedBoundaries, ...positionedNotes].map(
+        (n) => [n.id, n]
+      )
+    )
+    return nodes.map((n) => posMap.get(n.id) || n)
+  }
+
   const boundaries = nodes.filter((n) => n.type === 'boundary')
   const useCases = nodes.filter((n) => n.type === 'useCase')
   const actors = nodes.filter((n) => n.type === 'actor')

@@ -26,7 +26,9 @@ export function getNodeBox(node: Node): BoxMetrics {
         ? 148
         : node.type === 'boundary'
           ? 440
-          : 150)
+          : node.type === 'erEntity'
+            ? 230
+            : 150)
   const h =
     customH ??
     node.measured?.height ??
@@ -36,7 +38,9 @@ export function getNodeBox(node: Node): BoxMetrics {
         ? 64
         : node.type === 'boundary'
           ? 380
-          : 76)
+          : node.type === 'erEntity'
+            ? 140
+            : 76)
 
   const x = node.position.x
   const y = node.position.y

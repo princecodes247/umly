@@ -39,12 +39,14 @@ import {
   ArrowLeftRight,
   Trash2,
   Check,
+  Table2,
 } from 'lucide-react'
 
 import { ActorNode } from '../canvas/nodes/ActorNode'
 import { UseCaseNode } from '../canvas/nodes/UseCaseNode'
 import { BoundaryNode } from '../canvas/nodes/BoundaryNode'
 import { NoteNode } from '../canvas/nodes/NoteNode'
+import { ErEntityNode } from '../canvas/nodes/ErEntityNode'
 import { UmlEdge } from '../canvas/edges/UmlEdge'
 import { UmlMarkers } from '../canvas/UmlMarkers'
 import { StudioToolbar } from './StudioToolbar'
@@ -71,6 +73,7 @@ import {
   saveDiagramSnapshot,
   type DiagramDraft,
   type DiagramSnapshot,
+  type DiagramType,
 } from '../../lib/diagramStorage'
 import {
   getAllowedRelationshipTypes,
@@ -94,6 +97,7 @@ const nodeTypes: NodeTypes = {
   useCase: UseCaseNode,
   boundary: BoundaryNode,
   note: NoteNode,
+  erEntity: ErEntityNode,
 }
 
 const edgeTypes: EdgeTypes = {
@@ -144,6 +148,12 @@ function getNodeDimensions(n: Node): { w: number; h: number } {
       h: (n.data?.height as number) || n.measured?.height || 380,
     }
   }
+  if (n.type === 'erEntity') {
+    return {
+      w: (n.data?.width as number) || n.measured?.width || 230,
+      h: (n.data?.height as number) || n.measured?.height || 140,
+    }
+  }
   return {
     w:
       n.measured?.width ??
@@ -170,6 +180,9 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
 
   const [title, setTitle] = useState<string>(
     initialDraft?.title || defaultTemplate.name
+  )
+  const [diagramType, setDiagramType] = useState<DiagramType>(
+    initialDraft?.type || 'use_case'
   )
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>(
     initialDraft?.nodes || defaultTemplate.nodes
@@ -375,6 +388,7 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
     const draft = getDiagramDraft(activeDraftId)
     if (draft) {
       setTitle(draft.title)
+      setDiagramType(draft.type || 'use_case')
       setNodes(draft.nodes)
       setEdges(draft.edges)
       pastRef.current = []
@@ -744,7 +758,7 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
   // Add Node helper: auto-drops at visible viewport center (avoiding overlap) or at explicit drag-drop position
   const handleAddNode = useCallback(
     (
-      type: 'actor' | 'useCase' | 'boundary' | 'note',
+      type: 'actor' | 'useCase' | 'boundary' | 'note' | 'erEntity',
       options?: {
         actorType?: 'primary' | 'secondary' | 'system'
         position?: { x: number; y: number }
@@ -757,19 +771,23 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
       const nodeW =
         type === 'boundary'
           ? 440
-          : type === 'useCase'
-            ? 148
-            : type === 'actor'
-              ? 88
-              : 150
+          : type === 'erEntity'
+            ? 230
+            : type === 'useCase'
+              ? 148
+              : type === 'actor'
+                ? 88
+                : 150
       const nodeH =
         type === 'boundary'
           ? 380
-          : type === 'useCase'
-            ? 64
-            : type === 'actor'
-              ? 108
-              : 76
+          : type === 'erEntity'
+            ? 140
+            : type === 'useCase'
+              ? 64
+              : type === 'actor'
+                ? 108
+                : 76
 
       let posX: number
       let posY: number
@@ -839,11 +857,38 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
             autoFocusEdit: options?.autoFocusEdit ?? true,
           }
           break
+        case 'erEntity':
+          initialData = {
+            nodeType: 'erEntity',
+            label: 'NewEntity',
+            width: 230,
+            attributes: [
+              {
+                id: `attr-${Date.now()}-1`,
+                name: 'id',
+                dataType: 'uuid',
+                isPrimaryKey: true,
+              },
+              {
+                id: `attr-${Date.now()}-2`,
+                name: 'name',
+                dataType: 'varchar',
+              },
+              {
+                id: `attr-${Date.now()}-3`,
+                name: 'created_at',
+                dataType: 'timestamp',
+              },
+            ],
+            autoFocusEdit: options?.autoFocusEdit ?? true,
+          }
+          break
         case 'boundary':
           initialData = {
             nodeType: 'boundary',
-            boundaryTitle: 'System Boundary',
-            label: 'System Boundary',
+            boundaryTitle:
+              diagramType === 'er' ? 'Schema Group' : 'System Boundary',
+            label: diagramType === 'er' ? 'Schema Group' : 'System Boundary',
             width: 440,
             height: 380,
             autoFocusEdit: options?.autoFocusEdit ?? false,
@@ -882,7 +927,7 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
   const createConnectedElement = useCallback(
     (
       sourceNodeId: string,
-      targetType: 'useCase' | 'actor' | 'note',
+      targetType: 'useCase' | 'actor' | 'note' | 'erEntity',
       relationshipType: UmlRelationshipType,
       flowPos?: { x: number; y: number }
     ) => {
@@ -924,11 +969,31 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
               description: 'Constraint',
               autoFocusEdit: true,
             }
-            : {
-              nodeType: 'useCase',
-              label: 'New Use Case',
-              autoFocusEdit: true,
-            }
+            : targetType === 'erEntity'
+              ? {
+                nodeType: 'erEntity',
+                label: 'NewEntity',
+                width: 230,
+                attributes: [
+                  {
+                    id: `attr-${timestamp}-1`,
+                    name: 'id',
+                    dataType: 'uuid',
+                    isPrimaryKey: true,
+                  },
+                  {
+                    id: `attr-${timestamp}-2`,
+                    name: 'name',
+                    dataType: 'varchar',
+                  },
+                ],
+                autoFocusEdit: true,
+              }
+              : {
+                nodeType: 'useCase',
+                label: 'New Use Case',
+                autoFocusEdit: true,
+              }
 
       const newNode: Node = {
         id: newNodeId,
@@ -950,6 +1015,13 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
         data: {
           relationshipType,
           routingStyle: defaultRoutingStyle,
+          ...(relationshipType === 'er'
+            ? {
+              erSourceCardinality: 'one_only',
+              erTargetCardinality: 'zero_or_many',
+              erIdentifying: false,
+            }
+            : {}),
         },
       }
 
@@ -1063,6 +1135,13 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
         data: {
           relationshipType: inferredType,
           routingStyle: defaultRoutingStyle,
+          ...(inferredType === 'er'
+            ? {
+              erSourceCardinality: 'one_only',
+              erTargetCardinality: 'zero_or_many',
+              erIdentifying: false,
+            }
+            : {}),
         },
       }
 
@@ -1627,6 +1706,10 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
       if (!nodeId) return
       const sNode = nodes.find((n) => n.id === nodeId)
       if (!sNode) return
+      if (sNode.type === 'erEntity') {
+        createConnectedElement(nodeId, 'erEntity', 'er')
+        return
+      }
       const rel = sNode.type === 'actor' ? 'association' : 'include'
       createConnectedElement(nodeId, 'useCase', rel)
     }
@@ -1640,12 +1723,21 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
       setEdges((eds) =>
         eds.map((edge) => {
           if (edge.id !== edgeId) return edge
+          const d = (edge.data || {}) as Partial<UmlEdgeData>
           return {
             ...edge,
             source: edge.target,
             target: edge.source,
             sourceHandle: toSourceHandleId(edge.targetHandle),
             targetHandle: toTargetHandleId(edge.sourceHandle),
+            data:
+              d.relationshipType === 'er'
+                ? {
+                    ...d,
+                    erSourceCardinality: d.erTargetCardinality || 'zero_or_many',
+                    erTargetCardinality: d.erSourceCardinality || 'one_only',
+                  }
+                : edge.data,
           }
         })
       )
@@ -2102,14 +2194,19 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
         return
       }
 
-      // Single-key instant element auto-drop: U, A, B, N
+      // Single-key instant element auto-drop: E, U, A, B, N
       const keyLower = e.key.toLowerCase()
-      if (keyLower === 'u') {
+      if (keyLower === 'e' && diagramType === 'er') {
+        e.preventDefault()
+        handleAddNode('erEntity')
+        return
+      }
+      if (keyLower === 'u' && diagramType !== 'er') {
         e.preventDefault()
         handleAddNode('useCase')
         return
       }
-      if (keyLower === 'a') {
+      if (keyLower === 'a' && diagramType !== 'er') {
         e.preventDefault()
         handleAddNode('actor')
         return
@@ -2251,7 +2348,8 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
         rawType !== 'actor' &&
         rawType !== 'useCase' &&
         rawType !== 'boundary' &&
-        rawType !== 'note'
+        rawType !== 'note' &&
+        rawType !== 'erEntity'
       ) {
         return
       }
@@ -2261,9 +2359,21 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
         y: event.clientY,
       })
       const offsetX =
-        rawType === 'boundary' ? -220 : rawType === 'useCase' ? -72 : -45
+        rawType === 'boundary'
+          ? -220
+          : rawType === 'erEntity'
+            ? -115
+            : rawType === 'useCase'
+              ? -72
+              : -45
       const offsetY =
-        rawType === 'boundary' ? -190 : rawType === 'useCase' ? -32 : -50
+        rawType === 'boundary'
+          ? -190
+          : rawType === 'erEntity'
+            ? -70
+            : rawType === 'useCase'
+              ? -32
+              : -50
 
       handleAddNode(rawType, {
         position: { x: flowPos.x + offsetX, y: flowPos.y + offsetY },
@@ -2429,7 +2539,34 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
                 <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] font-mono">
                   Connect to New...
                 </div>
-                {dropCreateMenu.sourceNodeType === 'actor' ? (
+                {dropCreateMenu.sourceNodeType === 'erEntity' ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        createConnectedElement(
+                          dropCreateMenu.sourceNodeId,
+                          'erEntity',
+                          'er',
+                          {
+                            x: dropCreateMenu.flowX,
+                            y: dropCreateMenu.flowY,
+                          }
+                        )
+                        setDropCreateMenu(null)
+                      }}
+                      className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-[6px] hover:bg-[var(--hover-bg)] text-[var(--text-primary)] transition-colors cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2 font-medium">
+                        <Table2 className="w-3.5 h-3.5 text-[#2383e2]" />
+                        <span>Entity</span>
+                      </span>
+                      <span className="text-[10px] font-mono text-[var(--text-tertiary)]">
+                        1 : N
+                      </span>
+                    </button>
+                  </>
+                ) : dropCreateMenu.sourceNodeType === 'actor' ? (
                   <>
                     <button
                       type="button"
@@ -2817,6 +2954,7 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
 
           {/* Direct-Manipulation Bottom Dock */}
           <StudioBottomDock
+            diagramType={diagramType}
             onAddNode={(type) => handleAddNode(type)}
             onTidyLayout={handleTidyLayout}
             onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
@@ -2873,30 +3011,51 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
         isOpen={isCommandPaletteOpen}
         onClose={() => setIsCommandPaletteOpen(false)}
         commands={[
-          {
-            id: 'add-usecase',
-            category: 'Create',
-            label: 'New Use Case',
-            shortcut: 'U',
-            icon: <CircleDot className="w-3.5 h-3.5 text-[#2383e2]" />,
-            onSelect: () => handleAddNode('useCase'),
-          },
-          {
-            id: 'add-actor',
-            category: 'Create',
-            label: 'New Actor',
-            shortcut: 'A',
-            icon: <User className="w-3.5 h-3.5 text-[var(--primary-btn)]" />,
-            onSelect: () => handleAddNode('actor'),
-          },
-          {
-            id: 'add-boundary',
-            category: 'Create',
-            label: 'New System Boundary',
-            shortcut: 'B',
-            icon: <CircleDot className="w-3.5 h-3.5 text-[#9065b0]" />,
-            onSelect: () => handleAddNode('boundary'),
-          },
+          ...(diagramType === 'er'
+            ? [
+                {
+                  id: 'add-entity',
+                  category: 'Create',
+                  label: 'New Entity Table',
+                  shortcut: 'E',
+                  icon: <Table2 className="w-3.5 h-3.5 text-[#2383e2]" />,
+                  onSelect: () => handleAddNode('erEntity'),
+                },
+                {
+                  id: 'add-boundary',
+                  category: 'Create',
+                  label: 'New Schema Group',
+                  shortcut: 'B',
+                  icon: <CircleDot className="w-3.5 h-3.5 text-[#9065b0]" />,
+                  onSelect: () => handleAddNode('boundary'),
+                },
+              ]
+            : [
+                {
+                  id: 'add-usecase',
+                  category: 'Create',
+                  label: 'New Use Case',
+                  shortcut: 'U',
+                  icon: <CircleDot className="w-3.5 h-3.5 text-[#2383e2]" />,
+                  onSelect: () => handleAddNode('useCase'),
+                },
+                {
+                  id: 'add-actor',
+                  category: 'Create',
+                  label: 'New Actor',
+                  shortcut: 'A',
+                  icon: <User className="w-3.5 h-3.5 text-[var(--primary-btn)]" />,
+                  onSelect: () => handleAddNode('actor'),
+                },
+                {
+                  id: 'add-boundary',
+                  category: 'Create',
+                  label: 'New System Boundary',
+                  shortcut: 'B',
+                  icon: <CircleDot className="w-3.5 h-3.5 text-[#9065b0]" />,
+                  onSelect: () => handleAddNode('boundary'),
+                },
+              ]),
           {
             id: 'add-note',
             category: 'Create',

@@ -3,6 +3,7 @@ import { DIAGRAM_TEMPLATES } from '../data/templates'
 
 export type DiagramType =
   | 'use_case'
+  | 'er'
   | 'class'
   | 'sequence'
   | 'activity'

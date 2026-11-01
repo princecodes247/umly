@@ -38,6 +38,11 @@ export function getAllowedRelationshipTypes(
     return ['include', 'extend', 'generalization']
   }
 
+  // ER Entity <-> ER Entity: ER Crow's Foot relationship
+  if (sourceType === 'erEntity' && targetType === 'erEntity') {
+    return ['er']
+  }
+
   return []
 }
 
@@ -69,6 +74,7 @@ const RELATIONSHIP_LABELS: Record<UmlRelationshipType, string> = {
   include: '«include»',
   extend: '«extend»',
   generalization: 'Generalization',
+  er: 'ER Relationship',
 }
 
 const NODE_TYPE_LABELS: Record<string, string> = {
@@ -76,6 +82,7 @@ const NODE_TYPE_LABELS: Record<string, string> = {
   useCase: 'Use Case',
   boundary: 'System Boundary',
   note: 'Note',
+  erEntity: 'Entity',
 }
 
 /**

@@ -5,14 +5,22 @@ import {
   CircleDot,
   SquareDashed,
   StickyNote,
+  Table2,
   Wand2,
   Command,
   HelpCircle,
 } from 'lucide-react'
+import type { DiagramType } from '../../lib/diagramStorage'
 
-export type StudioElementKind = 'useCase' | 'actor' | 'boundary' | 'note'
+export type StudioElementKind =
+  | 'useCase'
+  | 'actor'
+  | 'boundary'
+  | 'note'
+  | 'erEntity'
 
 interface StudioBottomDockProps {
+  diagramType?: DiagramType
   onAddNode: (type: StudioElementKind) => void
   onTidyLayout: () => void
   onOpenCommandPalette: () => void
@@ -20,6 +28,7 @@ interface StudioBottomDockProps {
 }
 
 export const StudioBottomDock: React.FC<StudioBottomDockProps> = ({
+  diagramType = 'use_case',
   onAddNode,
   onTidyLayout,
   onOpenCommandPalette,
@@ -32,32 +41,54 @@ export const StudioBottomDock: React.FC<StudioBottomDockProps> = ({
     label: string
     shortcut: string
     icon: React.ReactNode
-  }> = [
-    {
-      id: 'useCase',
-      label: 'Use Case',
-      shortcut: 'U',
-      icon: <CircleDot className="w-3.5 h-3.5 text-[#2383e2]" />,
-    },
-    {
-      id: 'actor',
-      label: 'Actor',
-      shortcut: 'A',
-      icon: <User className="w-3.5 h-3.5 text-[var(--primary-btn)]" />,
-    },
-    {
-      id: 'boundary',
-      label: 'Boundary',
-      shortcut: 'B',
-      icon: <SquareDashed className="w-3.5 h-3.5 text-[#9065b0]" />,
-    },
-    {
-      id: 'note',
-      label: 'Note',
-      shortcut: 'N',
-      icon: <StickyNote className="w-3.5 h-3.5 text-[#cb912f]" />,
-    },
-  ]
+  }> =
+    diagramType === 'er'
+      ? [
+          {
+            id: 'erEntity',
+            label: 'Entity',
+            shortcut: 'E',
+            icon: <Table2 className="w-3.5 h-3.5 text-[#2383e2]" />,
+          },
+          {
+            id: 'boundary',
+            label: 'Schema',
+            shortcut: 'B',
+            icon: <SquareDashed className="w-3.5 h-3.5 text-[#9065b0]" />,
+          },
+          {
+            id: 'note',
+            label: 'Note',
+            shortcut: 'N',
+            icon: <StickyNote className="w-3.5 h-3.5 text-[#cb912f]" />,
+          },
+        ]
+      : [
+          {
+            id: 'useCase',
+            label: 'Use Case',
+            shortcut: 'U',
+            icon: <CircleDot className="w-3.5 h-3.5 text-[#2383e2]" />,
+          },
+          {
+            id: 'actor',
+            label: 'Actor',
+            shortcut: 'A',
+            icon: <User className="w-3.5 h-3.5 text-[var(--primary-btn)]" />,
+          },
+          {
+            id: 'boundary',
+            label: 'Boundary',
+            shortcut: 'B',
+            icon: <SquareDashed className="w-3.5 h-3.5 text-[#9065b0]" />,
+          },
+          {
+            id: 'note',
+            label: 'Note',
+            shortcut: 'N',
+            icon: <StickyNote className="w-3.5 h-3.5 text-[#cb912f]" />,
+          },
+        ]
 
   const handleDragStart = (
     e: React.DragEvent<HTMLButtonElement>,

@@ -404,12 +404,17 @@ export const UmlEdge = memo(
       data?.relationshipType || 'association'
     const condition = data?.condition
 
-    // Determine styles based on UML 2.5 relationship
+    // Determine styles based on UML 2.5 / ER relationship
     let strokeDasharray = 'none'
+    let markerStart = ''
     let markerEnd = ''
     let stereotypeText = ''
     let subText = ''
     let textColor = 'var(--text-secondary)'
+
+    const erSourceCard = data?.erSourceCardinality || 'one_only'
+    const erTargetCard = data?.erTargetCardinality || 'zero_or_many'
+    const erIdentifying = Boolean(data?.erIdentifying)
 
     switch (relationshipType) {
       case 'include':
@@ -430,6 +435,13 @@ export const UmlEdge = memo(
         markerEnd = 'url(#uml-generalization)'
         stereotypeText = ''
         textColor = 'var(--notion-green-text)'
+        break
+      case 'er':
+        strokeDasharray = erIdentifying ? 'none' : '5,4'
+        markerStart = `url(#er-${erSourceCard.replace(/_/g, '-')})`
+        markerEnd = `url(#er-${erTargetCard.replace(/_/g, '-')})`
+        stereotypeText = data?.label || ''
+        textColor = 'var(--text-primary)'
         break
       case 'association':
       default:
@@ -1059,7 +1071,8 @@ export const UmlEdge = memo(
         <BaseEdge
           id={id}
           path={edgePath}
-          markerEnd={markerEnd}
+          markerStart={markerStart || undefined}
+          markerEnd={markerEnd || undefined}
           style={{
             strokeWidth: selected || draggingEnd ? 2.25 : isHovered ? 2 : 1.65,
             strokeDasharray,
@@ -1402,6 +1415,105 @@ export const UmlEdge = memo(
                               </button>
                             )
                           })}
+                          <div className="h-3.5 w-px bg-[var(--border-subtle)] mx-0.5" />
+                        </>
+                      )}
+
+                      {/* Quick ER Cardinality presets when this is an ER relationship */}
+                      {relationshipType === 'er' && (
+                        <>
+                          {(
+                            [
+                              {
+                                label: '1:1',
+                                src: 'one_only',
+                                tgt: 'one_only',
+                                title: 'One-to-One (1:1)',
+                              },
+                              {
+                                label: '1:N',
+                                src: 'one_only',
+                                tgt: 'zero_or_many',
+                                title: 'One-to-Many (1:N)',
+                              },
+                              {
+                                label: 'N:M',
+                                src: 'zero_or_many',
+                                tgt: 'zero_or_many',
+                                title: 'Many-to-Many (N:M)',
+                              },
+                            ] as const
+                          ).map((preset) => {
+                            const isActive =
+                              erSourceCard === preset.src &&
+                              erTargetCard === preset.tgt
+                            return (
+                              <button
+                                key={preset.label}
+                                type="button"
+                                title={preset.title}
+                                onPointerDown={(e) => e.stopPropagation()}
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setEdges((eds) =>
+                                    eds.map((edge) =>
+                                      edge.id === id
+                                        ? {
+                                            ...edge,
+                                            data: {
+                                              ...edge.data,
+                                              erSourceCardinality: preset.src,
+                                              erTargetCardinality: preset.tgt,
+                                            },
+                                          }
+                                        : edge
+                                    )
+                                  )
+                                }}
+                                className={`px-1.5 py-0.5 rounded-[4px] font-mono text-[10px] transition-colors cursor-pointer ${
+                                  isActive
+                                    ? 'bg-[var(--selection-bg)] text-[var(--primary-btn)] font-semibold'
+                                    : 'text-[var(--text-secondary)] hover:bg-[var(--hover-bg)] hover:text-[var(--text-primary)]'
+                                }`}
+                              >
+                                {preset.label}
+                              </button>
+                            )
+                          })}
+                          <button
+                            type="button"
+                            title={
+                              erIdentifying
+                                ? 'Identifying (Solid) — Click for Non-Identifying (Dashed)'
+                                : 'Non-Identifying (Dashed) — Click for Identifying (Solid)'
+                            }
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setEdges((eds) =>
+                                eds.map((edge) =>
+                                  edge.id === id
+                                    ? {
+                                        ...edge,
+                                        data: {
+                                          ...edge.data,
+                                          erIdentifying: !erIdentifying,
+                                        },
+                                      }
+                                    : edge
+                                )
+                              )
+                            }}
+                            className={`px-1.5 py-0.5 rounded-[4px] font-mono text-[10px] transition-colors cursor-pointer ${
+                              erIdentifying
+                                ? 'bg-[var(--selection-bg)] text-[var(--primary-btn)] font-semibold'
+                                : 'text-[var(--text-secondary)] hover:bg-[var(--hover-bg)] hover:text-[var(--text-primary)]'
+                            }`}
+                          >
+                            {erIdentifying ? 'ID' : 'Non-ID'}
+                          </button>
                           <div className="h-3.5 w-px bg-[var(--border-subtle)] mx-0.5" />
                         </>
                       )}

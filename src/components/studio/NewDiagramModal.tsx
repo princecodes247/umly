@@ -9,6 +9,7 @@ import {
   GitCommit,
   CheckCircle2,
   FolderOpen,
+  Database,
 } from 'lucide-react'
 import {
   createDiagramDraft,
@@ -39,6 +40,14 @@ const DIAGRAM_TYPES: DiagramTypeOption[] = [
     description:
       'Model system boundaries, external actors, user goals, and «include» / «extend» relationships.',
     icon: CircleDot,
+    status: 'available',
+  },
+  {
+    type: 'er',
+    name: 'ER Diagram',
+    description:
+      'Model database entities, attributes, PK/FK keys, and Crow’s Foot cardinality relationships.',
+    icon: Database,
     status: 'available',
   },
   {
@@ -87,6 +96,18 @@ export const NewDiagramModal: React.FC<NewDiagramModalProps> = ({
 
   if (!isOpen) return null
 
+  const handleSelectType = (nextType: DiagramType) => {
+    setSelectedType(nextType)
+    setSelectedTemplate('blank')
+    if (
+      title === 'New Use Case Diagram' ||
+      title === 'New ER Diagram' ||
+      !title.trim()
+    ) {
+      setTitle(nextType === 'er' ? 'New ER Diagram' : 'New Use Case Diagram')
+    }
+  }
+
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault()
     const draft = createDiagramDraft(title, selectedType, selectedTemplate)
@@ -104,9 +125,10 @@ export const NewDiagramModal: React.FC<NewDiagramModalProps> = ({
         const parsed = parseDiagramJson(text)
         if (parsed) {
           const fileTitle = file.name.replace(/\.(umly\.)?json$/i, '')
+          const hasErEntity = parsed.nodes?.some((n) => n.type === 'erEntity')
           const draft = createDiagramDraft(
             parsed.title || fileTitle || 'Imported Diagram',
-            'use_case'
+            hasErEntity ? 'er' : 'use_case'
           )
           draft.nodes = parsed.nodes
           draft.edges = parsed.edges || []
@@ -239,7 +261,7 @@ export const NewDiagramModal: React.FC<NewDiagramModalProps> = ({
                     key={dt.type}
                     type="button"
                     disabled={!isAvailable}
-                    onClick={() => setSelectedType(dt.type)}
+                    onClick={() => handleSelectType(dt.type)}
                     className={`p-3 rounded-[6px] border text-left flex flex-col justify-between transition-all ${
                       isSelected && isAvailable
                         ? 'border-[var(--primary-btn)] bg-[var(--selection-bg)] ring-1 ring-[var(--primary-btn)] shadow-xs'
@@ -296,7 +318,11 @@ export const NewDiagramModal: React.FC<NewDiagramModalProps> = ({
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {DIAGRAM_TEMPLATES.map((tmpl) => {
+              {DIAGRAM_TEMPLATES.filter(
+                (t) =>
+                  t.id === 'blank' ||
+                  (t.diagramType || 'use_case') === selectedType
+              ).map((tmpl) => {
                 const isSelected = selectedTemplate === tmpl.id
                 return (
                   <button

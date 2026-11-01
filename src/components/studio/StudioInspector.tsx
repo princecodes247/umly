@@ -23,6 +23,10 @@ import {
   AlignVerticalSpaceBetween,
   Route,
   Palette,
+  Table2,
+  Plus,
+  KeyRound,
+  X,
 } from 'lucide-react'
 import type { AlignmentMode } from './StudioCanvas'
 import { getAllowedRelationshipTypes } from '../../lib/umlValidation'
@@ -30,6 +34,8 @@ import type {
   UmlNodeData,
   UmlEdgeData,
   NodeAccentColor,
+  ErCardinality,
+  ErAttribute,
 } from '../../types/game'
 
 interface StudioInspectorProps {
@@ -336,6 +342,12 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                   <span>Note</span>
                 </div>
               )}
+              {selectedNode.type === 'erEntity' && (
+                <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-[var(--notion-blue-bg)] text-[var(--notion-blue-text)] font-semibold text-xs whitespace-nowrap">
+                  <Table2 className="w-3.5 h-3.5" />
+                  <span>Entity Table</span>
+                </div>
+              )}
             </div>
             {/* Element Position & Size */}
             {(() => {
@@ -347,9 +359,11 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                     ? 148
                     : targetNode.type === 'boundary'
                       ? 440
-                      : targetNode.type === 'note'
-                        ? 150
-                        : 120
+                      : targetNode.type === 'erEntity'
+                        ? 230
+                        : targetNode.type === 'note'
+                          ? 150
+                          : 120
 
               const defaultHeight =
                 targetNode.type === 'actor'
@@ -358,9 +372,11 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                     ? 64
                     : targetNode.type === 'boundary'
                       ? 380
-                      : targetNode.type === 'note'
-                        ? 76
-                        : 60
+                      : targetNode.type === 'erEntity'
+                        ? 140
+                        : targetNode.type === 'note'
+                          ? 76
+                          : 60
 
               const minW =
                 targetNode.type === 'actor'
@@ -369,9 +385,11 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                     ? 90
                     : targetNode.type === 'boundary'
                       ? 200
-                      : targetNode.type === 'note'
-                        ? 80
-                        : 40
+                      : targetNode.type === 'erEntity'
+                        ? 190
+                        : targetNode.type === 'note'
+                          ? 80
+                          : 40
 
               const minH =
                 targetNode.type === 'actor'
@@ -380,9 +398,11 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                     ? 40
                     : targetNode.type === 'boundary'
                       ? 150
-                      : targetNode.type === 'note'
-                        ? 40
-                        : 30
+                      : targetNode.type === 'erEntity'
+                        ? 88
+                        : targetNode.type === 'note'
+                          ? 40
+                          : 30
 
               const currentWidth =
                 typeof nodeData.width === 'number'
@@ -672,6 +692,184 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                 </div>
               </div>
             )}
+            {/* ER Entity Attributes & Weak Entity toggle */}
+            {selectedNode.type === 'erEntity' && (() => {
+              const attrs: ErAttribute[] = Array.isArray(nodeData.attributes)
+                ? nodeData.attributes
+                : []
+              const updateAttrs = (next: ErAttribute[]) => {
+                onUpdateNodeData(selectedNode.id, { attributes: next })
+              }
+              return (
+                <div className="space-y-3 pt-3 border-t border-[var(--border-subtle)]">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-medium text-[var(--text-secondary)]">
+                      Weak Entity
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onUpdateNodeData(selectedNode.id, {
+                          isWeakEntity: !nodeData.isWeakEntity,
+                        })
+                      }
+                      className={`px-2 py-0.5 rounded-[4px] text-[10px] font-mono transition-colors cursor-pointer ${
+                        nodeData.isWeakEntity
+                          ? 'bg-[var(--selection-bg)] text-[var(--primary-btn)] font-semibold border border-[var(--primary-btn)]'
+                          : 'border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--hover-bg)]'
+                      }`}
+                    >
+                      {nodeData.isWeakEntity ? 'Weak (Double Border)' : 'Strong'}
+                    </button>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-medium text-[var(--text-secondary)]">
+                        Attributes / Columns ({attrs.length})
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateAttrs([
+                            ...attrs,
+                            {
+                              id: `attr-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+                              name: `col_${attrs.length + 1}`,
+                              dataType: 'varchar',
+                            },
+                          ])
+                        }
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[4px] text-[10px] font-medium text-[var(--primary-btn)] hover:bg-[var(--selection-bg)] transition-colors cursor-pointer"
+                      >
+                        <Plus className="w-3 h-3" />
+                        <span>Add</span>
+                      </button>
+                    </div>
+
+                    <div className="space-y-1.5 max-h-[280px] overflow-y-auto pr-0.5">
+                      {attrs.map((attr, idx) => (
+                        <div
+                          key={attr.id}
+                          className="p-1.5 rounded-[5px] border border-[var(--border-subtle)] bg-[var(--bg-secondary)]/60 space-y-1.5"
+                        >
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="text"
+                              value={attr.name}
+                              onChange={(e) => {
+                                const next = [...attrs]
+                                next[idx] = { ...attr, name: e.target.value }
+                                updateAttrs(next)
+                              }}
+                              placeholder="column_name"
+                              className="flex-1 min-w-0 px-1.5 py-1 rounded-[4px] border border-[var(--border-default)] bg-[var(--bg-primary)] text-[11px] font-mono text-[var(--text-primary)] outline-none focus:border-[var(--primary-btn)]"
+                            />
+                            <input
+                              type="text"
+                              value={attr.dataType}
+                              onChange={(e) => {
+                                const next = [...attrs]
+                                next[idx] = { ...attr, dataType: e.target.value }
+                                updateAttrs(next)
+                              }}
+                              placeholder="type"
+                              className="w-20 shrink-0 px-1.5 py-1 rounded-[4px] border border-[var(--border-default)] bg-[var(--bg-primary)] text-[11px] font-mono text-[var(--text-secondary)] outline-none focus:border-[var(--primary-btn)]"
+                            />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                updateAttrs(attrs.filter((a) => a.id !== attr.id))
+                              }
+                              title="Remove attribute"
+                              className="p-1 rounded-[4px] text-[var(--text-tertiary)] hover:text-[var(--notion-red-text)] hover:bg-[var(--notion-red-bg)] transition-colors cursor-pointer"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const next = [...attrs]
+                                next[idx] = {
+                                  ...attr,
+                                  isPrimaryKey: !attr.isPrimaryKey,
+                                }
+                                updateAttrs(next)
+                              }}
+                              className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-[3px] text-[9px] font-mono font-semibold transition-colors cursor-pointer ${
+                                attr.isPrimaryKey
+                                  ? 'bg-[var(--notion-yellow-bg)] text-[var(--notion-yellow-text)]'
+                                  : 'bg-[var(--bg-primary)] text-[var(--text-tertiary)] border border-[var(--border-subtle)]'
+                              }`}
+                            >
+                              <KeyRound className="w-2.5 h-2.5" />
+                              PK
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const next = [...attrs]
+                                next[idx] = {
+                                  ...attr,
+                                  isForeignKey: !attr.isForeignKey,
+                                }
+                                updateAttrs(next)
+                              }}
+                              className={`px-1.5 py-0.5 rounded-[3px] text-[9px] font-mono font-semibold transition-colors cursor-pointer ${
+                                attr.isForeignKey
+                                  ? 'bg-[var(--notion-blue-bg)] text-[var(--notion-blue-text)]'
+                                  : 'bg-[var(--bg-primary)] text-[var(--text-tertiary)] border border-[var(--border-subtle)]'
+                              }`}
+                            >
+                              FK
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const next = [...attrs]
+                                next[idx] = {
+                                  ...attr,
+                                  isUnique: !attr.isUnique,
+                                }
+                                updateAttrs(next)
+                              }}
+                              className={`px-1.5 py-0.5 rounded-[3px] text-[9px] font-mono font-semibold transition-colors cursor-pointer ${
+                                attr.isUnique
+                                  ? 'bg-[var(--notion-purple-bg)] text-[var(--notion-purple-text)]'
+                                  : 'bg-[var(--bg-primary)] text-[var(--text-tertiary)] border border-[var(--border-subtle)]'
+                              }`}
+                            >
+                              UQ
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const next = [...attrs]
+                                next[idx] = {
+                                  ...attr,
+                                  isNullable: !attr.isNullable,
+                                }
+                                updateAttrs(next)
+                              }}
+                              className={`px-1.5 py-0.5 rounded-[3px] text-[9px] font-mono font-semibold transition-colors cursor-pointer ${
+                                attr.isNullable
+                                  ? 'bg-[var(--hover-bg-strong)] text-[var(--text-primary)]'
+                                  : 'bg-[var(--bg-primary)] text-[var(--text-tertiary)] border border-[var(--border-subtle)]'
+                              }`}
+                            >
+                              NULL
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
           </div>
         ) : activeEdge && edgeData ? (
           /* CASE 2: EDGE SELECTED */
@@ -683,6 +881,171 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                 sNode?.type,
                 tNode?.type
               )
+
+              if (edgeData.relationshipType === 'er') {
+                const srcCard: ErCardinality =
+                  edgeData.erSourceCardinality || 'one_only'
+                const tgtCard: ErCardinality =
+                  edgeData.erTargetCardinality || 'zero_or_many'
+                const isIdentifying = Boolean(edgeData.erIdentifying)
+                const cardOptions: Array<{
+                  id: ErCardinality
+                  label: string
+                  symbol: string
+                }> = [
+                  { id: 'one', label: 'One', symbol: '1' },
+                  { id: 'one_only', label: 'Only One', symbol: '1..1' },
+                  { id: 'zero_or_one', label: 'Zero or One', symbol: '0..1' },
+                  { id: 'many', label: 'Many', symbol: 'N' },
+                  { id: 'one_or_many', label: 'One or Many', symbol: '1..*' },
+                  { id: 'zero_or_many', label: 'Zero or Many', symbol: '0..*' },
+                ]
+
+                return (
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-medium text-[var(--text-secondary)]">
+                        Cardinality Preset
+                      </label>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {(
+                          [
+                            {
+                              label: '1 : 1',
+                              src: 'one_only',
+                              tgt: 'one_only',
+                            },
+                            {
+                              label: '1 : N',
+                              src: 'one_only',
+                              tgt: 'zero_or_many',
+                            },
+                            {
+                              label: 'N : M',
+                              src: 'zero_or_many',
+                              tgt: 'zero_or_many',
+                            },
+                          ] as const
+                        ).map((preset) => {
+                          const isActive =
+                            srcCard === preset.src && tgtCard === preset.tgt
+                          return (
+                            <button
+                              key={preset.label}
+                              type="button"
+                              onClick={() =>
+                                onUpdateEdgeData(activeEdge.id, {
+                                  erSourceCardinality: preset.src,
+                                  erTargetCardinality: preset.tgt,
+                                })
+                              }
+                              className={`py-1.5 rounded-[4px] font-mono text-xs font-medium transition-colors cursor-pointer ${
+                                isActive
+                                  ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] font-semibold'
+                                  : 'border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--hover-bg)]'
+                              }`}
+                            >
+                              {preset.label}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-medium text-[var(--text-secondary)]">
+                        Relationship Kind
+                      </label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onUpdateEdgeData(activeEdge.id, {
+                              erIdentifying: false,
+                            })
+                          }
+                          className={`py-1.5 px-2 rounded-[4px] text-[11px] font-medium transition-colors cursor-pointer ${
+                            !isIdentifying
+                              ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] font-semibold'
+                              : 'border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--hover-bg)]'
+                          }`}
+                        >
+                          Non-Identifying (--)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onUpdateEdgeData(activeEdge.id, {
+                              erIdentifying: true,
+                            })
+                          }
+                          className={`py-1.5 px-2 rounded-[4px] text-[11px] font-medium transition-colors cursor-pointer ${
+                            isIdentifying
+                              ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] font-semibold'
+                              : 'border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--hover-bg)]'
+                          }`}
+                        >
+                          Identifying (—)
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-medium text-[var(--text-secondary)]">
+                        Source ({String(sNode?.data?.label || 'Source')})
+                      </label>
+                      <div className="grid grid-cols-3 gap-1">
+                        {cardOptions.map((opt) => (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            title={opt.label}
+                            onClick={() =>
+                              onUpdateEdgeData(activeEdge.id, {
+                                erSourceCardinality: opt.id,
+                              })
+                            }
+                            className={`py-1 px-1.5 rounded-[4px] text-[10px] font-mono transition-colors cursor-pointer ${
+                              srcCard === opt.id
+                                ? 'bg-[var(--selection-bg)] text-[var(--primary-btn)] font-semibold border border-[var(--primary-btn)]'
+                                : 'border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--hover-bg)]'
+                            }`}
+                          >
+                            {opt.symbol}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-medium text-[var(--text-secondary)]">
+                        Target ({String(tNode?.data?.label || 'Target')})
+                      </label>
+                      <div className="grid grid-cols-3 gap-1">
+                        {cardOptions.map((opt) => (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            title={opt.label}
+                            onClick={() =>
+                              onUpdateEdgeData(activeEdge.id, {
+                                erTargetCardinality: opt.id,
+                              })
+                            }
+                            className={`py-1 px-1.5 rounded-[4px] text-[10px] font-mono transition-colors cursor-pointer ${
+                              tgtCard === opt.id
+                                ? 'bg-[var(--selection-bg)] text-[var(--primary-btn)] font-semibold border border-[var(--primary-btn)]'
+                                : 'border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--hover-bg)]'
+                            }`}
+                          >
+                            {opt.symbol}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
 
               return (
                 <div className="space-y-1.5">
@@ -1007,6 +1370,14 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                   <span>
                     <strong>Generalization</strong>: Inheritance (hollow
                     triangle from Child → Parent).
+                  </span>
+                )}
+                {edgeData.relationshipType === 'er' && (
+                  <span>
+                    <strong>ER Relationship (Crow&apos;s Foot)</strong>:{' '}
+                    {edgeData.erIdentifying
+                      ? 'Identifying (solid line — child primary key depends on parent).'
+                      : 'Non-identifying (dashed line — foreign key reference).'}
                   </span>
                 )}
                 {(!edgeData.relationshipType ||

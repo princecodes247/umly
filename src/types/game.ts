@@ -1,4 +1,27 @@
-export type UmlRelationshipType = 'association' | 'include' | 'extend' | 'generalization'
+export type UmlRelationshipType =
+  | 'association'
+  | 'include'
+  | 'extend'
+  | 'generalization'
+  | 'er'
+
+export type ErCardinality =
+  | 'one'
+  | 'one_only'
+  | 'zero_or_one'
+  | 'many'
+  | 'zero_or_many'
+  | 'one_or_many'
+
+export interface ErAttribute {
+  id: string
+  name: string
+  dataType: string
+  isPrimaryKey?: boolean
+  isForeignKey?: boolean
+  isNullable?: boolean
+  isUnique?: boolean
+}
 
 export type LevelType = 'build' | 'fix' | 'classify'
 
@@ -12,11 +35,13 @@ export type NodeAccentColor =
 
 export interface UmlNodeData {
   label: string
-  nodeType: 'actor' | 'useCase' | 'boundary' | 'note'
+  nodeType: 'actor' | 'useCase' | 'boundary' | 'note' | 'erEntity'
   actorType?: 'primary' | 'secondary' | 'system'
   stereotype?: string
   accentColor?: NodeAccentColor
   boundaryTitle?: string
+  attributes?: ErAttribute[]
+  isWeakEntity?: boolean
   width?: number
   height?: number
   description?: string
@@ -30,6 +55,9 @@ export interface UmlEdgeData {
   relationshipType: UmlRelationshipType
   label?: string
   condition?: string
+  erSourceCardinality?: ErCardinality
+  erTargetCardinality?: ErCardinality
+  erIdentifying?: boolean
   routingStyle?: 'straight' | 'orthogonal' | 'bezier'
   orthogonalOffset?: number
   curveOffset?: { x: number; y: number }

@@ -290,6 +290,93 @@ export function generateMermaid(
   nodes: Node[],
   edges: Edge[]
 ): string {
+  const erEntities = nodes.filter((n) => n.type === 'erEntity')
+  if (erEntities.length > 0) {
+    const safeName = (s: string) =>
+      (s || 'Entity').replace(/[^a-zA-Z0-9_]/g, '_')
+    const entityNameMap = new Map(
+      erEntities.map((n) => {
+        const d = n.data as unknown as UmlNodeData
+        return [n.id, safeName(d.label || n.id)]
+      })
+    )
+    const lines: string[] = [
+      `---`,
+      `title: ${title || 'ER Diagram'}`,
+      `---`,
+      `erDiagram`,
+    ]
+
+    erEntities.forEach((n) => {
+      const d = n.data as unknown as UmlNodeData
+      const name = entityNameMap.get(n.id) || 'Entity'
+      const attrs = Array.isArray(d.attributes) ? d.attributes : []
+      if (attrs.length === 0) {
+        lines.push(`  ${name} { }`)
+      } else {
+        lines.push(`  ${name} {`)
+        attrs.forEach((a) => {
+          const keys = [
+            a.isPrimaryKey ? 'PK' : '',
+            a.isForeignKey ? 'FK' : '',
+            a.isUnique && !a.isPrimaryKey ? 'UK' : '',
+          ]
+            .filter(Boolean)
+            .join(',')
+          lines.push(
+            `    ${safeName(a.dataType || 'varchar')} ${safeName(a.name)}${keys ? ` ${keys}` : ''}`
+          )
+        })
+        lines.push(`  }`)
+      }
+    })
+
+    const leftCard = (c?: string) => {
+      switch (c) {
+        case 'zero_or_one':
+          return '|o'
+        case 'many':
+        case 'zero_or_many':
+          return '}o'
+        case 'one_or_many':
+          return '}|'
+        case 'one':
+        case 'one_only':
+        default:
+          return '||'
+      }
+    }
+    const rightCard = (c?: string) => {
+      switch (c) {
+        case 'zero_or_one':
+          return 'o|'
+        case 'many':
+        case 'zero_or_many':
+          return 'o{'
+        case 'one_or_many':
+          return '|{'
+        case 'one':
+        case 'one_only':
+        default:
+          return '||'
+      }
+    }
+
+    edges.forEach((e) => {
+      const sName = entityNameMap.get(e.source)
+      const tName = entityNameMap.get(e.target)
+      if (!sName || !tName) return
+      const ed = e.data as unknown as UmlEdgeData
+      const link = ed?.erIdentifying ? '--' : '..'
+      const lbl = (ed?.label || 'relates').replace(/"/g, "'")
+      lines.push(
+        `  ${sName} ${leftCard(ed?.erSourceCardinality)}${link}${rightCard(ed?.erTargetCardinality)} ${tName} : "${lbl}"`
+      )
+    })
+
+    return lines.join('\n')
+  }
+
   const lines: string[] = [
     `---`,
     `title: ${title || 'Use Case Diagram'}`,
