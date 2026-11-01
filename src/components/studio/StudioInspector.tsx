@@ -21,15 +21,11 @@ import {
   AlignEndHorizontal,
   AlignHorizontalSpaceBetween,
   AlignVerticalSpaceBetween,
-  History,
-  RotateCcw,
-  Plus,
   Route,
   Palette,
 } from 'lucide-react'
 import type { AlignmentMode } from './StudioCanvas'
 import { getAllowedRelationshipTypes } from '../../lib/umlValidation'
-import type { DiagramSnapshot } from '../../lib/diagramStorage'
 import type {
   UmlNodeData,
   UmlEdgeData,
@@ -42,6 +38,7 @@ interface StudioInspectorProps {
   selectedNodes?: Node[]
   selectedEdges?: Edge[]
   onUpdateNodeData: (id: string, data: Partial<UmlNodeData>) => void
+  onUpdateNodePosition?: (id: string, position: { x: number; y: number }) => void
   onUpdateEdgeData: (id: string, data: Partial<UmlEdgeData>) => void
   onDeleteNode?: (id: string) => void
   onDuplicateNode?: (id: string) => void
@@ -58,9 +55,6 @@ interface StudioInspectorProps {
   onAlignSelected?: (mode: AlignmentMode) => void
   defaultRoutingStyle?: 'straight' | 'orthogonal' | 'bezier'
   onDefaultRoutingStyleChange?: (style: 'straight' | 'orthogonal' | 'bezier') => void
-  snapshots?: DiagramSnapshot[]
-  onSaveSnapshot?: (label?: string) => void
-  onRestoreSnapshot?: (snapshot: DiagramSnapshot) => void
   diagramTitle?: string
   allNodes: Node[]
   allEdges: Edge[]
@@ -87,6 +81,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
   selectedNodes = [],
   selectedEdges: _selectedEdges = [],
   onUpdateNodeData,
+  onUpdateNodePosition,
   onUpdateEdgeData,
   onFlipEdgeDirection,
   onReconnectEdge,
@@ -96,9 +91,6 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
   onAlignSelected,
   defaultRoutingStyle = 'straight',
   onDefaultRoutingStyleChange,
-  snapshots = [],
-  onSaveSnapshot,
-  onRestoreSnapshot,
   allNodes,
   allEdges,
   isOpen,
@@ -506,54 +498,184 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
               </div>
             )}
 
-            {/* Boundary Dimensions */}
-            {selectedNode.type === 'boundary' && (
-              <div className="space-y-2">
-                <label className="text-[11px] font-medium text-[var(--text-secondary)]">
-                  Boundary Dimensions (px)
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <span className="text-[10px] text-[var(--text-tertiary)]">
-                      Width:
-                    </span>
-                    <input
-                      type="number"
-                      step={20}
-                      min={200}
-                      value={nodeData.width || 440}
-                      onChange={(e) =>
-                        onUpdateNodeData(selectedNode.id, {
-                          width: parseInt(e.target.value) || 440,
-                        })
-                      }
-                      className="w-full px-2 py-1 rounded-[4px] border border-[var(--border-default)] bg-[var(--bg-secondary)] text-xs"
-                    />
+            {/* Element Position & Size */}
+            {(() => {
+              const targetNode = activeNode || selectedNode
+              const defaultWidth =
+                targetNode.type === 'actor'
+                  ? 88
+                  : targetNode.type === 'useCase'
+                    ? 148
+                    : targetNode.type === 'boundary'
+                      ? 440
+                      : targetNode.type === 'note'
+                        ? 150
+                        : 120
+
+              const defaultHeight =
+                targetNode.type === 'actor'
+                  ? 108
+                  : targetNode.type === 'useCase'
+                    ? 64
+                    : targetNode.type === 'boundary'
+                      ? 380
+                      : targetNode.type === 'note'
+                        ? 76
+                        : 60
+
+              const minW =
+                targetNode.type === 'actor'
+                  ? 60
+                  : targetNode.type === 'useCase'
+                    ? 90
+                    : targetNode.type === 'boundary'
+                      ? 200
+                      : targetNode.type === 'note'
+                        ? 80
+                        : 40
+
+              const minH =
+                targetNode.type === 'actor'
+                  ? 70
+                  : targetNode.type === 'useCase'
+                    ? 40
+                    : targetNode.type === 'boundary'
+                      ? 150
+                      : targetNode.type === 'note'
+                        ? 40
+                        : 30
+
+              const currentWidth =
+                typeof nodeData.width === 'number'
+                  ? nodeData.width
+                  : Math.round(targetNode.measured?.width ?? defaultWidth)
+
+              const currentHeight =
+                typeof nodeData.height === 'number'
+                  ? nodeData.height
+                  : Math.round(targetNode.measured?.height ?? defaultHeight)
+
+              const currentX = Math.round(targetNode.position.x)
+              const currentY = Math.round(targetNode.position.y)
+
+              return (
+                <div className="space-y-3 pt-2 border-t border-[var(--border-subtle)]">
+                  {/* Position (X, Y) */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-medium text-[var(--text-secondary)]">
+                        Position (px)
+                      </label>
+                      <span className="text-[10px] text-[var(--text-tertiary)] font-mono">
+                        X, Y
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="flex items-center rounded-[4px] border border-[var(--border-default)] bg-[var(--bg-secondary)] px-2 py-1 focus-within:border-[var(--primary-btn)]">
+                        <span className="text-[10px] text-[var(--text-tertiary)] font-mono mr-1.5 shrink-0">
+                          X:
+                        </span>
+                        <input
+                          type="number"
+                          step={10}
+                          value={currentX}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value)
+                            if (!Number.isNaN(val)) {
+                              onUpdateNodePosition?.(targetNode.id, {
+                                x: val,
+                                y: targetNode.position.y,
+                              })
+                            }
+                          }}
+                          className="w-full bg-transparent text-xs text-[var(--text-primary)] outline-none"
+                        />
+                      </div>
+                      <div className="flex items-center rounded-[4px] border border-[var(--border-default)] bg-[var(--bg-secondary)] px-2 py-1 focus-within:border-[var(--primary-btn)]">
+                        <span className="text-[10px] text-[var(--text-tertiary)] font-mono mr-1.5 shrink-0">
+                          Y:
+                        </span>
+                        <input
+                          type="number"
+                          step={10}
+                          value={currentY}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value)
+                            if (!Number.isNaN(val)) {
+                              onUpdateNodePosition?.(targetNode.id, {
+                                x: targetNode.position.x,
+                                y: val,
+                              })
+                            }
+                          }}
+                          className="w-full bg-transparent text-xs text-[var(--text-primary)] outline-none"
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-[10px] text-[var(--text-tertiary)]">
-                      Height:
-                    </span>
-                    <input
-                      type="number"
-                      step={20}
-                      min={150}
-                      value={nodeData.height || 380}
-                      onChange={(e) =>
-                        onUpdateNodeData(selectedNode.id, {
-                          height: parseInt(e.target.value) || 380,
-                        })
-                      }
-                      className="w-full px-2 py-1 rounded-[4px] border border-[var(--border-default)] bg-[var(--bg-secondary)] text-xs"
-                    />
+
+                  {/* Dimensions (Width, Height) */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-medium text-[var(--text-secondary)]">
+                        Size (px)
+                      </label>
+                      <span className="text-[10px] text-[var(--text-tertiary)] font-mono">
+                        W × H
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="flex items-center rounded-[4px] border border-[var(--border-default)] bg-[var(--bg-secondary)] px-2 py-1 focus-within:border-[var(--primary-btn)]">
+                        <span className="text-[10px] text-[var(--text-tertiary)] font-mono mr-1.5 shrink-0">
+                          W:
+                        </span>
+                        <input
+                          type="number"
+                          step={targetNode.type === 'boundary' ? 20 : 10}
+                          min={minW}
+                          value={currentWidth}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value, 10)
+                            if (!Number.isNaN(val)) {
+                              onUpdateNodeData(targetNode.id, {
+                                width: Math.max(minW, val),
+                              })
+                            }
+                          }}
+                          className="w-full bg-transparent text-xs text-[var(--text-primary)] outline-none"
+                        />
+                      </div>
+                      <div className="flex items-center rounded-[4px] border border-[var(--border-default)] bg-[var(--bg-secondary)] px-2 py-1 focus-within:border-[var(--primary-btn)]">
+                        <span className="text-[10px] text-[var(--text-tertiary)] font-mono mr-1.5 shrink-0">
+                          H:
+                        </span>
+                        <input
+                          type="number"
+                          step={targetNode.type === 'boundary' ? 20 : 10}
+                          min={minH}
+                          value={currentHeight}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value, 10)
+                            if (!Number.isNaN(val)) {
+                              onUpdateNodeData(targetNode.id, {
+                                height: Math.max(minH, val),
+                              })
+                            }
+                          }}
+                          className="w-full bg-transparent text-xs text-[var(--text-primary)] outline-none"
+                        />
+                      </div>
+                    </div>
+                    {targetNode.type === 'boundary' && (
+                      <p className="text-[10px] text-[var(--text-tertiary)] leading-tight pt-0.5">
+                        Dragging a Use Case near the edge automatically grows this
+                        boundary.
+                      </p>
+                    )}
                   </div>
                 </div>
-                <p className="text-[10px] text-[var(--text-tertiary)] leading-tight">
-                  Dragging a Use Case near the edge automatically grows this
-                  boundary.
-                </p>
-              </div>
-            )}
+              )
+            })()}
           </div>
         ) : activeEdge && edgeData ? (
           /* CASE 2: EDGE SELECTED */
@@ -973,71 +1095,6 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                   )
                 })}
               </div>
-            </div>
-
-            {/* Version History / Snapshots */}
-            <div className="space-y-2 pt-2 border-t border-[var(--border-subtle)]">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] font-mono flex items-center gap-1">
-                  <History className="w-3 h-3" />
-                  <span>Version History</span>
-                </span>
-                {onSaveSnapshot && (
-                  <button
-                    type="button"
-                    onClick={() => onSaveSnapshot('Manual Checkpoint')}
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[4px] text-[10px] font-medium text-[var(--primary-btn)] hover:bg-[var(--selection-bg)] transition-colors cursor-pointer"
-                    title="Create a restore point snapshot"
-                  >
-                    <Plus className="w-3 h-3" />
-                    <span>Save Snapshot</span>
-                  </button>
-                )}
-              </div>
-
-              {snapshots.length === 0 ? (
-                <p className="text-[11px] text-[var(--text-tertiary)] py-2">
-                  Autosave snapshots appear here as you edit. Click{' '}
-                  <strong>Save Snapshot</strong> to pin a restore point.
-                </p>
-              ) : (
-                <div className="space-y-1 max-h-48 overflow-y-auto pr-0.5">
-                  {snapshots.map((snap) => {
-                    const date = new Date(snap.timestamp)
-                    const timeStr = date.toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      second: '2-digit',
-                    })
-                    return (
-                      <div
-                        key={snap.id}
-                        className="group flex items-center justify-between px-2.5 py-1.5 rounded-[5px] border border-[var(--border-subtle)] bg-[var(--bg-secondary)]/60 hover:bg-[var(--hover-bg)] transition-colors"
-                      >
-                        <div className="min-w-0">
-                          <div className="text-[11px] font-medium text-[var(--text-primary)] truncate">
-                            {snap.label}
-                          </div>
-                          <div className="text-[10px] font-mono text-[var(--text-tertiary)]">
-                            {timeStr} · {snap.nodes.length} items
-                          </div>
-                        </div>
-                        {onRestoreSnapshot && (
-                          <button
-                            type="button"
-                            onClick={() => onRestoreSnapshot(snap)}
-                            className="opacity-80 group-hover:opacity-100 inline-flex items-center gap-1 px-2 py-1 rounded-[4px] bg-[var(--bg-primary)] border border-[var(--border-default)] text-[10px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all cursor-pointer shrink-0"
-                            title="Restore this version (with Undo support)"
-                          >
-                            <RotateCcw className="w-2.5 h-2.5" />
-                            <span>Restore</span>
-                          </button>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
             </div>
           </div>
         )}

@@ -1789,6 +1789,38 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
     [pushSnapshot, reactFlowInstance, setNodes, setSelectedNodes]
   )
 
+  // Update node position from Inspector
+  const handleUpdateNodePosition = useCallback(
+    (id: string, position: { x: number; y: number }) => {
+      pushSnapshot()
+      setNodes((nds) =>
+        nds.map((n) => {
+          if (n.id !== id) return n
+          return {
+            ...n,
+            position: {
+              x: Math.round(position.x),
+              y: Math.round(position.y),
+            },
+          }
+        })
+      )
+      setSelectedNodes((prev) =>
+        prev.map((n) => {
+          if (n.id !== id) return n
+          return {
+            ...n,
+            position: {
+              x: Math.round(position.x),
+              y: Math.round(position.y),
+            },
+          }
+        })
+      )
+    },
+    [pushSnapshot, setNodes, setSelectedNodes]
+  )
+
   // Update edge data from Inspector (with UML 2.5 validation)
   const handleUpdateEdgeData = useCallback(
     (id: string, partial: Partial<UmlEdgeData>) => {
@@ -2263,6 +2295,9 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
         onExportJson={handleExportJson}
         onImportJson={handleImportJson}
         isSaved={isSaved}
+        snapshots={snapshots}
+        onSaveSnapshot={handleSaveSnapshot}
+        onRestoreSnapshot={handleRestoreSnapshot}
       />
 
       {/* Main Studio Workspace: Canvas + Inspector */}
@@ -2811,6 +2846,7 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
               selectedNodes={currentNodes}
               selectedEdges={currentEdges}
               onUpdateNodeData={handleUpdateNodeData}
+              onUpdateNodePosition={handleUpdateNodePosition}
               onUpdateEdgeData={handleUpdateEdgeData}
               onDeleteNode={handleDeleteNode}
               onDuplicateNode={handleDuplicateNode}
@@ -2822,9 +2858,6 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
               onAlignSelected={handleAlignSelected}
               defaultRoutingStyle={defaultRoutingStyle}
               onDefaultRoutingStyleChange={handleDefaultRoutingStyleChange}
-              snapshots={snapshots}
-              onSaveSnapshot={handleSaveSnapshot}
-              onRestoreSnapshot={handleRestoreSnapshot}
               diagramTitle={title}
               allNodes={nodes}
               allEdges={edges}
