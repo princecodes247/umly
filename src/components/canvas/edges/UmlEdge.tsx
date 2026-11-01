@@ -541,7 +541,20 @@ export const UmlEdge = memo(
       target,
     ])
 
-    const showActions = Boolean(selected || isHovered || draggingEnd)
+    const [activeDragSegIndex, setActiveDragSegIndex] = useState<number | null>(
+      null
+    )
+    const [hoveredSegIndex, setHoveredSegIndex] = useState<number | null>(null)
+    const [isDraggingAdjustment, setIsDraggingAdjustment] = useState(false)
+
+    const [activeDragCurve, setActiveDragCurve] = useState<{
+      type: 'curve-waypoint' | 'curve-segment'
+      index: number
+    } | null>(null)
+
+    const showActions = Boolean(
+      (selected || isHovered) && !isDraggingAdjustment && !draggingEnd
+    )
     const hasVisibleLabel = Boolean(stereotypeText)
 
     const selectThisEdge = (e: React.MouseEvent) => {
@@ -562,17 +575,6 @@ export const UmlEdge = memo(
         })
       )
     }
-
-    const [activeDragSegIndex, setActiveDragSegIndex] = useState<number | null>(
-      null
-    )
-    const [hoveredSegIndex, setHoveredSegIndex] = useState<number | null>(null)
-    const [isDraggingAdjustment, setIsDraggingAdjustment] = useState(false)
-
-    const [activeDragCurve, setActiveDragCurve] = useState<{
-      type: 'curve-waypoint' | 'curve-segment'
-      index: number
-    } | null>(null)
 
     // Interactive adjustment handles for each segment or curve bend point
     const handles = useMemo(() => {
@@ -1349,7 +1351,7 @@ export const UmlEdge = memo(
                     style={{
                       position: 'absolute',
                       bottom: hasVisibleLabel ? '100%' : '0',
-                      marginBottom: `${(hasVisibleLabel ? 10 : 20) * (1 / zoom)}px`,
+                      marginBottom: `${(hasVisibleLabel ? 12 : 28) * (1 / zoom)}px`,
                       left: '50%',
                       transform: `translateX(-50%) scale(${1 / zoom})`,
                       transformOrigin: 'bottom center',

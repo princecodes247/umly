@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import {
   X,
   Plus,
@@ -8,11 +8,14 @@ import {
   Workflow,
   GitCommit,
   CheckCircle2,
+  FolderOpen,
 } from 'lucide-react'
 import {
   createDiagramDraft,
+  saveDiagramDraft,
   type DiagramType,
 } from '../../lib/diagramStorage'
+import { parseDiagramJson } from '../../lib/exportDiagram'
 import { DIAGRAM_TEMPLATES } from '../../data/templates'
 
 interface NewDiagramModalProps {
@@ -80,6 +83,7 @@ export const NewDiagramModal: React.FC<NewDiagramModalProps> = ({
   const [title, setTitle] = useState('New Use Case Diagram')
   const [selectedType, setSelectedType] = useState<DiagramType>('use_case')
   const [selectedTemplate, setSelectedTemplate] = useState<string>('blank')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   if (!isOpen) return null
 
@@ -88,6 +92,38 @@ export const NewDiagramModal: React.FC<NewDiagramModalProps> = ({
     const draft = createDiagramDraft(title, selectedType, selectedTemplate)
     onClose()
     onCreated(draft.id)
+  }
+
+  const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string
+        const parsed = parseDiagramJson(text)
+        if (parsed) {
+          const fileTitle = file.name.replace(/\.(umly\.)?json$/i, '')
+          const draft = createDiagramDraft(
+            parsed.title || fileTitle || 'Imported Diagram',
+            'use_case'
+          )
+          draft.nodes = parsed.nodes
+          draft.edges = parsed.edges || []
+          saveDiagramDraft(draft)
+          onClose()
+          onCreated(draft.id)
+        } else {
+          alert(
+            'Invalid diagram JSON file. Please select a valid .umly.json file.'
+          )
+        }
+      } catch (err) {
+        console.error('Import error:', err)
+        alert('Failed to read the diagram file.')
+      }
+    }
+    reader.readAsText(file)
   }
 
   return (
@@ -107,10 +143,10 @@ export const NewDiagramModal: React.FC<NewDiagramModalProps> = ({
             </div>
             <div>
               <h2 className="text-sm font-bold text-[var(--text-primary)]">
-                Create New Diagram Draft
+                Create New Project
               </h2>
               <p className="text-xs text-[var(--text-secondary)]">
-                Configure your diagram type and starting template.
+                Start fresh, choose a starter template, or open an existing project file.
               </p>
             </div>
           </div>
@@ -126,6 +162,45 @@ export const NewDiagramModal: React.FC<NewDiagramModalProps> = ({
 
         {/* Form Body */}
         <form onSubmit={handleCreate} className="p-5 overflow-y-auto space-y-5 text-xs font-sans">
+          {/* Quick Option: Open Existing Project File */}
+          <div className="space-y-2">
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center justify-between p-3 rounded-[6px] border border-dashed border-[var(--border-default)] bg-[var(--bg-secondary)]/50 hover:bg-[var(--hover-bg)] hover:border-[var(--primary-btn)] transition-all cursor-pointer group"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-8 h-8 rounded-[5px] bg-[var(--bg-primary)] border border-[var(--border-subtle)] flex items-center justify-center shrink-0 group-hover:border-[var(--primary-btn)] transition-colors">
+                  <FolderOpen className="w-4 h-4 text-[var(--primary-btn)]" />
+                </div>
+                <div className="min-w-0">
+                  <div className="font-semibold text-xs text-[var(--text-primary)]">
+                    Open Existing Project (.umly.json)
+                  </div>
+                  <div className="text-[11px] text-[var(--text-tertiary)] truncate">
+                    Import and edit a previously saved UML diagram file from your computer
+                  </div>
+                </div>
+              </div>
+              <span className="text-xs font-medium text-[var(--primary-btn)] shrink-0 pl-2">
+                Browse file...
+              </span>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json,application/json"
+                className="hidden"
+                onChange={handleFileImport}
+              />
+            </div>
+
+            <div className="relative py-1 flex items-center">
+              <div className="flex-1 border-t border-[var(--border-subtle)]" />
+              <span className="px-2.5 text-[10px] font-mono text-[var(--text-tertiary)] uppercase bg-[var(--bg-modal)]">
+                or configure a new diagram
+              </span>
+              <div className="flex-1 border-t border-[var(--border-subtle)]" />
+            </div>
+          </div>
           {/* Section 1: Title */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-[var(--text-primary)] block">

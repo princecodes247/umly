@@ -1,17 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import {
   Undo2,
   Redo2,
   Download,
   Trash2,
-  FolderOpen,
   ChevronDown,
   Check,
   FileCode,
   FileCode2,
   Image as ImageIcon,
-  Sparkles,
   ArrowLeft,
   Copy,
   FileText,
@@ -22,10 +20,10 @@ import {
   RotateCcw,
   Plus,
 } from 'lucide-react'
-import { DIAGRAM_TEMPLATES } from '../../data/templates'
 import type { DiagramSnapshot } from '../../lib/diagramStorage'
 import ThemeToggle from '../ThemeToggle'
 import { UmlCheatsheetModal } from '../game/UmlCheatsheetModal'
+import { NewDiagramModal } from './NewDiagramModal'
 
 interface StudioToolbarProps {
   title: string
@@ -35,7 +33,7 @@ interface StudioToolbarProps {
   canUndo: boolean
   canRedo: boolean
   onClearCanvas: () => void
-  onLoadTemplate: (templateId: string) => void
+  onLoadTemplate?: (templateId: string) => void
   onExportPng: () => void
   onExportSvg: () => void
   onExportJson: () => void
@@ -44,7 +42,7 @@ interface StudioToolbarProps {
   onCopyPlantUml?: () => void
   onCopyMermaid?: () => void
   onCopyImageToClipboard?: () => void
-  onImportJson: (file: File) => void
+  onImportJson?: (file: File) => void
   isSaved?: boolean
   snapshots?: DiagramSnapshot[]
   onSaveSnapshot?: (label?: string) => void
@@ -59,7 +57,6 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
   canUndo,
   canRedo,
   onClearCanvas,
-  onLoadTemplate,
   onExportPng,
   onExportSvg,
   onExportJson,
@@ -68,25 +65,29 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
   onCopyPlantUml,
   onCopyMermaid,
   onCopyImageToClipboard,
-  onImportJson,
   isSaved = true,
   snapshots = [],
   onSaveSnapshot,
   onRestoreSnapshot,
 }) => {
+  const navigate = useNavigate()
   const [showNavMenu, setShowNavMenu] = useState(false)
   const [showExportMenu, setShowExportMenu] = useState(false)
   const [showMoreMenu, setShowMoreMenu] = useState(false)
   const [showHistoryMenu, setShowHistoryMenu] = useState(false)
   const [showCheatsheet, setShowCheatsheet] = useState(false)
+  const [showNewModal, setShowNewModal] = useState(false)
   const [isEditingTitle, setIsEditingTitle] = useState(false)
   const [titleInput, setTitleInput] = useState(title)
 
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const navMenuRef = useRef<HTMLDivElement>(null)
   const exportMenuRef = useRef<HTMLDivElement>(null)
   const moreMenuRef = useRef<HTMLDivElement>(null)
   const historyMenuRef = useRef<HTMLDivElement>(null)
+
+  const handleDiagramCreated = (newId: string) => {
+    navigate({ to: '/studio/$diagramId', params: { diagramId: newId } })
+  }
 
   useEffect(() => {
     setTitleInput(title)
@@ -182,15 +183,15 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
                   type="button"
                   onClick={() => {
                     setShowNavMenu(false)
-                    fileInputRef.current?.click()
+                    setShowNewModal(true)
                   }}
                   className="w-full text-left px-3 py-2 text-[var(--text-primary)] hover:bg-[var(--hover-bg)] transition-colors cursor-pointer flex items-center gap-2.5"
                 >
-                  <FolderOpen className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
+                  <Plus className="w-3.5 h-3.5 text-[var(--primary-btn)]" />
                   <div className="flex flex-col">
-                    <span className="font-medium">Open Project...</span>
+                    <span className="font-medium">New Project...</span>
                     <span className="text-[10px] text-[var(--text-tertiary)]">
-                      Import .umly.json file
+                      Create draft, templates, or open file
                     </span>
                   </div>
                 </button>
@@ -202,6 +203,17 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
               </div>
             )}
           </div>
+
+          {/* New Project Flow Trigger */}
+          <button
+            type="button"
+            onClick={() => setShowNewModal(true)}
+            title="Create a new diagram, choose a template, or open a project file"
+            className="notion-btn flex items-center gap-1.5 py-1 px-2.5 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] shrink-0"
+          >
+            <Plus className="w-3.5 h-3.5 text-[var(--primary-btn)]" />
+            <span>New</span>
+          </button>
 
           <div className="h-4 w-px bg-[var(--border-subtle)] mx-0.5 shrink-0" />
 
@@ -511,23 +523,9 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
                 </button>
               </div>
             )}
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".json,.umly.json"
-              onChange={(e) => {
-                const file = e.target.files?.[0]
-                if (file) {
-                  onImportJson(file)
-                  e.target.value = ''
-                }
-              }}
-              className="hidden"
-            />
           </div>
 
-          {/* ⋯ Menu for Templates, Notation Guide, and Clear */}
+          {/* ⋯ Menu for Notation Guide and Clear */}
           <div ref={moreMenuRef} className="relative">
             <button
               type="button"
@@ -536,13 +534,13 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
                 setShowExportMenu(false)
               }}
               className="notion-btn notion-btn-ghost p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-              title="More options (Templates, Open Project, Notation Guide)"
+              title="More options (Notation Guide, Clear Canvas)"
             >
               <MoreHorizontal className="w-4 h-4" />
             </button>
 
             {showMoreMenu && (
-              <div className="absolute right-0 mt-1.5 w-64 rounded-[6px] bg-[var(--bg-primary)] border border-[var(--border-default)] shadow-lg py-1 z-50 text-xs">
+              <div className="absolute right-0 mt-1.5 w-60 rounded-[6px] bg-[var(--bg-primary)] border border-[var(--border-default)] shadow-lg py-1 z-50 text-xs">
                 {/* Notation Guide */}
                 <button
                   type="button"
@@ -561,51 +559,6 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
                   </div>
                 </button>
 
-                {/* Open Project */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowMoreMenu(false)
-                    fileInputRef.current?.click()
-                  }}
-                  className="w-full text-left px-3 py-2 hover:bg-[var(--hover-bg)] flex items-center gap-2.5 text-[var(--text-primary)] cursor-pointer"
-                >
-                  <FolderOpen className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
-                  <div className="flex flex-col">
-                    <span className="font-medium">Open Project...</span>
-                    <span className="text-[10px] text-[var(--text-tertiary)]">
-                      Import a .umly.json diagram file
-                    </span>
-                  </div>
-                </button>
-
-                <div className="my-1 border-t border-[var(--border-subtle)]" />
-
-                {/* Templates Header */}
-                <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] font-mono flex items-center justify-between">
-                  <span>Starter Templates</span>
-                  <Sparkles className="w-3 h-3 text-[#cb912f]" />
-                </div>
-
-                {DIAGRAM_TEMPLATES.map((tpl) => (
-                  <button
-                    key={tpl.id}
-                    type="button"
-                    onClick={() => {
-                      setShowMoreMenu(false)
-                      onLoadTemplate(tpl.id)
-                    }}
-                    className="w-full text-left px-3 py-1.5 hover:bg-[var(--hover-bg)] transition-colors flex flex-col gap-0.5 cursor-pointer"
-                  >
-                    <span className="font-medium text-[var(--text-primary)]">
-                      {tpl.name}
-                    </span>
-                    <span className="text-[10px] text-[var(--text-secondary)] line-clamp-1">
-                      {tpl.description}
-                    </span>
-                  </button>
-                ))}
-
                 <div className="my-1 border-t border-[var(--border-subtle)]" />
 
                 <button
@@ -614,7 +567,7 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
                     setShowMoreMenu(false)
                     onClearCanvas()
                   }}
-                  className="w-full text-left px-3 py-1.5 hover:bg-[var(--notion-red-bg)] flex items-center gap-2 text-[var(--notion-red-text)] cursor-pointer"
+                  className="w-full text-left px-3 py-2 hover:bg-[var(--notion-red-bg)] flex items-center gap-2 text-[var(--notion-red-text)] cursor-pointer transition-colors"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   <span>Clear Canvas</span>
@@ -629,6 +582,13 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
       <UmlCheatsheetModal
         isOpen={showCheatsheet}
         onClose={() => setShowCheatsheet(false)}
+      />
+
+      {/* New Project / Diagram Modal (Centralized New Project Flow) */}
+      <NewDiagramModal
+        isOpen={showNewModal}
+        onClose={() => setShowNewModal(false)}
+        onCreated={handleDiagramCreated}
       />
     </>
   )
