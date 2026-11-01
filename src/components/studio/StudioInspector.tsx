@@ -67,13 +67,13 @@ const ACCENT_COLORS: {
   label: string
   swatch: string
 }[] = [
-  { id: 'default', label: 'Default', swatch: 'bg-[var(--text-tertiary)]' },
-  { id: 'blue', label: 'Blue', swatch: 'bg-[#2383e2]' },
-  { id: 'green', label: 'Green', swatch: 'bg-[#448361]' },
-  { id: 'amber', label: 'Amber', swatch: 'bg-[#cb912f]' },
-  { id: 'purple', label: 'Purple', swatch: 'bg-[#9065b0]' },
-  { id: 'rose', label: 'Rose', swatch: 'bg-[#d44c47]' },
-]
+    { id: 'default', label: 'Default', swatch: 'bg-[var(--text-tertiary)]' },
+    { id: 'blue', label: 'Blue', swatch: 'bg-[#2383e2]' },
+    { id: 'green', label: 'Green', swatch: 'bg-[#448361]' },
+    { id: 'amber', label: 'Amber', swatch: 'bg-[#cb912f]' },
+    { id: 'purple', label: 'Purple', swatch: 'bg-[#9065b0]' },
+    { id: 'rose', label: 'Rose', swatch: 'bg-[#d44c47]' },
+  ]
 
 export const StudioInspector: React.FC<StudioInspectorProps> = ({
   selectedNode,
@@ -337,167 +337,6 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                 </div>
               )}
             </div>
-
-            {/* Name / Label Input */}
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-medium text-[var(--text-secondary)]">
-                {selectedNode.type === 'boundary' ? 'System Name' : 'Name'}
-              </label>
-              <input
-                type="text"
-                value={
-                  selectedNode.type === 'boundary'
-                    ? nodeData.boundaryTitle || nodeData.label || ''
-                    : nodeData.label || ''
-                }
-                onChange={(e) => {
-                  const val = e.target.value
-                  if (selectedNode.type === 'boundary') {
-                    onUpdateNodeData(selectedNode.id, {
-                      boundaryTitle: val,
-                      label: val,
-                    })
-                  } else {
-                    onUpdateNodeData(selectedNode.id, { label: val })
-                  }
-                }}
-                className="w-full px-2.5 py-1.5 rounded-[4px] border border-[var(--border-default)] bg-[var(--bg-secondary)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-btn)] text-xs"
-                placeholder="Enter name..."
-              />
-            </div>
-
-            {/* Stereotype Input */}
-            {selectedNode.type !== 'note' && (
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-medium text-[var(--text-secondary)] flex items-center justify-between">
-                  <span>Stereotype</span>
-                  <span className="text-[10px] font-mono text-[var(--text-tertiary)]">
-                    «optional»
-                  </span>
-                </label>
-                <input
-                  type="text"
-                  value={nodeData.stereotype || ''}
-                  onChange={(e) =>
-                    onUpdateNodeData(selectedNode.id, {
-                      stereotype: e.target.value.replace(/[«»]/g, ''),
-                    })
-                  }
-                  className="w-full px-2.5 py-1.5 rounded-[4px] border border-[var(--border-default)] bg-[var(--bg-secondary)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-btn)] text-xs font-mono"
-                  placeholder="e.g. external, service, core..."
-                />
-              </div>
-            )}
-
-            {/* Description / Documentation Input */}
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-medium text-[var(--text-secondary)]">
-                {selectedNode.type === 'note'
-                  ? 'Note / Constraint Text'
-                  : 'Description & Preconditions'}
-              </label>
-              <textarea
-                rows={3}
-                value={
-                  selectedNode.type === 'note'
-                    ? nodeData.description || nodeData.label || ''
-                    : nodeData.description || ''
-                }
-                onChange={(e) => {
-                  const val = e.target.value
-                  if (selectedNode.type === 'note') {
-                    onUpdateNodeData(selectedNode.id, {
-                      description: val,
-                      label: val,
-                    })
-                  } else {
-                    onUpdateNodeData(selectedNode.id, {
-                      description: val,
-                    })
-                  }
-                }}
-                className="w-full px-2.5 py-1.5 rounded-[4px] border border-[var(--border-default)] bg-[var(--bg-secondary)] text-xs leading-relaxed resize-none focus:outline-none focus:border-[var(--primary-btn)]"
-                placeholder={
-                  selectedNode.type === 'note'
-                    ? 'Specify constraint rules or notes...'
-                    : 'Document preconditions, postconditions, or actor responsibilities...'
-                }
-              />
-            </div>
-
-            {/* Color Swatches */}
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-medium text-[var(--text-secondary)] flex items-center gap-1.5">
-                <Palette className="w-3 h-3 text-[var(--text-tertiary)]" />
-                <span>Color Accent</span>
-              </label>
-              <div className="grid grid-cols-6 gap-1.5">
-                {ACCENT_COLORS.map((color) => {
-                  const isActive =
-                    (nodeData.accentColor || 'default') === color.id
-                  return (
-                    <button
-                      key={color.id}
-                      type="button"
-                      onClick={() =>
-                        onUpdateNodeData(selectedNode.id, {
-                          accentColor: color.id,
-                        })
-                      }
-                      title={color.label}
-                      className={`h-6 rounded-[5px] border flex items-center justify-center transition-all cursor-pointer ${
-                        isActive
-                          ? 'border-[var(--text-primary)] ring-2 ring-[var(--primary-btn)]/30 bg-[var(--bg-secondary)]'
-                          : 'border-[var(--border-subtle)] hover:border-[var(--border-default)] bg-[var(--bg-secondary)]/50'
-                      }`}
-                    >
-                      <span
-                        className={`w-3 h-3 rounded-full ${color.swatch}`}
-                      />
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
-            {/* Actor Classification */}
-            {selectedNode.type === 'actor' && (
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-medium text-[var(--text-secondary)]">
-                  Actor Role
-                </label>
-                <div className="grid grid-cols-3 gap-1">
-                  {(
-                    [
-                      { id: 'primary', label: 'Primary' },
-                      { id: 'secondary', label: 'Secondary' },
-                      { id: 'system', label: 'System' },
-                    ] as const
-                  ).map((at) => {
-                    const isActive = (nodeData.actorType || 'primary') === at.id
-                    return (
-                      <button
-                        key={at.id}
-                        type="button"
-                        onClick={() =>
-                          onUpdateNodeData(selectedNode.id, {
-                            actorType: at.id,
-                          })
-                        }
-                        className={`px-2 py-1.5 rounded-[4px] text-xs font-medium text-center transition-colors cursor-pointer ${
-                          isActive
-                            ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] font-semibold'
-                            : 'border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--hover-bg)]'
-                        }`}
-                      >
-                        {at.label}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-
             {/* Element Position & Size */}
             {(() => {
               const targetNode = activeNode || selectedNode
@@ -559,7 +398,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
               const currentY = Math.round(targetNode.position.y)
 
               return (
-                <div className="space-y-3 pt-2 border-t border-[var(--border-subtle)]">
+                <div className="space-y-3 pb-4 border-b border-[var(--border-subtle)]">
                   {/* Position (X, Y) */}
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
@@ -676,6 +515,163 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                 </div>
               )
             })()}
+            {/* Name / Label Input */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-medium text-[var(--text-secondary)]">
+                {selectedNode.type === 'boundary' ? 'System Name' : 'Name'}
+              </label>
+              <input
+                type="text"
+                value={
+                  selectedNode.type === 'boundary'
+                    ? nodeData.boundaryTitle || nodeData.label || ''
+                    : nodeData.label || ''
+                }
+                onChange={(e) => {
+                  const val = e.target.value
+                  if (selectedNode.type === 'boundary') {
+                    onUpdateNodeData(selectedNode.id, {
+                      boundaryTitle: val,
+                      label: val,
+                    })
+                  } else {
+                    onUpdateNodeData(selectedNode.id, { label: val })
+                  }
+                }}
+                className="w-full px-2.5 py-1.5 rounded-[4px] border border-[var(--border-default)] bg-[var(--bg-secondary)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-btn)] text-xs"
+                placeholder="Enter name..."
+              />
+            </div>
+
+            {/* Stereotype Input */}
+            {selectedNode.type !== 'note' && (
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-medium text-[var(--text-secondary)] flex items-center justify-between">
+                  <span>Stereotype</span>
+                  <span className="text-[10px] font-mono text-[var(--text-tertiary)]">
+                    «optional»
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  value={nodeData.stereotype || ''}
+                  onChange={(e) =>
+                    onUpdateNodeData(selectedNode.id, {
+                      stereotype: e.target.value.replace(/[«»]/g, ''),
+                    })
+                  }
+                  className="w-full px-2.5 py-1.5 rounded-[4px] border border-[var(--border-default)] bg-[var(--bg-secondary)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-btn)] text-xs font-mono"
+                  placeholder="e.g. external, service, core..."
+                />
+              </div>
+            )}
+
+            {/* Description / Documentation Input */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-medium text-[var(--text-secondary)]">
+                {selectedNode.type === 'note'
+                  ? 'Note / Constraint Text'
+                  : 'Description & Preconditions'}
+              </label>
+              <textarea
+                rows={3}
+                value={
+                  selectedNode.type === 'note'
+                    ? nodeData.description || nodeData.label || ''
+                    : nodeData.description || ''
+                }
+                onChange={(e) => {
+                  const val = e.target.value
+                  if (selectedNode.type === 'note') {
+                    onUpdateNodeData(selectedNode.id, {
+                      description: val,
+                      label: val,
+                    })
+                  } else {
+                    onUpdateNodeData(selectedNode.id, {
+                      description: val,
+                    })
+                  }
+                }}
+                className="w-full px-2.5 py-1.5 rounded-[4px] border border-[var(--border-default)] bg-[var(--bg-secondary)] text-xs leading-relaxed resize-none focus:outline-none focus:border-[var(--primary-btn)]"
+                placeholder={
+                  selectedNode.type === 'note'
+                    ? 'Specify constraint rules or notes...'
+                    : 'Document preconditions, postconditions, or actor responsibilities...'
+                }
+              />
+            </div>
+
+            {/* Color Swatches */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-medium text-[var(--text-secondary)] flex items-center gap-1.5">
+                <Palette className="w-3 h-3 text-[var(--text-tertiary)]" />
+                <span>Color Accent</span>
+              </label>
+              <div className="grid grid-cols-6 gap-1.5">
+                {ACCENT_COLORS.map((color) => {
+                  const isActive =
+                    (nodeData.accentColor || 'default') === color.id
+                  return (
+                    <button
+                      key={color.id}
+                      type="button"
+                      onClick={() =>
+                        onUpdateNodeData(selectedNode.id, {
+                          accentColor: color.id,
+                        })
+                      }
+                      title={color.label}
+                      className={`h-6 rounded-[5px] border flex items-center justify-center transition-all cursor-pointer ${isActive
+                        ? 'border-[var(--text-primary)] ring-2 ring-[var(--primary-btn)]/30 bg-[var(--bg-secondary)]'
+                        : 'border-[var(--border-subtle)] hover:border-[var(--border-default)] bg-[var(--bg-secondary)]/50'
+                        }`}
+                    >
+                      <span
+                        className={`w-3 h-3 rounded-full ${color.swatch}`}
+                      />
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Actor Classification */}
+            {selectedNode.type === 'actor' && (
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-medium text-[var(--text-secondary)]">
+                  Actor Role
+                </label>
+                <div className="grid grid-cols-3 gap-1">
+                  {(
+                    [
+                      { id: 'primary', label: 'Primary' },
+                      { id: 'secondary', label: 'Secondary' },
+                      { id: 'system', label: 'System' },
+                    ] as const
+                  ).map((at) => {
+                    const isActive = (nodeData.actorType || 'primary') === at.id
+                    return (
+                      <button
+                        key={at.id}
+                        type="button"
+                        onClick={() =>
+                          onUpdateNodeData(selectedNode.id, {
+                            actorType: at.id,
+                          })
+                        }
+                        className={`px-2 py-1.5 rounded-[4px] text-xs font-medium text-center transition-colors cursor-pointer ${isActive
+                          ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] font-semibold'
+                          : 'border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--hover-bg)]'
+                          }`}
+                      >
+                        {at.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         ) : activeEdge && edgeData ? (
           /* CASE 2: EDGE SELECTED */
@@ -739,13 +735,12 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                               relationshipType: rel.id,
                             })
                           }}
-                          className={`px-2 py-1.5 rounded-[4px] text-xs font-medium text-left transition-colors flex items-center justify-between ${
-                            isActive
-                              ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] font-semibold'
-                              : isAllowed
-                                ? 'border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--hover-bg)] cursor-pointer'
-                                : 'border border-[var(--border-subtle)]/40 text-[var(--text-tertiary)] opacity-40 cursor-not-allowed line-through'
-                          }`}
+                          className={`px-2 py-1.5 rounded-[4px] text-xs font-medium text-left transition-colors flex items-center justify-between ${isActive
+                            ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] font-semibold'
+                            : isAllowed
+                              ? 'border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--hover-bg)] cursor-pointer'
+                              : 'border border-[var(--border-subtle)]/40 text-[var(--text-tertiary)] opacity-40 cursor-not-allowed line-through'
+                            }`}
                         >
                           <span>{rel.label}</span>
                           <span className="font-mono text-[10px] opacity-75">
@@ -784,11 +779,10 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                           routingStyle: rt.id,
                         })
                       }
-                      className={`px-2 py-1.5 rounded-[4px] text-xs font-medium text-center transition-colors cursor-pointer ${
-                        isActive
-                          ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] font-semibold'
-                          : 'border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--hover-bg)]'
-                      }`}
+                      className={`px-2 py-1.5 rounded-[4px] text-xs font-medium text-center transition-colors cursor-pointer ${isActive
+                        ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] font-semibold'
+                        : 'border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--hover-bg)]'
+                        }`}
                     >
                       {rt.label}
                     </button>
@@ -1017,11 +1011,11 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                 )}
                 {(!edgeData.relationshipType ||
                   edgeData.relationshipType === 'association') && (
-                  <span>
-                    <strong>Association</strong>: Direct communication between
-                    Actor and Use Case (solid line).
-                  </span>
-                )}
+                    <span>
+                      <strong>Association</strong>: Direct communication between
+                      Actor and Use Case (solid line).
+                    </span>
+                  )}
               </div>
             </div>
           </div>
@@ -1084,11 +1078,10 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                       key={rt.id}
                       type="button"
                       onClick={() => onDefaultRoutingStyleChange?.(rt.id)}
-                      className={`px-2 py-1.5 rounded-[4px] text-xs font-medium text-center transition-colors cursor-pointer ${
-                        isActive
-                          ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] font-semibold'
-                          : 'border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--hover-bg)]'
-                      }`}
+                      className={`px-2 py-1.5 rounded-[4px] text-xs font-medium text-center transition-colors cursor-pointer ${isActive
+                        ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] font-semibold'
+                        : 'border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--hover-bg)]'
+                        }`}
                     >
                       {rt.label}
                     </button>
