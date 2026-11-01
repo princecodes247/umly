@@ -28,6 +28,14 @@ import {
   applySegmentDrag,
   simplifyPoints,
 } from '../../../lib/orthogonalRouting'
+import {
+  getCurvePoints,
+  getCurveSegments,
+  pointsToSmoothCurve,
+  prepareCurveDragTopology,
+  applyCurveDrag,
+  simplifyCurvePoints,
+} from '../../../lib/curveRouting'
 import type { UmlEdgeData, UmlRelationshipType } from '../../../types/game'
 
 interface UmlEdgeProps extends EdgeProps {
@@ -205,13 +213,25 @@ export const UmlEdge = memo(
       (routingStyle === 'orthogonal' &&
         ((rawWaypoints && rawWaypoints.length > 0) ||
           orthogonalOffset !== undefined)) ||
-      (routingStyle === 'bezier' && curveOffset !== undefined)
+      (routingStyle === 'bezier' &&
+        ((rawWaypoints && rawWaypoints.length > 0) ||
+          curveOffset !== undefined))
 
-    // Compute bezier bend apex
-    const chordMidX = (sx + tx) / 2
-    const chordMidY = (sy + ty) / 2
-    const bezierApexX = chordMidX + (curveOffset?.x ?? 0)
-    const bezierApexY = chordMidY + (curveOffset?.y ?? 0)
+    // Compute full curve points & segments
+    const curvePoints = useMemo(() => {
+      if (routingStyle !== 'bezier') return []
+      return getCurvePoints(
+        { x: sx, y: sy },
+        { x: tx, y: ty },
+        rawWaypoints,
+        curveOffset
+      )
+    }, [routingStyle, sx, sy, tx, ty, rawWaypoints, curveOffset])
+
+    const curveSegments = useMemo(() => {
+      if (routingStyle !== 'bezier' || curvePoints.length < 2) return []
+      return getCurveSegments(curvePoints)
+    }, [routingStyle, curvePoints])
 
     // Compute full orthogonal polyline points
     const orthogonalPoints = useMemo(() => {
@@ -257,14 +277,15 @@ export const UmlEdge = memo(
         return [path, lx, ly, null]
       }
       if (routingStyle === 'bezier') {
-        if (curveOffset) {
-          const cp1x = sx + (bezierApexX - sx) * 0.72
-          const cp1y = sy + (bezierApexY - sy) * 0.72
-          const cp2x = tx + (bezierApexX - tx) * 0.72
-          const cp2y = ty + (bezierApexY - ty) * 0.72
-          const path = `M ${sx} ${sy} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${tx} ${ty}`
-          const guide = `M ${sx} ${sy} L ${bezierApexX} ${bezierApexY} L ${tx} ${ty}`
-          return [path, bezierApexX, bezierApexY, guide]
+        if (curvePoints.length > 2) {
+          const path = pointsToSmoothCurve(curvePoints, sourcePos, targetPos)
+          const guide = curvePoints
+            .map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`))
+            .join(' ')
+          const midIdx = Math.floor(curvePoints.length / 2)
+          const lx = curvePoints[midIdx].x
+          const ly = curvePoints[midIdx].y
+          return [path, lx, ly, guide]
         }
         const [path, lx, ly] = getBezierPath({
           sourceX: sx,
@@ -293,9 +314,7 @@ export const UmlEdge = memo(
       targetPos,
       orthogonalPoints,
       orthogonalSegments,
-      curveOffset,
-      bezierApexX,
-      bezierApexY,
+      curvePoints,
     ])
 
     const allowedTypes = useMemo(
@@ -472,7 +491,12 @@ export const UmlEdge = memo(
     const [hoveredSegIndex, setHoveredSegIndex] = useState<number | null>(null)
     const [isDraggingAdjustment, setIsDraggingAdjustment] = useState(false)
 
-    // Interactive adjustment handles for each segment or curve apex
+    const [activeDragCurve, setActiveDragCurve] = useState<{
+      type: 'curve-waypoint' | 'curve-segment'
+      index: number
+    } | null>(null)
+
+    // Interactive adjustment handles for each segment or curve bend point
     const handles = useMemo(() => {
       if (!selected) return []
       if (routingStyle === 'orthogonal') {
@@ -491,26 +515,45 @@ export const UmlEdge = memo(
           }))
       }
       if (routingStyle === 'bezier') {
-        return [
-          {
-            id: 'curve-apex',
-            segIndex: -1,
-            x: bezierApexX,
-            y: bezierApexY,
+        const result = []
+        // Waypoint handles (actual bend vertices)
+        for (let i = 1; i < curvePoints.length - 1; i++) {
+          const pt = curvePoints[i]
+          result.push({
+            id: `curve-wp-${i}`,
+            segIndex: i,
+            x: pt.x,
+            y: pt.y,
             cursor: isDraggingAdjustment ? 'grabbing' : 'grab',
             title:
-              'Drag to bend curve (Shift for smooth) · Double-click to reset',
-            type: 'bezier' as const,
-          },
-        ]
+              'Drag bend point (Shift for smooth) · Double-click to remove',
+            type: 'curve-waypoint' as const,
+          })
+        }
+        // Segment handles (midpoints between vertices to pull out new bends)
+        for (const seg of curveSegments) {
+          if (seg.length >= 18) {
+            result.push({
+              id: `curve-seg-${seg.index}`,
+              segIndex: seg.index,
+              x: seg.mid.x,
+              y: seg.mid.y,
+              cursor: isDraggingAdjustment ? 'grabbing' : 'grab',
+              title:
+                'Drag to pull out a new curve bend (Shift for smooth)',
+              type: 'curve-segment' as const,
+            })
+          }
+        }
+        return result
       }
       return []
     }, [
       selected,
       routingStyle,
       orthogonalSegments,
-      bezierApexX,
-      bezierApexY,
+      curvePoints,
+      curveSegments,
       isDraggingAdjustment,
     ])
 
@@ -617,21 +660,31 @@ export const UmlEdge = memo(
       window.addEventListener('pointerup', onPointerUp)
     }
 
-    const handleStartCurveDrag = (e: React.PointerEvent) => {
+    const handleStartCurveDrag = (
+      targetType: 'curve-waypoint' | 'curve-segment',
+      index: number,
+      e: React.PointerEvent
+    ) => {
       e.stopPropagation()
       e.preventDefault()
+      setActiveDragCurve({ type: targetType, index })
       setIsDraggingAdjustment(true)
       document.body.style.cursor = 'grabbing'
 
-      const startFlowPos = screenToFlowPosition({
+      const clickFlowPos = screenToFlowPosition({
         x: e.clientX,
         y: e.clientY,
       })
-      const initialCurveOffset = {
-        x: curveOffset?.x ?? 0,
-        y: curveOffset?.y ?? 0,
-      }
 
+      const { points: baselinePoints, activePointIndex } =
+        prepareCurveDragTopology(
+          curvePoints,
+          targetType === 'curve-waypoint' ? 'waypoint' : 'segment',
+          index,
+          clickFlowPos
+        )
+
+      let lastAppliedPoints = baselinePoints
       let rafId: number | null = null
       let latestEvent: PointerEvent | null = null
 
@@ -643,25 +696,17 @@ export const UmlEdge = memo(
           y: latestEvent.clientY,
         })
         const isShift = latestEvent.shiftKey
-        const dx = flowPos.x - startFlowPos.x
-        const dy = flowPos.y - startFlowPos.y
 
-        let targetX = chordMidX + initialCurveOffset.x + dx
-        let targetY = chordMidY + initialCurveOffset.y + dy
+        const newPts = applyCurveDrag(
+          baselinePoints,
+          activePointIndex,
+          flowPos,
+          isShift
+        )
 
-        // Soft magnetic snap within 5px
-        if (!isShift) {
-          const nearestGridX = Math.round(targetX / 16) * 16
-          const nearestGridY = Math.round(targetY / 16) * 16
-          if (Math.abs(targetX - nearestGridX) <= 5) targetX = nearestGridX
-          if (Math.abs(targetY - nearestGridY) <= 5) targetY = nearestGridY
-        }
+        lastAppliedPoints = newPts
 
-        const offset = {
-          x: Math.round(targetX - chordMidX),
-          y: Math.round(targetY - chordMidY),
-        }
-
+        const nextWaypoints = newPts.slice(1, -1)
         setEdges((eds) =>
           eds.map((edge) =>
             edge.id === id
@@ -669,7 +714,8 @@ export const UmlEdge = memo(
                   ...edge,
                   data: {
                     ...edge.data,
-                    curveOffset: offset,
+                    waypoints: nextWaypoints,
+                    curveOffset: undefined,
                   },
                 }
               : edge
@@ -690,14 +736,59 @@ export const UmlEdge = memo(
           cancelAnimationFrame(rafId)
           rafId = null
         }
+        setActiveDragCurve(null)
         setIsDraggingAdjustment(false)
         document.body.style.cursor = ''
         window.removeEventListener('pointermove', onPointerMove)
         window.removeEventListener('pointerup', onPointerUp)
+
+        // Simplify colinear curve points & merge back to chord
+        const simplifiedWaypoints = simplifyCurvePoints(
+          lastAppliedPoints
+        ).slice(1, -1)
+
+        setEdges((eds) =>
+          eds.map((edge) =>
+            edge.id === id
+              ? {
+                  ...edge,
+                  data: {
+                    ...edge.data,
+                    waypoints:
+                      simplifiedWaypoints.length > 0
+                        ? simplifiedWaypoints
+                        : undefined,
+                    curveOffset: undefined,
+                  },
+                }
+              : edge
+          )
+        )
       }
 
       window.addEventListener('pointermove', onPointerMove)
       window.addEventListener('pointerup', onPointerUp)
+    }
+
+    const handleRemoveCurveWaypoint = (wpIndex: number) => {
+      const nextWaypoints = curvePoints
+        .slice(1, -1)
+        .filter((_, idx) => idx !== wpIndex - 1)
+      setEdges((eds) =>
+        eds.map((edge) =>
+          edge.id === id
+            ? {
+                ...edge,
+                data: {
+                  ...edge.data,
+                  waypoints:
+                    nextWaypoints.length > 0 ? nextWaypoints : undefined,
+                  curveOffset: undefined,
+                },
+              }
+            : edge
+        )
+      )
     }
 
     const handleResetRouting = () => {
@@ -959,6 +1050,19 @@ export const UmlEdge = memo(
             </path>
           ))}
 
+        {/* Visual glow on the curve when hovering or dragging */}
+        {selected && routingStyle === 'bezier' && (
+          <path
+            d={edgePath}
+            fill="none"
+            stroke="var(--primary-btn)"
+            strokeWidth={isDraggingAdjustment ? 4 : isHovered ? 2.5 : 0}
+            strokeOpacity={isDraggingAdjustment ? 0.6 : 0.25}
+            strokeLinecap="round"
+            className="pointer-events-none transition-opacity duration-150"
+          />
+        )}
+
         {/* Draggable curve hit area covering the entire curve when selected */}
         {selected && routingStyle === 'bezier' && (
           <path
@@ -970,7 +1074,7 @@ export const UmlEdge = memo(
             style={{
               cursor: isDraggingAdjustment ? 'grabbing' : 'grab',
             }}
-            onPointerDown={handleStartCurveDrag}
+            onPointerDown={(e) => handleStartCurveDrag('curve-segment', 0, e)}
             onDoubleClick={(e) => {
               e.stopPropagation()
               handleResetRouting()
@@ -1071,7 +1175,11 @@ export const UmlEdge = memo(
               (h.type === 'orthogonal' &&
                 (activeDragSegIndex === h.segIndex ||
                   hoveredSegIndex === h.segIndex)) ||
-              (h.type === 'bezier' && isDraggingAdjustment)
+              ((h.type === 'curve-waypoint' || h.type === 'curve-segment') &&
+                activeDragCurve?.type === h.type &&
+                activeDragCurve?.index === h.segIndex)
+
+            const isWaypointVertex = h.type === 'curve-waypoint'
 
             return (
               <EdgeLabelRenderer key={h.id}>
@@ -1092,13 +1200,19 @@ export const UmlEdge = memo(
                   onPointerDown={(e) => {
                     if (h.type === 'orthogonal') {
                       handleStartSegmentDrag(h.segIndex, e)
+                    } else if (h.type === 'curve-waypoint') {
+                      handleStartCurveDrag('curve-waypoint', h.segIndex, e)
                     } else {
-                      handleStartCurveDrag(e)
+                      handleStartCurveDrag('curve-segment', h.segIndex, e)
                     }
                   }}
                   onDoubleClick={(e) => {
                     e.stopPropagation()
-                    handleResetRouting()
+                    if (h.type === 'curve-waypoint') {
+                      handleRemoveCurveWaypoint(h.segIndex)
+                    } else {
+                      handleResetRouting()
+                    }
                   }}
                 >
                   <div
@@ -1107,7 +1221,11 @@ export const UmlEdge = memo(
                       transformOrigin: 'center center',
                       cursor: h.cursor,
                     }}
-                    className={`w-3.5 h-3.5 rounded-full bg-[var(--bg-primary)] border-2 border-[var(--primary-btn)] shadow-md hover:scale-125 transition-transform flex items-center justify-center ${
+                    className={`${
+                      isWaypointVertex
+                        ? 'w-4 h-4 rounded-full bg-[var(--bg-primary)] border-2 border-[var(--primary-btn)] shadow-md'
+                        : 'w-3.5 h-3.5 rounded-full bg-[var(--bg-primary)] border-2 border-[var(--primary-btn)] shadow-md'
+                    } hover:scale-125 transition-transform flex items-center justify-center ${
                       isSegmentActive
                         ? 'ring-4 ring-[var(--primary-btn)]/35 bg-[var(--primary-btn)] scale-110'
                         : ''
@@ -1115,7 +1233,9 @@ export const UmlEdge = memo(
                     title={h.title}
                   >
                     <div
-                      className={`w-1 h-1 rounded-full ${
+                      className={`${
+                        isWaypointVertex ? 'w-1.5 h-1.5' : 'w-1 h-1'
+                      } rounded-full ${
                         isSegmentActive
                           ? 'bg-white'
                           : 'bg-[var(--primary-btn)]'
