@@ -473,52 +473,52 @@ export const ErEntityNode = memo(({ id, data, selected }: NodeProps) => {
 
       {/* 4-way connection handles */}
       <Handle
-        type="source"
+        type="target"
         position={Position.Top}
-        id="top-source"
+        id="top"
         className={`!w-2.5 !h-2.5 !bg-[var(--primary-btn)] !border-2 !border-[var(--bg-primary)] hover:!scale-125 transition-all ${handleVisibility}`}
       />
       <Handle
-        type="target"
+        type="source"
         position={Position.Top}
-        id="top-target"
-        className="!w-2.5 !h-2.5 !opacity-0"
+        id="top-source"
+        className="!w-2.5 !h-2.5 opacity-0 !pointer-events-none"
       />
       <Handle
         type="source"
         position={Position.Right}
-        id="right-source"
+        id="right"
         className={`!w-2.5 !h-2.5 !bg-[var(--primary-btn)] !border-2 !border-[var(--bg-primary)] hover:!scale-125 transition-all ${handleVisibility}`}
       />
       <Handle
         type="target"
         position={Position.Right}
         id="right-target"
-        className="!w-2.5 !h-2.5 !opacity-0"
+        className="!w-2.5 !h-2.5 opacity-0 !pointer-events-none"
       />
       <Handle
         type="source"
         position={Position.Bottom}
-        id="bottom-source"
+        id="bottom"
         className={`!w-2.5 !h-2.5 !bg-[var(--primary-btn)] !border-2 !border-[var(--bg-primary)] hover:!scale-125 transition-all ${handleVisibility}`}
       />
       <Handle
         type="target"
         position={Position.Bottom}
         id="bottom-target"
-        className="!w-2.5 !h-2.5 !opacity-0"
+        className="!w-2.5 !h-2.5 opacity-0 !pointer-events-none"
+      />
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="left"
+        className={`!w-2.5 !h-2.5 !bg-[var(--primary-btn)] !border-2 !border-[var(--bg-primary)] hover:!scale-125 transition-all ${handleVisibility}`}
       />
       <Handle
         type="source"
         position={Position.Left}
         id="left-source"
-        className={`!w-2.5 !h-2.5 !bg-[var(--primary-btn)] !border-2 !border-[var(--bg-primary)] hover:!scale-125 transition-all ${handleVisibility}`}
-      />
-      <Handle
-        type="target"
-        position={Position.Left}
-        id="left-target"
-        className="!w-2.5 !h-2.5 !opacity-0"
+        className="!w-2.5 !h-2.5 opacity-0 !pointer-events-none"
       />
     </div>
   )

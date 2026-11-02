@@ -80,7 +80,7 @@ import {
   inferRelationshipType,
   validateUmlConnection,
 } from '../../lib/umlValidation'
-import { computeTidyLayout } from '../../lib/tidyLayout'
+import { computeTidyLayout, computeTidyEdges } from '../../lib/tidyLayout'
 import {
   toSourceHandleId,
   toTargetHandleId,
@@ -1402,7 +1402,9 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
     if (nodes.length === 0) return
     pushSnapshot()
     const tidied = computeTidyLayout(nodes, edges)
+    const tidiedEdges = computeTidyEdges(tidied, edges)
     setNodes(tidied)
+    setEdges(tidiedEdges)
     handleSaveSnapshot('Before Tidy Layout')
     setTimeout(() => {
       reactFlowInstance.fitView({ padding: 0.2, duration: 350 })
@@ -1413,6 +1415,7 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
     edges,
     pushSnapshot,
     setNodes,
+    setEdges,
     handleSaveSnapshot,
     reactFlowInstance,
     showToast,

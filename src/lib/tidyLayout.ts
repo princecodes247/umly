@@ -1,10 +1,71 @@
 import type { Node, Edge } from '@xyflow/react'
-import type { UmlNodeData, UmlEdgeData } from '../types/game'
+import type { UmlNodeData, UmlEdgeData, ErAttribute } from '../types/game'
+import {
+  getFloatingEdgeParams,
+  toSourceHandleId,
+  toTargetHandleId,
+} from './floatingEdges'
+
+function computeErEntitySize(node: Node): { w: number; h: number } {
+  const d = (node.data || {}) as Partial<UmlNodeData>
+  const label = String(d.label || 'Entity')
+  const attrs: ErAttribute[] = Array.isArray(d.attributes) ? d.attributes : []
+  const weakExtra = d.isWeakEntity ? 44 : 0
+  const titleW = label.length * 7.5 + 64 + weakExtra
+
+  let maxAttrW = 0
+  for (const attr of attrs) {
+    const keyBadgeW = attr.isPrimaryKey ? 38 : attr.isForeignKey ? 28 : 16
+    const uqBadgeW = attr.isUnique && !attr.isPrimaryKey ? 26 : 0
+    const rowW =
+      (attr.name?.length || 0) * 6.8 +
+      (attr.dataType?.length || 0) * 6.4 +
+      keyBadgeW +
+      uqBadgeW +
+      36
+    if (rowW > maxAttrW) maxAttrW = rowW
+  }
+
+  const w =
+    Math.ceil(Math.max(210, Math.min(340, Math.max(titleW, maxAttrW))) / 10) *
+    10
+  const h =
+    Math.ceil(
+      Math.max(90, 38 + Math.max(1, attrs.length) * 26 + 6) / 10
+    ) * 10
+
+  return { w, h }
+}
 
 /**
- * Deterministic layered auto-layout ("Tidy Up") for UML 2.5 Use Case diagrams.
- * Minimizes edge crossings using barycenter ordering and automatically sizes the System Boundary
- * around the Use Cases.
+ * Recomputes optimal sourceHandle / targetHandle connections for edges after nodes
+ * have been repositioned/resized, and clears stale manual routing overrides.
+ */
+export function computeTidyEdges(tidiedNodes: Node[], edges: Edge[]): Edge[] {
+  const nodeMap = new Map(tidiedNodes.map((n) => [n.id, n]))
+  return edges.map((edge) => {
+    const sNode = nodeMap.get(edge.source)
+    const tNode = nodeMap.get(edge.target)
+    if (!sNode || !tNode) return edge
+
+    const params = getFloatingEdgeParams(sNode, tNode)
+    const nextData = { ...(edge.data || {}) } as Record<string, unknown>
+    delete nextData.orthogonalOffset
+    delete nextData.curveOffset
+    delete nextData.waypoints
+
+    return {
+      ...edge,
+      sourceHandle: toSourceHandleId(params.sourcePos),
+      targetHandle: toTargetHandleId(params.targetPos),
+      data: nextData,
+    }
+  })
+}
+
+/**
+ * Deterministic layered auto-layout ("Tidy Up") for UML 2.5 Use Case diagrams
+ * and ER diagrams.
  */
 export function computeTidyLayout(nodes: Node[], edges: Edge[]): Node[] {
   if (nodes.length === 0) return nodes
@@ -14,47 +75,81 @@ export function computeTidyLayout(nodes: Node[], edges: Edge[]): Node[] {
     const boundaries = nodes.filter((n) => n.type === 'boundary')
     const notes = nodes.filter((n) => n.type === 'note')
     const cols = Math.max(1, Math.min(3, Math.ceil(Math.sqrt(erEntities.length))))
-    const colGap = 320
-    const rowGap = 230
+    const hGap = 100
+    const vGap = 90
     const startX = 120
     const startY = 120
 
     const sorted = [...erEntities].sort((a, b) =>
-      a.position.y === b.position.y
+      Math.abs(a.position.y - b.position.y) < 40
         ? a.position.x - b.position.x
         : a.position.y - b.position.y
     )
 
-    const positionedEntities = sorted.map((n, idx) => {
+    const sized = sorted.map((n) => ({
+      node: n,
+      size: computeErEntitySize(n),
+    }))
+
+    const rows = Math.ceil(sized.length / cols)
+    const colWidths = Array.from({ length: cols }, () => 220)
+    const rowHeights = Array.from({ length: rows }, () => 120)
+
+    sized.forEach(({ size }, idx) => {
+      const col = idx % cols
+      const row = Math.floor(idx / cols)
+      if (size.w > colWidths[col]) colWidths[col] = size.w
+      if (size.h > rowHeights[row]) rowHeights[row] = size.h
+    })
+
+    const colX: number[] = []
+    let accX = startX
+    for (let c = 0; c < cols; c++) {
+      colX.push(accX)
+      accX += colWidths[c] + hGap
+    }
+
+    const rowY: number[] = []
+    let accY = startY
+    for (let r = 0; r < rows; r++) {
+      rowY.push(accY)
+      accY += rowHeights[r] + vGap
+    }
+
+    const positionedEntities = sized.map(({ node, size }, idx) => {
       const col = idx % cols
       const row = Math.floor(idx / cols)
       return {
-        ...n,
+        ...node,
         position: {
-          x: Math.round(startX + col * colGap),
-          y: Math.round(startY + row * rowGap),
+          x: Math.round(colX[col]),
+          y: Math.round(rowY[row]),
+        },
+        data: {
+          ...node.data,
+          width: size.w,
+          height: size.h,
         },
       }
     })
 
-    const rows = Math.ceil(sorted.length / cols)
-    const contentW = cols * colGap - 60
-    const contentH = rows * rowGap - 40
+    const totalW = accX - hGap - startX
+    const totalH = accY - vGap - startY
 
     const positionedBoundaries = boundaries.map((b, idx) => ({
       ...b,
       position: { x: startX - 50 + idx * 20, y: startY - 60 + idx * 20 },
       data: {
         ...b.data,
-        width: Math.max(440, contentW + 100),
-        height: Math.max(320, contentH + 110),
+        width: Math.max(440, totalW + 100),
+        height: Math.max(320, totalH + 110),
       },
     }))
 
     const positionedNotes = notes.map((n, idx) => ({
       ...n,
       position: {
-        x: Math.round(startX + cols * colGap),
+        x: Math.round(startX + totalW + 80),
         y: Math.round(startY + idx * 110),
       },
     }))

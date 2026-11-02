@@ -521,8 +521,8 @@ export const DIAGRAM_TEMPLATES: DiagramTemplate[] = [
         id: 'er-e-cust-order',
         source: 'er-customer',
         target: 'er-order',
-        sourceHandle: 'right-source',
-        targetHandle: 'left-target',
+        sourceHandle: 'right',
+        targetHandle: 'left',
         type: 'umlEdge',
         data: {
           relationshipType: 'er',
@@ -537,8 +537,8 @@ export const DIAGRAM_TEMPLATES: DiagramTemplate[] = [
         id: 'er-e-order-item',
         source: 'er-order',
         target: 'er-order-item',
-        sourceHandle: 'bottom-source',
-        targetHandle: 'top-target',
+        sourceHandle: 'bottom',
+        targetHandle: 'top',
         type: 'umlEdge',
         data: {
           relationshipType: 'er',
@@ -628,8 +628,8 @@ export const DIAGRAM_TEMPLATES: DiagramTemplate[] = [
         id: 'er-e-user-mem',
         source: 'er-user',
         target: 'er-membership',
-        sourceHandle: 'right-source',
-        targetHandle: 'left-target',
+        sourceHandle: 'right',
+        targetHandle: 'left',
         type: 'umlEdge',
         data: {
           relationshipType: 'er',
