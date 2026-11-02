@@ -719,7 +719,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                           : 'border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--hover-bg)]'
                       }`}
                     >
-                      {nodeData.isWeakEntity ? 'Weak (Double Border)' : 'Strong'}
+                      {nodeData.isWeakEntity ? 'Weak (Diamond)' : 'Strong'}
                     </button>
                   </div>
 

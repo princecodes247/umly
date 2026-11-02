@@ -218,7 +218,7 @@ export const ErEntityNode = memo(({ id, data, selected }: NodeProps) => {
         selected
           ? 'ring-2 ring-[var(--primary-btn)] shadow-md'
           : 'hover:border-[var(--text-primary)] shadow-sm'
-      } ${isWeak ? 'outline-2 outline-offset-[3px] outline-[var(--border-strong)]' : ''}`}
+      }`}
       style={{
         width: customW ?? 230,
         height: customH,
@@ -227,6 +227,23 @@ export const ErEntityNode = memo(({ id, data, selected }: NodeProps) => {
         borderColor: selected ? 'var(--primary-btn)' : accent.border,
       }}
     >
+      {/* Weak entity diamond shape inscribed within the entity */}
+      {isWeak && (
+        <svg
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          className="pointer-events-none absolute inset-0 w-full h-full z-[1]"
+        >
+          <polygon
+            points="50,0 100,50 50,100 0,50"
+            fill="none"
+            stroke={selected ? 'var(--primary-btn)' : accent.border}
+            strokeOpacity={0.45}
+            strokeWidth={1.5}
+            vectorEffect="non-scaling-stroke"
+          />
+        </svg>
+      )}
       {!isLocked && (
         <NodeResizer
           isVisible={selected}
