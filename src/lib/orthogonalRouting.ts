@@ -104,8 +104,23 @@ export function pointsToSmoothSvgPath(
   return d
 }
 
+function getPortDir(pos: Position): { dx: number; dy: number } {
+  switch (pos) {
+    case Position.Top:
+      return { dx: 0, dy: -1 }
+    case Position.Right:
+      return { dx: 1, dy: 0 }
+    case Position.Bottom:
+      return { dx: 0, dy: 1 }
+    case Position.Left:
+      return { dx: -1, dy: 0 }
+  }
+}
+
 /**
- * Compute the full sequence of orthogonal points connecting source to target
+ * Compute the full sequence of orthogonal points connecting source to target,
+ * guaranteeing a minimum outward protrusion stub at both ports so markers and
+ * relationship lines never hug or clip entity borders.
  */
 export function getOrthogonalPoints(
   source: Point,
@@ -121,26 +136,126 @@ export function getOrthogonalPoints(
   const ty = target.y
 
   if (!rawWaypoints || rawWaypoints.length === 0) {
-    const isVertMiddle =
-      sourcePos === Position.Left || sourcePos === Position.Right
-    if (isVertMiddle) {
-      const defaultSplit = (sx + tx) / 2
-      const splitX = defaultSplit + (orthogonalOffset ?? 0)
-      return [
+    const STUB = 28
+    const sDir = getPortDir(sourcePos)
+    const tDir = getPortDir(targetPos)
+    const sOut = { x: sx + sDir.dx * STUB, y: sy + sDir.dy * STUB }
+    const tOut = { x: tx + tDir.dx * STUB, y: ty + tDir.dy * STUB }
+    const offset = orthogonalOffset ?? 0
+
+    const sHoriz = sourcePos === Position.Left || sourcePos === Position.Right
+    const tHoriz = targetPos === Position.Left || targetPos === Position.Right
+
+    // Same-axis ports (both horizontal or both vertical)
+    if (sHoriz && tHoriz) {
+      if (sourcePos === targetPos) {
+        const channelX =
+          sourcePos === Position.Left
+            ? Math.min(sOut.x, tOut.x) + offset
+            : Math.max(sOut.x, tOut.x) + offset
+        return mergeColinearPoints([
+          { x: sx, y: sy },
+          { x: channelX, y: sy },
+          { x: channelX, y: ty },
+          { x: tx, y: ty },
+        ])
+      }
+      // Opposite horizontal ports (Left <-> Right)
+      const isForward =
+        sourcePos === Position.Right ? sOut.x <= tOut.x : sOut.x >= tOut.x
+      if (isForward) {
+        const splitX = (sx + tx) / 2 + offset
+        return mergeColinearPoints([
+          { x: sx, y: sy },
+          { x: splitX, y: sy },
+          { x: splitX, y: ty },
+          { x: tx, y: ty },
+        ])
+      }
+      // Reversed horizontal ports: protrude outward on both ends and route via mid-Y
+      const midY = (sy + ty) / 2 + offset
+      return mergeColinearPoints([
         { x: sx, y: sy },
-        { x: splitX, y: sy },
-        { x: splitX, y: ty },
+        sOut,
+        { x: sOut.x, y: midY },
+        { x: tOut.x, y: midY },
+        tOut,
         { x: tx, y: ty },
-      ]
+      ])
+    }
+
+    if (!sHoriz && !tHoriz) {
+      if (sourcePos === targetPos) {
+        const channelY =
+          sourcePos === Position.Top
+            ? Math.min(sOut.y, tOut.y) + offset
+            : Math.max(sOut.y, tOut.y) + offset
+        return mergeColinearPoints([
+          { x: sx, y: sy },
+          { x: sx, y: channelY },
+          { x: tx, y: channelY },
+          { x: tx, y: ty },
+        ])
+      }
+      // Opposite vertical ports (Top <-> Bottom)
+      const isForward =
+        sourcePos === Position.Bottom ? sOut.y <= tOut.y : sOut.y >= tOut.y
+      if (isForward) {
+        const splitY = (sy + ty) / 2 + offset
+        return mergeColinearPoints([
+          { x: sx, y: sy },
+          { x: sx, y: splitY },
+          { x: tx, y: splitY },
+          { x: tx, y: ty },
+        ])
+      }
+      // Reversed vertical ports: protrude outward on both ends and route via mid-X
+      const midX = (sx + tx) / 2 + offset
+      return mergeColinearPoints([
+        { x: sx, y: sy },
+        sOut,
+        { x: midX, y: sOut.y },
+        { x: midX, y: tOut.y },
+        tOut,
+        { x: tx, y: ty },
+      ])
+    }
+
+    // Perpendicular ports (one horizontal, one vertical)
+    if (sHoriz && !tHoriz) {
+      const sClear = (tx - sx) * sDir.dx >= STUB
+      const tClear = (sy - ty) * tDir.dy >= STUB
+      if (sClear && tClear) {
+        return mergeColinearPoints([
+          { x: sx, y: sy },
+          { x: tx, y: sy },
+          { x: tx, y: ty },
+        ])
+      }
+      return mergeColinearPoints([
+        { x: sx, y: sy },
+        sOut,
+        { x: sOut.x, y: tOut.y },
+        tOut,
+        { x: tx, y: ty },
+      ])
     } else {
-      const defaultSplit = (sy + ty) / 2
-      const splitY = defaultSplit + (orthogonalOffset ?? 0)
-      return [
+      const sClear = (ty - sy) * sDir.dy >= STUB
+      const tClear = (sx - tx) * tDir.dx >= STUB
+      if (sClear && tClear) {
+        return mergeColinearPoints([
+          { x: sx, y: sy },
+          { x: sx, y: ty },
+          { x: tx, y: ty },
+        ])
+      }
+      return mergeColinearPoints([
         { x: sx, y: sy },
-        { x: sx, y: splitY },
-        { x: tx, y: splitY },
+        sOut,
+        { x: tOut.x, y: sOut.y },
+        tOut,
         { x: tx, y: ty },
-      ]
+      ])
     }
   }
 
