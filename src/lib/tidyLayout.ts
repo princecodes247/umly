@@ -1,7 +1,7 @@
-import type { Node, Edge } from '@xyflow/react'
+import { Position, type Node, type Edge } from '@xyflow/react'
 import type { UmlNodeData, UmlEdgeData, ErAttribute } from '../types/game'
 import {
-  getFloatingEdgeParams,
+  getNodeBox,
   toSourceHandleId,
   toTargetHandleId,
 } from './floatingEdges'
@@ -37,18 +37,82 @@ function computeErEntitySize(node: Node): { w: number; h: number } {
   return { w, h }
 }
 
+const ALL_PORTS: Position[] = [
+  Position.Top,
+  Position.Right,
+  Position.Bottom,
+  Position.Left,
+]
+
+function pickBestPort(
+  nodeId: string,
+  ux: number,
+  uy: number,
+  portUsage: Map<string, Map<Position, number>>
+): Position {
+  let counts = portUsage.get(nodeId)
+  if (!counts) {
+    counts = new Map<Position, number>()
+    portUsage.set(nodeId, counts)
+  }
+
+  const scoreFor = (pos: Position): number => {
+    switch (pos) {
+      case Position.Top:
+        return -uy
+      case Position.Right:
+        return ux
+      case Position.Bottom:
+        return uy
+      case Position.Left:
+        return -ux
+    }
+  }
+
+  let best = ALL_PORTS[0]
+  let bestCount = counts.get(best) ?? 0
+  let bestScore = scoreFor(best)
+
+  for (let i = 1; i < ALL_PORTS.length; i++) {
+    const pos = ALL_PORTS[i]
+    const c = counts.get(pos) ?? 0
+    const s = scoreFor(pos)
+    if (c < bestCount || (c === bestCount && s > bestScore)) {
+      best = pos
+      bestCount = c
+      bestScore = s
+    }
+  }
+
+  counts.set(best, bestCount + 1)
+  return best
+}
+
 /**
  * Recomputes optimal sourceHandle / targetHandle connections for edges after nodes
- * have been repositioned/resized, and clears stale manual routing overrides.
+ * have been repositioned/resized, distributing connections across unused ports before
+ * reusing any port, and clears stale manual routing overrides.
  */
 export function computeTidyEdges(tidiedNodes: Node[], edges: Edge[]): Edge[] {
   const nodeMap = new Map(tidiedNodes.map((n) => [n.id, n]))
+  const portUsage = new Map<string, Map<Position, number>>()
+
   return edges.map((edge) => {
     const sNode = nodeMap.get(edge.source)
     const tNode = nodeMap.get(edge.target)
     if (!sNode || !tNode) return edge
 
-    const params = getFloatingEdgeParams(sNode, tNode)
+    const sBox = getNodeBox(sNode)
+    const tBox = getNodeBox(tNode)
+    const dx = tBox.cx - sBox.cx
+    const dy = tBox.cy - sBox.cy
+    const len = Math.hypot(dx, dy) || 1
+    const ux = dx / len
+    const uy = dy / len
+
+    const sourcePos = pickBestPort(edge.source, ux, uy, portUsage)
+    const targetPos = pickBestPort(edge.target, -ux, -uy, portUsage)
+
     const nextData = { ...(edge.data || {}) } as Record<string, unknown>
     delete nextData.orthogonalOffset
     delete nextData.curveOffset
@@ -56,8 +120,8 @@ export function computeTidyEdges(tidiedNodes: Node[], edges: Edge[]): Edge[] {
 
     return {
       ...edge,
-      sourceHandle: toSourceHandleId(params.sourcePos),
-      targetHandle: toTargetHandleId(params.targetPos),
+      sourceHandle: toSourceHandleId(sourcePos),
+      targetHandle: toTargetHandleId(targetPos),
       data: nextData,
     }
   })
