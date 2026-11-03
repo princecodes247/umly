@@ -1,72 +1,70 @@
 import { useEffect, useState } from 'react'
-import { Sun, Moon, Laptop } from 'lucide-react'
+import { Sun, Moon } from 'lucide-react'
 
-type ThemeMode = 'light' | 'dark' | 'auto'
+type ThemeMode = 'light' | 'dark'
 
 function getInitialMode(): ThemeMode {
   if (typeof window === 'undefined') {
-    return 'auto'
+    return 'light'
   }
 
   const stored = window.localStorage.getItem('theme')
-  if (stored === 'light' || stored === 'dark' || stored === 'auto') {
+  if (stored === 'light' || stored === 'dark') {
     return stored
   }
 
-  return 'auto'
+  return window.matchMedia('(prefers-color-scheme: dark)').matches
+    ? 'dark'
+    : 'light'
 }
 
 function applyThemeMode(mode: ThemeMode) {
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-  const resolved = mode === 'auto' ? (prefersDark ? 'dark' : 'light') : mode
-
   document.documentElement.classList.remove('light', 'dark')
-  document.documentElement.classList.add(resolved)
-
-  if (mode === 'auto') {
-    document.documentElement.removeAttribute('data-theme')
-  } else {
-    document.documentElement.setAttribute('data-theme', mode)
-  }
-
-  document.documentElement.style.colorScheme = resolved
+  document.documentElement.classList.add(mode)
+  document.documentElement.setAttribute('data-theme', mode)
+  document.documentElement.style.colorScheme = mode
 }
 
 export default function ThemeToggle() {
-  const [mode, setMode] = useState<ThemeMode>('auto')
+  const [mode, setMode] = useState<ThemeMode>('light')
 
   useEffect(() => {
     const initialMode = getInitialMode()
     setMode(initialMode)
     applyThemeMode(initialMode)
+    if (
+      window.localStorage.getItem('theme') !== 'light' &&
+      window.localStorage.getItem('theme') !== 'dark'
+    ) {
+      window.localStorage.setItem('theme', initialMode)
+    }
+
+    const handleSync = () => {
+      const next = getInitialMode()
+      setMode(next)
+      applyThemeMode(next)
+    }
+
+    window.addEventListener('storage', handleSync)
+    window.addEventListener('umly-theme-change', handleSync)
+    return () => {
+      window.removeEventListener('storage', handleSync)
+      window.removeEventListener('umly-theme-change', handleSync)
+    }
   }, [])
 
-  useEffect(() => {
-    if (mode !== 'auto') {
-      return
-    }
-
-    const media = window.matchMedia('(prefers-color-scheme: dark)')
-    const onChange = () => applyThemeMode('auto')
-
-    media.addEventListener('change', onChange)
-    return () => {
-      media.removeEventListener('change', onChange)
-    }
-  }, [mode])
-
   function toggleMode() {
-    const nextMode: ThemeMode =
-      mode === 'light' ? 'dark' : mode === 'dark' ? 'auto' : 'light'
+    const nextMode: ThemeMode = mode === 'light' ? 'dark' : 'light'
     setMode(nextMode)
     applyThemeMode(nextMode)
     window.localStorage.setItem('theme', nextMode)
+    window.dispatchEvent(new Event('umly-theme-change'))
   }
 
   const label =
-    mode === 'auto'
-      ? 'Theme: Auto (System). Click to toggle.'
-      : `Theme: ${mode.charAt(0).toUpperCase() + mode.slice(1)}. Click to toggle.`
+    mode === 'dark'
+      ? 'Theme: Dark. Click to switch to Light.'
+      : 'Theme: Light. Click to switch to Dark.'
 
   return (
     <button
@@ -74,14 +72,12 @@ export default function ThemeToggle() {
       onClick={toggleMode}
       aria-label={label}
       title={label}
-      className="flex items-center gap-1.5 px-2 py-1 rounded-[4px] text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] transition-colors select-none"
+      className="flex items-center gap-1.5 px-2 py-1 rounded-[4px] text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] transition-colors select-none cursor-pointer"
     >
-      {mode === 'light' ? (
-        <Sun className="w-3.5 h-3.5" />
-      ) : mode === 'dark' ? (
+      {mode === 'dark' ? (
         <Moon className="w-3.5 h-3.5" />
       ) : (
-        <Laptop className="w-3.5 h-3.5" />
+        <Sun className="w-3.5 h-3.5" />
       )}
       <span className="capitalize">{mode}</span>
     </button>
