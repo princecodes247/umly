@@ -340,18 +340,36 @@ export const UmlEdge = memo(
     }, [routingStyle, orthogonalPoints])
 
     const [edgePath, labelX, labelY, guideLinePath] = useMemo(() => {
+      const getPolylineMidpoint = (
+        segs: Array<{
+          start: { x: number; y: number }
+          end: { x: number; y: number }
+          length: number
+        }>
+      ) => {
+        if (segs.length === 0) return null
+        const total = segs.reduce((acc, s) => acc + s.length, 0)
+        if (total === 0) return segs[0].start
+        let rem = total / 2
+        for (let i = 0; i < segs.length; i++) {
+          const s = segs[i]
+          if (rem <= s.length || i === segs.length - 1) {
+            const t = s.length > 0 ? Math.max(0, Math.min(1, rem / s.length)) : 0.5
+            return {
+              x: s.start.x + (s.end.x - s.start.x) * t,
+              y: s.start.y + (s.end.y - s.start.y) * t,
+            }
+          }
+          rem -= s.length
+        }
+        return segs[0].start
+      }
+
       if (routingStyle === 'orthogonal') {
         const path = pointsToSmoothSvgPath(orthogonalPoints, 8)
-        let lx = (sx + tx) / 2
-        let ly = (sy + ty) / 2
-        if (orthogonalSegments.length > 0) {
-          let longest = orthogonalSegments[0]
-          for (const seg of orthogonalSegments) {
-            if (seg.length > longest.length) longest = seg
-          }
-          lx = longest.mid.x
-          ly = longest.mid.y
-        }
+        const mid = getPolylineMidpoint(orthogonalSegments)
+        const lx = mid ? mid.x : (sx + tx) / 2
+        const ly = mid ? mid.y : (sy + ty) / 2
         return [path, lx, ly, null]
       }
       if (routingStyle === 'bezier') {
@@ -360,9 +378,10 @@ export const UmlEdge = memo(
           const guide = curvePoints
             .map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`))
             .join(' ')
+          const mid = getPolylineMidpoint(curveSegments)
           const midIdx = Math.floor(curvePoints.length / 2)
-          const lx = curvePoints[midIdx].x
-          const ly = curvePoints[midIdx].y
+          const lx = mid ? mid.x : curvePoints[midIdx].x
+          const ly = mid ? mid.y : curvePoints[midIdx].y
           return [path, lx, ly, guide]
         }
         const [path, lx, ly] = getBezierPath({
@@ -393,6 +412,7 @@ export const UmlEdge = memo(
       orthogonalPoints,
       orthogonalSegments,
       curvePoints,
+      curveSegments,
     ])
 
     const allowedTypes = useMemo(
