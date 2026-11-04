@@ -29,6 +29,7 @@ import {
   X,
 } from 'lucide-react'
 import type { AlignmentMode } from './StudioCanvas'
+import type { DiagramType } from '../../lib/diagramStorage'
 import { getAllowedRelationshipTypes } from '../../lib/umlValidation'
 import type {
   UmlNodeData,
@@ -62,6 +63,7 @@ interface StudioInspectorProps {
   defaultRoutingStyle?: 'straight' | 'orthogonal' | 'bezier'
   onDefaultRoutingStyleChange?: (style: 'straight' | 'orthogonal' | 'bezier') => void
   diagramTitle?: string
+  diagramType?: DiagramType
   allNodes: Node[]
   allEdges: Edge[]
   isOpen: boolean
@@ -97,6 +99,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
   onAlignSelected,
   defaultRoutingStyle = 'straight',
   onDefaultRoutingStyleChange,
+  diagramType,
   allNodes,
   allEdges,
   isOpen,
@@ -118,10 +121,31 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
   const isMultiSelection = selectedNodes.length > 1
 
   // Node stats
+  const isErDiagram = diagramType === 'er' || allNodes.some((n) => n.type === 'erEntity')
   const actorsCount = allNodes.filter((n) => n.type === 'actor').length
   const useCasesCount = allNodes.filter((n) => n.type === 'useCase').length
   const boundariesCount = allNodes.filter((n) => n.type === 'boundary').length
+  const erEntityNodes = allNodes.filter((n) => n.type === 'erEntity')
+  const entitiesCount = erEntityNodes.length
+  const weakEntitiesCount = erEntityNodes.filter((n) => Boolean(n.data?.isWeak)).length
+  const attributesCount = erEntityNodes.reduce(
+    (sum, n) => sum + (Array.isArray(n.data?.attributes) ? n.data.attributes.length : 0),
+    0
+  )
   const edgesCount = allEdges.length
+  const overviewStats = isErDiagram
+    ? [
+      { label: 'Entities', value: entitiesCount },
+      { label: 'Attrs', value: attributesCount },
+      { label: 'Weak', value: weakEntitiesCount },
+      { label: 'Links', value: edgesCount },
+    ]
+    : [
+      { label: 'Actors', value: actorsCount },
+      { label: 'Cases', value: useCasesCount },
+      { label: 'Bounds', value: boundariesCount },
+      { label: 'Links', value: edgesCount },
+    ]
 
   // Always resolve the freshest node and edge data from source arrays
   const activeEdge = selectedEdge
@@ -713,13 +737,12 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                           isWeakEntity: !nodeData.isWeakEntity,
                         })
                       }
-                      className={`px-2 py-0.5 rounded-[4px] text-[10px] font-mono transition-colors cursor-pointer ${
-                        nodeData.isWeakEntity
+                      className={`px-2 py-0.5 rounded-[4px] text-[10px] font-mono transition-colors cursor-pointer ${nodeData.isWeakEntity
                           ? 'bg-[var(--selection-bg)] text-[var(--primary-btn)] font-semibold border border-[var(--primary-btn)]'
                           : 'border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--hover-bg)]'
-                      }`}
+                        }`}
                     >
-                      {nodeData.isWeakEntity ? 'Weak (Diamond)' : 'Strong'}
+                      {nodeData.isWeakEntity ? 'Weak' : 'Strong'}
                     </button>
                   </div>
 
@@ -799,11 +822,10 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                                 }
                                 updateAttrs(next)
                               }}
-                              className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-[3px] text-[9px] font-mono font-semibold transition-colors cursor-pointer ${
-                                attr.isPrimaryKey
+                              className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-[3px] text-[9px] font-mono font-semibold transition-colors cursor-pointer ${attr.isPrimaryKey
                                   ? 'bg-[var(--notion-yellow-bg)] text-[var(--notion-yellow-text)]'
                                   : 'bg-[var(--bg-primary)] text-[var(--text-tertiary)] border border-[var(--border-subtle)]'
-                              }`}
+                                }`}
                             >
                               <KeyRound className="w-2.5 h-2.5" />
                               PK
@@ -818,11 +840,10 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                                 }
                                 updateAttrs(next)
                               }}
-                              className={`px-1.5 py-0.5 rounded-[3px] text-[9px] font-mono font-semibold transition-colors cursor-pointer ${
-                                attr.isForeignKey
+                              className={`px-1.5 py-0.5 rounded-[3px] text-[9px] font-mono font-semibold transition-colors cursor-pointer ${attr.isForeignKey
                                   ? 'bg-[var(--notion-blue-bg)] text-[var(--notion-blue-text)]'
                                   : 'bg-[var(--bg-primary)] text-[var(--text-tertiary)] border border-[var(--border-subtle)]'
-                              }`}
+                                }`}
                             >
                               FK
                             </button>
@@ -836,11 +857,10 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                                 }
                                 updateAttrs(next)
                               }}
-                              className={`px-1.5 py-0.5 rounded-[3px] text-[9px] font-mono font-semibold transition-colors cursor-pointer ${
-                                attr.isUnique
+                              className={`px-1.5 py-0.5 rounded-[3px] text-[9px] font-mono font-semibold transition-colors cursor-pointer ${attr.isUnique
                                   ? 'bg-[var(--notion-purple-bg)] text-[var(--notion-purple-text)]'
                                   : 'bg-[var(--bg-primary)] text-[var(--text-tertiary)] border border-[var(--border-subtle)]'
-                              }`}
+                                }`}
                             >
                               UQ
                             </button>
@@ -854,11 +874,10 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                                 }
                                 updateAttrs(next)
                               }}
-                              className={`px-1.5 py-0.5 rounded-[3px] text-[9px] font-mono font-semibold transition-colors cursor-pointer ${
-                                attr.isNullable
+                              className={`px-1.5 py-0.5 rounded-[3px] text-[9px] font-mono font-semibold transition-colors cursor-pointer ${attr.isNullable
                                   ? 'bg-[var(--hover-bg-strong)] text-[var(--text-primary)]'
                                   : 'bg-[var(--bg-primary)] text-[var(--text-tertiary)] border border-[var(--border-subtle)]'
-                              }`}
+                                }`}
                             >
                               NULL
                             </button>
@@ -893,13 +912,13 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                   label: string
                   symbol: string
                 }> = [
-                  { id: 'one', label: 'One', symbol: '1' },
-                  { id: 'one_only', label: 'Only One', symbol: '1..1' },
-                  { id: 'zero_or_one', label: 'Zero or One', symbol: '0..1' },
-                  { id: 'many', label: 'Many', symbol: 'N' },
-                  { id: 'one_or_many', label: 'One or Many', symbol: '1..*' },
-                  { id: 'zero_or_many', label: 'Zero or Many', symbol: '0..*' },
-                ]
+                    { id: 'one', label: 'One', symbol: '1' },
+                    { id: 'one_only', label: 'Only One', symbol: '1..1' },
+                    { id: 'zero_or_one', label: 'Zero or One', symbol: '0..1' },
+                    { id: 'many', label: 'Many', symbol: 'N' },
+                    { id: 'one_or_many', label: 'One or Many', symbol: '1..*' },
+                    { id: 'zero_or_many', label: 'Zero or Many', symbol: '0..*' },
+                  ]
 
                 return (
                   <div className="space-y-3">
@@ -939,11 +958,10 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                                   erTargetCardinality: preset.tgt,
                                 })
                               }
-                              className={`py-1.5 rounded-[4px] font-mono text-xs font-medium transition-colors cursor-pointer ${
-                                isActive
+                              className={`py-1.5 rounded-[4px] font-mono text-xs font-medium transition-colors cursor-pointer ${isActive
                                   ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] font-semibold'
                                   : 'border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--hover-bg)]'
-                              }`}
+                                }`}
                             >
                               {preset.label}
                             </button>
@@ -964,11 +982,10 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                               erIdentifying: false,
                             })
                           }
-                          className={`py-1.5 px-2 rounded-[4px] text-[11px] font-medium transition-colors cursor-pointer ${
-                            !isIdentifying
+                          className={`py-1.5 px-2 rounded-[4px] text-[11px] font-medium transition-colors cursor-pointer ${!isIdentifying
                               ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] font-semibold'
                               : 'border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--hover-bg)]'
-                          }`}
+                            }`}
                         >
                           Non-Identifying (--)
                         </button>
@@ -979,11 +996,10 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                               erIdentifying: true,
                             })
                           }
-                          className={`py-1.5 px-2 rounded-[4px] text-[11px] font-medium transition-colors cursor-pointer ${
-                            isIdentifying
+                          className={`py-1.5 px-2 rounded-[4px] text-[11px] font-medium transition-colors cursor-pointer ${isIdentifying
                               ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] font-semibold'
                               : 'border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--hover-bg)]'
-                          }`}
+                            }`}
                         >
                           Identifying (—)
                         </button>
@@ -1005,11 +1021,10 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                                 erSourceCardinality: opt.id,
                               })
                             }
-                            className={`py-1 px-1.5 rounded-[4px] text-[10px] font-mono transition-colors cursor-pointer ${
-                              srcCard === opt.id
+                            className={`py-1 px-1.5 rounded-[4px] text-[10px] font-mono transition-colors cursor-pointer ${srcCard === opt.id
                                 ? 'bg-[var(--selection-bg)] text-[var(--primary-btn)] font-semibold border border-[var(--primary-btn)]'
                                 : 'border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--hover-bg)]'
-                            }`}
+                              }`}
                           >
                             {opt.symbol}
                           </button>
@@ -1032,11 +1047,10 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                                 erTargetCardinality: opt.id,
                               })
                             }
-                            className={`py-1 px-1.5 rounded-[4px] text-[10px] font-mono transition-colors cursor-pointer ${
-                              tgtCard === opt.id
+                            className={`py-1 px-1.5 rounded-[4px] text-[10px] font-mono transition-colors cursor-pointer ${tgtCard === opt.id
                                 ? 'bg-[var(--selection-bg)] text-[var(--primary-btn)] font-semibold border border-[var(--primary-btn)]'
                                 : 'border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--hover-bg)]'
-                            }`}
+                              }`}
                           >
                             {opt.symbol}
                           </button>
@@ -1395,38 +1409,19 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
           <div className="space-y-4">
             {/* Compact Stats Bar */}
             <div className="grid grid-cols-4 gap-1.5 font-mono text-center">
-              <div className="p-2 rounded-[5px] border border-[var(--border-subtle)] bg-[var(--bg-secondary)]">
-                <span className="text-sm font-bold text-[var(--text-primary)] block">
-                  {actorsCount}
-                </span>
-                <span className="text-[9px] text-[var(--text-tertiary)] uppercase">
-                  Actors
-                </span>
-              </div>
-              <div className="p-2 rounded-[5px] border border-[var(--border-subtle)] bg-[var(--bg-secondary)]">
-                <span className="text-sm font-bold text-[var(--text-primary)] block">
-                  {useCasesCount}
-                </span>
-                <span className="text-[9px] text-[var(--text-tertiary)] uppercase">
-                  Cases
-                </span>
-              </div>
-              <div className="p-2 rounded-[5px] border border-[var(--border-subtle)] bg-[var(--bg-secondary)]">
-                <span className="text-sm font-bold text-[var(--text-primary)] block">
-                  {boundariesCount}
-                </span>
-                <span className="text-[9px] text-[var(--text-tertiary)] uppercase">
-                  Bounds
-                </span>
-              </div>
-              <div className="p-2 rounded-[5px] border border-[var(--border-subtle)] bg-[var(--bg-secondary)]">
-                <span className="text-sm font-bold text-[var(--text-primary)] block">
-                  {edgesCount}
-                </span>
-                <span className="text-[9px] text-[var(--text-tertiary)] uppercase">
-                  Links
-                </span>
-              </div>
+              {overviewStats.map((stat) => (
+                <div
+                  key={stat.label}
+                  className="p-2 rounded-[5px] border border-[var(--border-subtle)] bg-[var(--bg-secondary)]"
+                >
+                  <span className="text-sm font-bold text-[var(--text-primary)] block">
+                    {stat.value}
+                  </span>
+                  <span className="text-[9px] text-[var(--text-tertiary)] uppercase">
+                    {stat.label}
+                  </span>
+                </div>
+              ))}
             </div>
 
             {/* Canvas Layout & Edge Routing Controls */}

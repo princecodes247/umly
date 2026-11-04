@@ -3000,6 +3000,7 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
               defaultRoutingStyle={defaultRoutingStyle}
               onDefaultRoutingStyleChange={handleDefaultRoutingStyleChange}
               diagramTitle={title}
+              diagramType={diagramType}
               allNodes={nodes}
               allEdges={edges}
               isOpen={isInspectorOpen}
