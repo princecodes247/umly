@@ -71,6 +71,20 @@ export const ErEntityNode = memo(({ id, data, selected }: NodeProps) => {
   const [editingAttrId, setEditingAttrId] = useState<string | null>(null)
   const [editingAttrValue, setEditingAttrValue] = useState('')
   const titleRef = useRef<HTMLDivElement>(null)
+  const autoFocusGraceUntilRef = useRef(
+    nodeData.autoFocusEdit ? Date.now() + 180 : 0
+  )
+
+  const focusTitleAndSelect = () => {
+    const el = titleRef.current
+    if (!el) return
+    el.focus()
+    const selection = window.getSelection()
+    const range = document.createRange()
+    range.selectNodeContents(el)
+    selection?.removeAllRanges()
+    selection?.addRange(range)
+  }
 
   const attributes: ErAttribute[] = Array.isArray(nodeData.attributes)
     ? nodeData.attributes
@@ -78,19 +92,25 @@ export const ErEntityNode = memo(({ id, data, selected }: NodeProps) => {
 
   useEffect(() => {
     if (nodeData.autoFocusEdit) {
+      autoFocusGraceUntilRef.current = Date.now() + 180
       setIsEditingTitle(true)
       updateNodeData(id, { autoFocusEdit: false })
     }
   }, [id, nodeData.autoFocusEdit, updateNodeData])
 
   useEffect(() => {
-    if (isEditingTitle && titleRef.current) {
-      titleRef.current.focus()
-      const selection = window.getSelection()
-      const range = document.createRange()
-      range.selectNodeContents(titleRef.current)
-      selection?.removeAllRanges()
-      selection?.addRange(range)
+    if (!isEditingTitle) return
+    focusTitleAndSelect()
+    const ensureFocused = () => {
+      if (titleRef.current && document.activeElement !== titleRef.current) {
+        focusTitleAndSelect()
+      }
+    }
+    const rafId = requestAnimationFrame(ensureFocused)
+    const timerId = window.setTimeout(ensureFocused, 40)
+    return () => {
+      cancelAnimationFrame(rafId)
+      window.clearTimeout(timerId)
     }
   }, [isEditingTitle])
 
@@ -112,6 +132,12 @@ export const ErEntityNode = memo(({ id, data, selected }: NodeProps) => {
   }, [id, isLocked])
 
   const handleFinishEditingTitle = () => {
+    if (Date.now() < autoFocusGraceUntilRef.current && selected) {
+      requestAnimationFrame(() => {
+        focusTitleAndSelect()
+      })
+      return
+    }
     setIsEditingTitle(false)
     const raw = titleRef.current?.innerText ?? ''
     const trimmed = raw.trim() || 'Entity'
