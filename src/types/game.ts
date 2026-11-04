@@ -42,6 +42,7 @@ export interface UmlNodeData {
   boundaryTitle?: string
   attributes?: ErAttribute[]
   isWeakEntity?: boolean
+  isMinimized?: boolean
   width?: number
   height?: number
   description?: string

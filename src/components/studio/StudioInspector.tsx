@@ -127,7 +127,9 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
   const boundariesCount = allNodes.filter((n) => n.type === 'boundary').length
   const erEntityNodes = allNodes.filter((n) => n.type === 'erEntity')
   const entitiesCount = erEntityNodes.length
-  const weakEntitiesCount = erEntityNodes.filter((n) => Boolean(n.data?.isWeak)).length
+  const weakEntitiesCount = erEntityNodes.filter((n) =>
+    Boolean(n.data?.isWeakEntity)
+  ).length
   const attributesCount = erEntityNodes.reduce(
     (sum, n) => sum + (Array.isArray(n.data?.attributes) ? n.data.attributes.length : 0),
     0

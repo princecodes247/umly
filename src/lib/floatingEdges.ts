@@ -15,7 +15,11 @@ export function getNodeBox(node: Node): BoxMetrics {
   const customW =
     typeof node.data?.width === 'number' ? node.data.width : undefined
   const customH =
-    typeof node.data?.height === 'number' ? node.data.height : undefined
+    node.type === 'erEntity' && node.data?.isMinimized
+      ? 44
+      : typeof node.data?.height === 'number'
+        ? node.data.height
+        : undefined
 
   const w =
     customW ??

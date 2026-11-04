@@ -9,6 +9,12 @@ import {
 function computeErEntitySize(node: Node): { w: number; h: number } {
   const d = (node.data || {}) as Partial<UmlNodeData>
   const label = String(d.label || 'Entity')
+  if (d.isMinimized) {
+    const w =
+      Math.ceil(Math.max(190, Math.min(340, label.length * 7.5 + 64)) / 10) *
+      10
+    return { w, h: 44 }
+  }
   const attrs: ErAttribute[] = Array.isArray(d.attributes) ? d.attributes : []
   const weakExtra = d.isWeakEntity ? 44 : 0
   const titleW = label.length * 7.5 + 64 + weakExtra
@@ -192,7 +198,7 @@ export function computeTidyLayout(nodes: Node[], edges: Edge[]): Node[] {
         data: {
           ...node.data,
           width: size.w,
-          height: size.h,
+          ...(node.data?.isMinimized ? {} : { height: size.h }),
         },
       }
     })

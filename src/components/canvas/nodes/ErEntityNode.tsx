@@ -7,7 +7,17 @@ import {
   useReactFlow,
   type NodeProps,
 } from '@xyflow/react'
-import { Trash2, Copy, Pencil, Plus, KeyRound, Table2, X } from 'lucide-react'
+import {
+  Trash2,
+  Copy,
+  Pencil,
+  Plus,
+  KeyRound,
+  Table2,
+  X,
+  Minimize2,
+  Maximize2,
+} from 'lucide-react'
 import type {
   UmlNodeData,
   NodeAccentColor,
@@ -211,20 +221,29 @@ export const ErEntityNode = memo(({ id, data, selected }: NodeProps) => {
     typeof nodeData.height === 'number' ? nodeData.height : undefined
 
   const isWeak = Boolean(nodeData.isWeakEntity)
+  const isMinimized = Boolean(nodeData.isMinimized)
+
+  const handleToggleMinimize = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    updateNodeData(id, { isMinimized: !isMinimized })
+  }
 
   return (
     <div
       className={`group relative flex flex-col rounded-[6px] bg-[var(--bg-primary)] transition-colors select-none border-[1.5px] ${
+        isMinimized ? 'justify-center' : ''
+      } ${
         selected
           ? 'ring-2 ring-[var(--primary-btn)] shadow-md'
           : 'hover:border-[var(--text-primary)] shadow-sm'
       }`}
       style={{
         width: customW ?? 230,
-        height: customH,
+        height: isMinimized ? 44 : customH,
         minWidth: 190,
-        minHeight: 88,
+        minHeight: isMinimized ? 44 : 88,
         borderColor: selected ? 'var(--primary-btn)' : accent.border,
+        backgroundColor: isMinimized ? accent.headerBg : undefined,
       }}
     >
       {/* Weak entity diamond shape inscribed within the entity */}
@@ -246,7 +265,7 @@ export const ErEntityNode = memo(({ id, data, selected }: NodeProps) => {
       )}
       {!isLocked && (
         <NodeResizer
-          isVisible={selected}
+          isVisible={selected && !isMinimized}
           minWidth={190}
           minHeight={88}
           lineClassName="!border-[var(--primary-btn)] pointer-events-auto"
@@ -313,20 +332,25 @@ export const ErEntityNode = memo(({ id, data, selected }: NodeProps) => {
         </NodeToolbar>
       )}
 
-      {/* Entity Header */}
-      <div
-        className="flex items-center justify-between gap-1.5 px-2.5 py-2 rounded-t-[5px] border-b border-[var(--border-default)]"
-        style={{ backgroundColor: accent.headerBg }}
-        onDoubleClick={(e) => {
-          e.stopPropagation()
-          if (!isLocked) setIsEditingTitle(true)
-        }}
-      >
-        <div className="flex items-center gap-1.5 min-w-0 flex-1">
-          <Table2
-            className="w-3.5 h-3.5 shrink-0 opacity-80"
+      {isMinimized ? (
+        <div
+          className="relative flex items-center justify-center w-full h-full px-7 rounded-[5px]"
+          onDoubleClick={(e) => {
+            e.stopPropagation()
+            if (!isLocked) setIsEditingTitle(true)
+          }}
+        >
+          <button
+            type="button"
+            title="Expand entity"
+            onClick={handleToggleMinimize}
+            onPointerDown={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
             style={{ color: accent.headerText }}
-          />
+            className="nodrag nopan absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center rounded-[3px] opacity-0 group-hover:opacity-100 hover:bg-[var(--hover-bg)] transition-opacity cursor-pointer z-[2]"
+          >
+            <Maximize2 className="w-3 h-3" />
+          </button>
           <div
             ref={titleRef}
             contentEditable={isEditingTitle && !isLocked}
@@ -341,7 +365,7 @@ export const ErEntityNode = memo(({ id, data, selected }: NodeProps) => {
               if (isEditingTitle) e.stopPropagation()
             }}
             style={{ color: accent.headerText }}
-            className={`text-xs font-bold leading-snug outline-none truncate ${
+            className={`text-xs font-bold leading-snug outline-none text-center truncate max-w-full ${
               isEditingTitle
                 ? 'nodrag select-text cursor-text bg-[var(--bg-primary)] px-1 rounded-[3px] ring-1 ring-[var(--primary-btn)] min-w-[60px]'
                 : 'cursor-inherit'
@@ -350,125 +374,179 @@ export const ErEntityNode = memo(({ id, data, selected }: NodeProps) => {
             {nodeData.label || 'Entity'}
           </div>
         </div>
-
-        {isWeak && (
-          <span className="shrink-0 text-[9px] font-mono uppercase px-1 py-0.5 rounded bg-[var(--bg-primary)]/70 border border-[var(--border-subtle)] text-[var(--text-tertiary)]">
-            weak
-          </span>
-        )}
-      </div>
-
-      {/* Attributes List */}
-      <div className="flex-1 flex flex-col divide-y divide-[var(--border-subtle)]/60 overflow-hidden">
-        {attributes.length === 0 ? (
-          <div className="px-2.5 py-2.5 text-[11px] text-[var(--text-tertiary)] italic text-center">
-            No attributes
-          </div>
-        ) : (
-          attributes.map((attr) => (
-            <div
-              key={attr.id}
-              className="group/attr flex items-center justify-between gap-1.5 px-2.5 py-1 text-[11px] hover:bg-[var(--hover-bg)]/60 transition-colors"
-              onDoubleClick={(e) => {
-                e.stopPropagation()
-                if (!isLocked) {
-                  setEditingAttrId(attr.id)
-                  setEditingAttrValue(attr.name)
-                }
-              }}
-            >
-              <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                {attr.isPrimaryKey ? (
-                  <span
-                    title="Primary Key"
-                    className="inline-flex items-center gap-0.5 px-1 py-0 rounded text-[9px] font-mono font-bold bg-[var(--notion-yellow-bg)] text-[var(--notion-yellow-text)] shrink-0"
-                  >
-                    <KeyRound className="w-2.5 h-2.5" />
-                    PK
-                  </span>
-                ) : attr.isForeignKey ? (
-                  <span
-                    title="Foreign Key"
-                    className="inline-flex items-center px-1 py-0 rounded text-[9px] font-mono font-bold bg-[var(--notion-blue-bg)] text-[var(--notion-blue-text)] shrink-0"
-                  >
-                    FK
-                  </span>
-                ) : (
-                  <span className="w-3.5 text-center text-[var(--text-tertiary)] shrink-0">
-                    ·
-                  </span>
-                )}
-
-                {editingAttrId === attr.id ? (
-                  <input
-                    type="text"
-                    autoFocus
-                    value={editingAttrValue}
-                    onChange={(e) => setEditingAttrValue(e.target.value)}
-                    onBlur={() => commitAttrRename(attr.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault()
-                        commitAttrRename(attr.id)
-                      } else if (e.key === 'Escape') {
-                        e.preventDefault()
-                        setEditingAttrId(null)
-                      }
-                    }}
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onMouseDown={(e) => e.stopPropagation()}
-                    className="nodrag w-full px-1 py-0 text-[11px] font-mono bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--primary-btn)] rounded-[2px] outline-none"
-                  />
-                ) : (
-                  <span
-                    className={`truncate font-mono ${
-                      attr.isPrimaryKey
-                        ? 'font-semibold text-[var(--text-primary)] underline decoration-[var(--notion-yellow-text)]/50'
-                        : 'text-[var(--text-primary)]'
-                    }`}
-                  >
-                    {attr.name}
-                    {attr.isNullable ? '?' : ''}
-                  </span>
-                )}
+      ) : (
+        <>
+          {/* Entity Header */}
+          <div
+            className="flex items-center justify-between gap-1.5 px-2.5 py-2 rounded-t-[5px] border-b border-[var(--border-default)]"
+            style={{ backgroundColor: accent.headerBg }}
+            onDoubleClick={(e) => {
+              e.stopPropagation()
+              if (!isLocked) setIsEditingTitle(true)
+            }}
+          >
+            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+              <div className="relative w-3.5 h-3.5 shrink-0 flex items-center justify-center">
+                <Table2
+                  className="w-3.5 h-3.5 opacity-80 transition-opacity group-hover:opacity-0"
+                  style={{ color: accent.headerText }}
+                />
+                <button
+                  type="button"
+                  title="Minimize entity"
+                  onClick={handleToggleMinimize}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  style={{ color: accent.headerText }}
+                  className="nodrag nopan absolute inset-0 flex items-center justify-center rounded-[3px] opacity-0 group-hover:opacity-100 hover:bg-[var(--hover-bg)] transition-opacity cursor-pointer"
+                >
+                  <Minimize2 className="w-3 h-3" />
+                </button>
               </div>
-
-              <div className="flex items-center gap-1 shrink-0">
-                {attr.isUnique && !attr.isPrimaryKey && (
-                  <span className="text-[8.5px] font-mono px-1 rounded bg-[var(--notion-purple-bg)] text-[var(--notion-purple-text)]">
-                    UQ
-                  </span>
-                )}
-                <span className="text-[10px] font-mono text-[var(--text-tertiary)]">
-                  {attr.dataType || 'varchar'}
-                </span>
-                {selected && !isLocked && (
-                  <button
-                    type="button"
-                    onClick={(e) => handleRemoveAttribute(attr.id, e)}
-                    title="Remove attribute"
-                    className="opacity-0 group-hover/attr:opacity-100 p-0.5 rounded hover:bg-[var(--notion-red-bg)] text-[var(--text-tertiary)] hover:text-[var(--notion-red-text)] transition-opacity cursor-pointer"
-                  >
-                    <X className="w-2.5 h-2.5" />
-                  </button>
-                )}
+              <div
+                ref={titleRef}
+                contentEditable={isEditingTitle && !isLocked}
+                suppressContentEditableWarning
+                onBlur={handleFinishEditingTitle}
+                onKeyDown={handleTitleKeyDown}
+                onPaste={handlePaste}
+                onPointerDown={(e) => {
+                  if (isEditingTitle) e.stopPropagation()
+                }}
+                onMouseDown={(e) => {
+                  if (isEditingTitle) e.stopPropagation()
+                }}
+                style={{ color: accent.headerText }}
+                className={`text-xs font-bold leading-snug outline-none truncate ${
+                  isEditingTitle
+                    ? 'nodrag select-text cursor-text bg-[var(--bg-primary)] px-1 rounded-[3px] ring-1 ring-[var(--primary-btn)] min-w-[60px]'
+                    : 'cursor-inherit'
+                }`}
+              >
+                {nodeData.label || 'Entity'}
               </div>
             </div>
-          ))
-        )}
-      </div>
 
-      {/* Inline Add Attribute footer when selected */}
-      {selected && !isLocked && (
-        <button
-          type="button"
-          onClick={handleAddAttribute}
-          onPointerDown={(e) => e.stopPropagation()}
-          className="nodrag flex items-center justify-center gap-1 py-1 text-[10px] font-medium text-[var(--text-tertiary)] hover:text-[var(--primary-btn)] hover:bg-[var(--hover-bg)] border-t border-[var(--border-subtle)] rounded-b-[5px] transition-colors cursor-pointer"
-        >
-          <Plus className="w-3 h-3" />
-          <span>Add attribute</span>
-        </button>
+            {isWeak && (
+              <span className="shrink-0 text-[9px] font-mono uppercase px-1 py-0.5 rounded bg-[var(--bg-primary)]/70 border border-[var(--border-subtle)] text-[var(--text-tertiary)]">
+                weak
+              </span>
+            )}
+          </div>
+
+          {/* Attributes List */}
+          <div className="flex-1 flex flex-col divide-y divide-[var(--border-subtle)]/60 overflow-hidden">
+            {attributes.length === 0 ? (
+              <div className="px-2.5 py-2.5 text-[11px] text-[var(--text-tertiary)] italic text-center">
+                No attributes
+              </div>
+            ) : (
+              attributes.map((attr) => (
+                <div
+                  key={attr.id}
+                  className="group/attr flex items-center justify-between gap-1.5 px-2.5 py-1 text-[11px] hover:bg-[var(--hover-bg)]/60 transition-colors"
+                  onDoubleClick={(e) => {
+                    e.stopPropagation()
+                    if (!isLocked) {
+                      setEditingAttrId(attr.id)
+                      setEditingAttrValue(attr.name)
+                    }
+                  }}
+                >
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                    {attr.isPrimaryKey ? (
+                      <span
+                        title="Primary Key"
+                        className="inline-flex items-center gap-0.5 px-1 py-0 rounded text-[9px] font-mono font-bold bg-[var(--notion-yellow-bg)] text-[var(--notion-yellow-text)] shrink-0"
+                      >
+                        <KeyRound className="w-2.5 h-2.5" />
+                        PK
+                      </span>
+                    ) : attr.isForeignKey ? (
+                      <span
+                        title="Foreign Key"
+                        className="inline-flex items-center px-1 py-0 rounded text-[9px] font-mono font-bold bg-[var(--notion-blue-bg)] text-[var(--notion-blue-text)] shrink-0"
+                      >
+                        FK
+                      </span>
+                    ) : (
+                      <span className="w-3.5 text-center text-[var(--text-tertiary)] shrink-0">
+                        ·
+                      </span>
+                    )}
+
+                    {editingAttrId === attr.id ? (
+                      <input
+                        type="text"
+                        autoFocus
+                        value={editingAttrValue}
+                        onChange={(e) => setEditingAttrValue(e.target.value)}
+                        onBlur={() => commitAttrRename(attr.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            commitAttrRename(attr.id)
+                          } else if (e.key === 'Escape') {
+                            e.preventDefault()
+                            setEditingAttrId(null)
+                          }
+                        }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        className="nodrag w-full px-1 py-0 text-[11px] font-mono bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--primary-btn)] rounded-[2px] outline-none"
+                      />
+                    ) : (
+                      <span
+                        className={`truncate font-mono ${
+                          attr.isPrimaryKey
+                            ? 'font-semibold text-[var(--text-primary)] underline decoration-[var(--notion-yellow-text)]/50'
+                            : 'text-[var(--text-primary)]'
+                        }`}
+                      >
+                        {attr.name}
+                        {attr.isNullable ? '?' : ''}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    {attr.isUnique && !attr.isPrimaryKey && (
+                      <span className="text-[8.5px] font-mono px-1 rounded bg-[var(--notion-purple-bg)] text-[var(--notion-purple-text)]">
+                        UQ
+                      </span>
+                    )}
+                    <span className="text-[10px] font-mono text-[var(--text-tertiary)]">
+                      {attr.dataType || 'varchar'}
+                    </span>
+                    {selected && !isLocked && (
+                      <button
+                        type="button"
+                        onClick={(e) => handleRemoveAttribute(attr.id, e)}
+                        title="Remove attribute"
+                        className="opacity-0 group-hover/attr:opacity-100 p-0.5 rounded hover:bg-[var(--notion-red-bg)] text-[var(--text-tertiary)] hover:text-[var(--notion-red-text)] transition-opacity cursor-pointer"
+                      >
+                        <X className="w-2.5 h-2.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Inline Add Attribute footer when selected */}
+          {selected && !isLocked && (
+            <button
+              type="button"
+              onClick={handleAddAttribute}
+              onPointerDown={(e) => e.stopPropagation()}
+              className="nodrag flex items-center justify-center gap-1 py-1 text-[10px] font-medium text-[var(--text-tertiary)] hover:text-[var(--primary-btn)] hover:bg-[var(--hover-bg)] border-t border-[var(--border-subtle)] rounded-b-[5px] transition-colors cursor-pointer"
+            >
+              <Plus className="w-3 h-3" />
+              <span>Add attribute</span>
+            </button>
+          )}
+        </>
       )}
 
       {/* 4-way connection handles */}
