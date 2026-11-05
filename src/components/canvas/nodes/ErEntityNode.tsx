@@ -17,6 +17,7 @@ import {
   X,
   Minimize2,
   Maximize2,
+  GripVertical,
 } from 'lucide-react'
 import type {
   UmlNodeData,
@@ -70,7 +71,12 @@ export const ErEntityNode = memo(({ id, data, selected }: NodeProps) => {
   )
   const [editingAttrId, setEditingAttrId] = useState<string | null>(null)
   const [editingAttrValue, setEditingAttrValue] = useState('')
+  const [dragAttrState, setDragAttrState] = useState<{
+    draggingId: string
+    insertIndex: number
+  } | null>(null)
   const titleRef = useRef<HTMLDivElement>(null)
+  const attrRowRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const autoFocusGraceUntilRef = useRef(
     nodeData.autoFocusEdit ? Date.now() + 180 : 0
   )
@@ -89,6 +95,8 @@ export const ErEntityNode = memo(({ id, data, selected }: NodeProps) => {
   const attributes: ErAttribute[] = Array.isArray(nodeData.attributes)
     ? nodeData.attributes
     : []
+  const attributesRef = useRef<ErAttribute[]>(attributes)
+  attributesRef.current = attributes
 
   useEffect(() => {
     if (nodeData.autoFocusEdit) {
@@ -219,6 +227,70 @@ export const ErEntityNode = memo(({ id, data, selected }: NodeProps) => {
       })
     }
     setEditingAttrId(null)
+  }
+
+  const handleStartAttrDrag = (
+    attrId: string,
+    startIndex: number,
+    e: React.PointerEvent
+  ) => {
+    if (isLocked || attributesRef.current.length < 2) return
+    e.stopPropagation()
+    e.preventDefault()
+
+    let currentInsertIndex = startIndex
+    setDragAttrState({ draggingId: attrId, insertIndex: startIndex })
+
+    const computeInsertIndex = (clientY: number) => {
+      const list = attributesRef.current
+      for (let i = 0; i < list.length; i++) {
+        const el = attrRowRefs.current.get(list[i].id)
+        if (!el) continue
+        const rect = el.getBoundingClientRect()
+        if (clientY < rect.top + rect.height / 2) {
+          return i
+        }
+      }
+      return list.length
+    }
+
+    const onPointerMove = (ev: PointerEvent) => {
+      const nextIdx = computeInsertIndex(ev.clientY)
+      if (nextIdx !== currentInsertIndex) {
+        currentInsertIndex = nextIdx
+        setDragAttrState({ draggingId: attrId, insertIndex: nextIdx })
+      }
+    }
+
+    const onPointerUp = () => {
+      window.removeEventListener('pointermove', onPointerMove)
+      window.removeEventListener('pointerup', onPointerUp)
+      window.removeEventListener('pointercancel', onPointerUp)
+
+      const list = attributesRef.current
+      const fromIndex = list.findIndex((a) => a.id === attrId)
+      const targetIndex =
+        currentInsertIndex > fromIndex
+          ? currentInsertIndex - 1
+          : currentInsertIndex
+
+      if (
+        fromIndex !== -1 &&
+        targetIndex >= 0 &&
+        targetIndex < list.length &&
+        targetIndex !== fromIndex
+      ) {
+        const reordered = [...list]
+        const [moved] = reordered.splice(fromIndex, 1)
+        reordered.splice(targetIndex, 0, moved)
+        updateNodeData(id, { attributes: reordered })
+      }
+      setDragAttrState(null)
+    }
+
+    window.addEventListener('pointermove', onPointerMove)
+    window.addEventListener('pointerup', onPointerUp)
+    window.addEventListener('pointercancel', onPointerUp)
   }
 
   const handleDuplicate = (e: React.MouseEvent) => {
@@ -467,10 +539,35 @@ export const ErEntityNode = memo(({ id, data, selected }: NodeProps) => {
                 No attributes
               </div>
             ) : (
-              attributes.map((attr) => (
+              attributes.map((attr, index) => {
+                const isDraggingThis = dragAttrState?.draggingId === attr.id
+                const showTopIndicator =
+                  dragAttrState !== null &&
+                  dragAttrState.insertIndex === index &&
+                  !isDraggingThis
+                const showBottomIndicator =
+                  dragAttrState !== null &&
+                  index === attributes.length - 1 &&
+                  dragAttrState.insertIndex === attributes.length &&
+                  !isDraggingThis
+
+                return (
                 <div
                   key={attr.id}
-                  className="group/attr flex items-center justify-between gap-1.5 px-2.5 py-1 text-[11px] hover:bg-[var(--hover-bg)]/60 transition-colors"
+                  ref={(el) => {
+                    if (el) attrRowRefs.current.set(attr.id, el)
+                    else attrRowRefs.current.delete(attr.id)
+                  }}
+                  style={{
+                    boxShadow: showTopIndicator
+                      ? 'inset 0 2px 0 0 var(--primary-btn)'
+                      : showBottomIndicator
+                        ? 'inset 0 -2px 0 0 var(--primary-btn)'
+                        : undefined,
+                  }}
+                  className={`group/attr flex items-center justify-between gap-1.5 px-2.5 py-1 text-[11px] hover:bg-[var(--hover-bg)]/60 transition-colors ${
+                    isDraggingThis ? 'opacity-45 bg-[var(--hover-bg)]' : ''
+                  }`}
                   onDoubleClick={(e) => {
                     e.stopPropagation()
                     if (!isLocked) {
@@ -480,6 +577,18 @@ export const ErEntityNode = memo(({ id, data, selected }: NodeProps) => {
                   }}
                 >
                   <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                    {selected && !isLocked && attributes.length > 1 && (
+                      <span
+                        title="Drag to reorder"
+                        onPointerDown={(e) =>
+                          handleStartAttrDrag(attr.id, index, e)
+                        }
+                        onMouseDown={(e) => e.stopPropagation()}
+                        className="nodrag nopan cursor-grab active:cursor-grabbing opacity-0 group-hover/attr:opacity-70 hover:!opacity-100 text-[var(--text-tertiary)] shrink-0 -ml-1 flex items-center"
+                      >
+                        <GripVertical className="w-3 h-3" />
+                      </span>
+                    )}
                     {attr.isPrimaryKey ? (
                       <span
                         title="Primary Key"
@@ -556,7 +665,8 @@ export const ErEntityNode = memo(({ id, data, selected }: NodeProps) => {
                     )}
                   </div>
                 </div>
-              ))
+                )
+              })
             )}
           </div>
 
