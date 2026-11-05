@@ -803,6 +803,30 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                             />
                             <button
                               type="button"
+                              onClick={() => {
+                                const existingNames = new Set(
+                                  attrs.map((a) => a.name)
+                                )
+                                let copyName = `${attr.name}_copy`
+                                let suffix = 2
+                                while (existingNames.has(copyName)) {
+                                  copyName = `${attr.name}_copy_${suffix++}`
+                                }
+                                const next = [...attrs]
+                                next.splice(idx + 1, 0, {
+                                  ...attr,
+                                  id: `attr-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+                                  name: copyName,
+                                })
+                                updateAttrs(next)
+                              }}
+                              title="Duplicate attribute"
+                              className="p-1 rounded-[4px] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] transition-colors cursor-pointer"
+                            >
+                              <Copy className="w-3 h-3" />
+                            </button>
+                            <button
+                              type="button"
                               onClick={() =>
                                 updateAttrs(attrs.filter((a) => a.id !== attr.id))
                               }

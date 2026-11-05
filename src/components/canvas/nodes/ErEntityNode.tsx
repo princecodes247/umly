@@ -209,6 +209,30 @@ export const ErEntityNode = memo(({ id, data, selected }: NodeProps) => {
     setEditingAttrValue(nextAttr.name)
   }
 
+  const handleDuplicateAttribute = (attrId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (isLocked) return
+    const idx = attributes.findIndex((a) => a.id === attrId)
+    if (idx === -1) return
+    const source = attributes[idx]
+    const existingNames = new Set(attributes.map((a) => a.name))
+    let copyName = `${source.name}_copy`
+    let suffix = 2
+    while (existingNames.has(copyName)) {
+      copyName = `${source.name}_copy_${suffix++}`
+    }
+    const duplicated: ErAttribute = {
+      ...source,
+      id: `attr-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+      name: copyName,
+    }
+    const next = [...attributes]
+    next.splice(idx + 1, 0, duplicated)
+    updateNodeData(id, { attributes: next })
+    setEditingAttrId(duplicated.id)
+    setEditingAttrValue(duplicated.name)
+  }
+
   const handleRemoveAttribute = (attrId: string, e: React.MouseEvent) => {
     e.stopPropagation()
     if (isLocked) return
@@ -654,14 +678,26 @@ export const ErEntityNode = memo(({ id, data, selected }: NodeProps) => {
                       {attr.dataType || 'varchar'}
                     </span>
                     {selected && !isLocked && (
-                      <button
-                        type="button"
-                        onClick={(e) => handleRemoveAttribute(attr.id, e)}
-                        title="Remove attribute"
-                        className="opacity-0 group-hover/attr:opacity-100 p-0.5 rounded hover:bg-[var(--notion-red-bg)] text-[var(--text-tertiary)] hover:text-[var(--notion-red-text)] transition-opacity cursor-pointer"
-                      >
-                        <X className="w-2.5 h-2.5" />
-                      </button>
+                      <div className="opacity-0 group-hover/attr:opacity-100 flex items-center gap-0.5 transition-opacity">
+                        <button
+                          type="button"
+                          onClick={(e) => handleDuplicateAttribute(attr.id, e)}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          title="Duplicate attribute"
+                          className="nodrag nopan p-0.5 rounded hover:bg-[var(--hover-bg)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] cursor-pointer"
+                        >
+                          <Copy className="w-2.5 h-2.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => handleRemoveAttribute(attr.id, e)}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          title="Remove attribute"
+                          className="nodrag nopan p-0.5 rounded hover:bg-[var(--notion-red-bg)] text-[var(--text-tertiary)] hover:text-[var(--notion-red-text)] cursor-pointer"
+                        >
+                          <X className="w-2.5 h-2.5" />
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
