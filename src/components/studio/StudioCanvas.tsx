@@ -165,6 +165,37 @@ function getNodeDimensions(n: Node): { w: number; h: number } {
   }
 }
 
+function expandIdsWithBoundaryChildren(
+  initialIds: Set<string>,
+  allNodes: Node[]
+): Set<string> {
+  const result = new Set(initialIds)
+  let changed = true
+  while (changed) {
+    changed = false
+    for (const b of allNodes) {
+      if (!result.has(b.id) || b.type !== 'boundary') continue
+      const { w: bw, h: bh } = getNodeDimensions(b)
+      const bx1 = b.position.x
+      const by1 = b.position.y
+      const bx2 = bx1 + bw
+      const by2 = by1 + bh
+
+      for (const n of allNodes) {
+        if (result.has(n.id)) continue
+        const { w: nw, h: nh } = getNodeDimensions(n)
+        const cx = n.position.x + nw / 2
+        const cy = n.position.y + nh / 2
+        if (cx >= bx1 && cx <= bx2 && cy >= by1 && cy <= by2) {
+          result.add(n.id)
+          changed = true
+        }
+      }
+    }
+  }
+  return result
+}
+
 const MULTI_SELECTION_KEY_CODES = ['Meta', 'Control', 'Shift']
 
 interface StudioCanvasProps {
@@ -525,6 +556,30 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
   // Custom onNodesChange wrapper: Snaps by default unless Shift is held
   const handleNodesChange = useCallback(
     (changes: NodeChange<Node>[]) => {
+      const removedIds = new Set(
+        changes
+          .filter((c): c is Extract<NodeChange<Node>, { type: 'remove' }> => c.type === 'remove')
+          .map((c) => c.id)
+      )
+      if (removedIds.size > 0) {
+        const expandedIds = expandIdsWithBoundaryChildren(removedIds, nodes)
+        if (expandedIds.size > removedIds.size) {
+          const extraRemoves: NodeChange<Node>[] = []
+          expandedIds.forEach((id) => {
+            if (!removedIds.has(id)) {
+              extraRemoves.push({ type: 'remove', id })
+            }
+          })
+          setEdges((eds) =>
+            eds.filter(
+              (e) => !expandedIds.has(e.source) && !expandedIds.has(e.target)
+            )
+          )
+          onNodesChange([...changes, ...extraRemoves])
+          return
+        }
+      }
+
       const posChanges = changes.filter(
         (c): c is Extract<NodeChange<Node>, { type: 'position' }> =>
           c.type === 'position' && Boolean(c.position)
@@ -665,7 +720,7 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
 
       onNodesChange(changes)
     },
-    [nodes, onNodesChange]
+    [nodes, onNodesChange, setEdges]
   )
 
   const onNodeDragStart: OnNodeDrag<Node> = useCallback(
@@ -1407,7 +1462,10 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
     if (selectedNodes.length === 0 && selectedEdges.length === 0) return
 
     pushSnapshot()
-    const selNodeIds = new Set(selectedNodes.map((n) => n.id))
+    const selNodeIds = expandIdsWithBoundaryChildren(
+      new Set(selectedNodes.map((n) => n.id)),
+      nodes
+    )
     const selEdgeIds = new Set(selectedEdges.map((e) => e.id))
 
     setNodes((nds) => nds.filter((n) => !selNodeIds.has(n.id)))
@@ -1421,7 +1479,7 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
     )
     setSelectedNodes([])
     setSelectedEdges([])
-  }, [selectedNodes, selectedEdges, pushSnapshot, setNodes, setEdges])
+  }, [selectedNodes, selectedEdges, nodes, pushSnapshot, setNodes, setEdges])
 
   const handleDeselectAll = useCallback(() => {
     setNodes((nds) => nds.map((n) => ({ ...n, selected: false })))
@@ -1827,11 +1885,16 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
   const handleDeleteNode = useCallback(
     (id: string) => {
       pushSnapshot()
-      setNodes((nds) => nds.filter((n) => n.id !== id))
-      setEdges((eds) => eds.filter((e) => e.source !== id && e.target !== id))
-      setSelectedNodes((prev) => prev.filter((n) => n.id !== id))
+      const idsToDelete = expandIdsWithBoundaryChildren(new Set([id]), nodes)
+      setNodes((nds) => nds.filter((n) => !idsToDelete.has(n.id)))
+      setEdges((eds) =>
+        eds.filter(
+          (e) => !idsToDelete.has(e.source) && !idsToDelete.has(e.target)
+        )
+      )
+      setSelectedNodes((prev) => prev.filter((n) => !idsToDelete.has(n.id)))
     },
-    [pushSnapshot, setNodes, setEdges]
+    [nodes, pushSnapshot, setNodes, setEdges]
   )
 
   // Edge deletion
