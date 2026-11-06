@@ -12,6 +12,7 @@ import {
   useEdgesState,
   reconnectEdge,
   useReactFlow,
+  useStoreApi,
   ReactFlowProvider,
   ViewportPortal,
   BackgroundVariant,
@@ -164,12 +165,15 @@ function getNodeDimensions(n: Node): { w: number; h: number } {
   }
 }
 
+const MULTI_SELECTION_KEY_CODES = ['Meta', 'Control', 'Shift']
+
 interface StudioCanvasProps {
   diagramId?: string
 }
 
 function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
   const reactFlowInstance = useReactFlow()
+  const storeApi = useStoreApi()
   const canvasRef = useRef<HTMLDivElement>(null)
 
   // Resolve active diagram draft ID
@@ -486,17 +490,37 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
     const onBlur = () => {
       shiftKeyPressedRef.current = false
       setAlignmentGuides({ vertical: null, horizontal: null })
+      if (storeApi.getState().multiSelectionActive) {
+        storeApi.setState({ multiSelectionActive: false })
+      }
+    }
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        onBlur()
+      }
+    }
+    const onPointerDownCapture = (e: PointerEvent) => {
+      if (!e.shiftKey && !e.metaKey && !e.ctrlKey) {
+        shiftKeyPressedRef.current = false
+        if (storeApi.getState().multiSelectionActive) {
+          storeApi.setState({ multiSelectionActive: false })
+        }
+      }
     }
 
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('keyup', onKeyUp)
     window.addEventListener('blur', onBlur)
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    window.addEventListener('pointerdown', onPointerDownCapture, true)
     return () => {
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)
       window.removeEventListener('blur', onBlur)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+      window.removeEventListener('pointerdown', onPointerDownCapture, true)
     }
-  }, [])
+  }, [storeApi])
 
   // Custom onNodesChange wrapper: Snaps by default unless Shift is held
   const handleNodesChange = useCallback(
@@ -2851,7 +2875,7 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
             connectionRadius={28}
             onSelectionChange={onSelectionChange}
             selectionMode={SelectionMode.Partial}
-            multiSelectionKeyCode={['Meta', 'Control', 'Shift']}
+            multiSelectionKeyCode={MULTI_SELECTION_KEY_CODES}
             selectionKeyCode="Shift"
             panActivationKeyCode="Space"
             zoomOnDoubleClick={false}
