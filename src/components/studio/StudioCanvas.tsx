@@ -1722,40 +1722,20 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
       const edgeId = customEvent.detail?.edgeId
       if (!edgeId) return
 
+      const swapEndpoints = (edge: Edge): Edge =>
+        edge.id !== edgeId
+          ? edge
+          : {
+              ...edge,
+              source: edge.target,
+              target: edge.source,
+              sourceHandle: toSourceHandleId(edge.targetHandle),
+              targetHandle: toTargetHandleId(edge.sourceHandle),
+            }
+
       pushSnapshot()
-      setEdges((eds) =>
-        eds.map((edge) => {
-          if (edge.id !== edgeId) return edge
-          const d = (edge.data || {}) as Partial<UmlEdgeData>
-          return {
-            ...edge,
-            source: edge.target,
-            target: edge.source,
-            sourceHandle: toSourceHandleId(edge.targetHandle),
-            targetHandle: toTargetHandleId(edge.sourceHandle),
-            data:
-              d.relationshipType === 'er'
-                ? {
-                    ...d,
-                    erSourceCardinality: d.erTargetCardinality || 'zero_or_many',
-                    erTargetCardinality: d.erSourceCardinality || 'one_only',
-                  }
-                : edge.data,
-          }
-        })
-      )
-      setSelectedEdges((prev) =>
-        prev.map((edge) => {
-          if (edge.id !== edgeId) return edge
-          return {
-            ...edge,
-            source: edge.target,
-            target: edge.source,
-            sourceHandle: toSourceHandleId(edge.targetHandle),
-            targetHandle: toTargetHandleId(edge.sourceHandle),
-          }
-        })
-      )
+      setEdges((eds) => eds.map(swapEndpoints))
+      setSelectedEdges((prev) => prev.map(swapEndpoints))
     }
 
     const handleDelete = (e: Event) => {
@@ -1834,19 +1814,20 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
   // Flip edge
   const handleFlipEdge = useCallback(
     (id: string) => {
+      const swapEndpoints = (edge: Edge): Edge =>
+        edge.id !== id
+          ? edge
+          : {
+              ...edge,
+              source: edge.target,
+              target: edge.source,
+              sourceHandle: toSourceHandleId(edge.targetHandle),
+              targetHandle: toTargetHandleId(edge.sourceHandle),
+            }
+
       pushSnapshot()
-      setEdges((eds) =>
-        eds.map((edge) => {
-          if (edge.id !== id) return edge
-          return {
-            ...edge,
-            source: edge.target,
-            target: edge.source,
-            sourceHandle: toSourceHandleId(edge.targetHandle),
-            targetHandle: toTargetHandleId(edge.sourceHandle),
-          }
-        })
-      )
+      setEdges((eds) => eds.map(swapEndpoints))
+      setSelectedEdges((prev) => prev.map(swapEndpoints))
     },
     [pushSnapshot, setEdges]
   )
