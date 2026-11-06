@@ -501,10 +501,11 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
   // Custom onNodesChange wrapper: Snaps by default unless Shift is held
   const handleNodesChange = useCallback(
     (changes: NodeChange<Node>[]) => {
-      const draggingPosChanges = changes.filter(
+      const posChanges = changes.filter(
         (c): c is Extract<NodeChange<Node>, { type: 'position' }> =>
-          c.type === 'position' && Boolean(c.dragging) && Boolean(c.position)
+          c.type === 'position' && Boolean(c.position)
       )
+      const isActivelyDragging = posChanges.some((c) => Boolean(c.dragging))
 
       const dragEnded = changes.some(
         (c) => c.type === 'position' && c.dragging === false
@@ -515,8 +516,8 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
       }
 
       // Snapping is ON by default; holding Shift disables snapping
-      if (draggingPosChanges.length > 0 && !shiftKeyPressedRef.current) {
-        const primaryChange = draggingPosChanges[0]
+      if (posChanges.length > 0 && !shiftKeyPressedRef.current) {
+        const primaryChange = posChanges[0]
         const draggedNode = nodes.find((n) => n.id === primaryChange.id)
 
         if (
@@ -545,7 +546,7 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
           let bestAbsDy = SNAP_THRESHOLD
           let hGuide: AlignmentGuides['horizontal'] = null
 
-          const draggingIds = new Set(draggingPosChanges.map((c) => c.id))
+          const draggingIds = new Set(posChanges.map((c) => c.id))
 
           for (const other of nodes) {
             if (
@@ -607,16 +608,24 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
             }
           }
 
-          setAlignmentGuides({ vertical: vGuide, horizontal: hGuide })
+          if (isActivelyDragging) {
+            setAlignmentGuides({ vertical: vGuide, horizontal: hGuide })
+          }
 
           if (bestDx !== null || bestDy !== null) {
             const snappedChanges = changes.map((c) => {
-              if (c.type === 'position' && c.dragging && c.position) {
+              if (c.type === 'position' && c.position) {
                 return {
                   ...c,
                   position: {
-                    x: Math.round(c.position.x + (bestDx ?? 0)),
-                    y: Math.round(c.position.y + (bestDy ?? 0)),
+                    x:
+                      bestDx !== null
+                        ? c.position.x + bestDx
+                        : Math.round(c.position.x),
+                    y:
+                      bestDy !== null
+                        ? c.position.y + bestDy
+                        : Math.round(c.position.y),
                   },
                 }
               }
@@ -626,7 +635,7 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
             return
           }
         }
-      } else if (draggingPosChanges.length > 0 && shiftKeyPressedRef.current) {
+      } else if (isActivelyDragging && shiftKeyPressedRef.current) {
         setAlignmentGuides({ vertical: null, horizontal: null })
       }
 
