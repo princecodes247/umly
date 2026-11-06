@@ -924,7 +924,7 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
             label: diagramType === 'er' ? 'Schema Group' : 'System Boundary',
             width: 440,
             height: 380,
-            autoFocusEdit: options?.autoFocusEdit ?? false,
+            autoFocusEdit: options?.autoFocusEdit ?? true,
           }
           break
         case 'note':
@@ -2394,7 +2394,7 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
 
       handleAddNode(rawType, {
         position: { x: flowPos.x + offsetX, y: flowPos.y + offsetY },
-        autoFocusEdit: rawType !== 'boundary',
+        autoFocusEdit: true,
       })
     },
     [reactFlowInstance, handleAddNode]

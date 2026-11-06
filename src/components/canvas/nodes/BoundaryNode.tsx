@@ -1,4 +1,4 @@
-import { memo, useState, useRef, useEffect } from 'react'
+import { memo, useEffect } from 'react'
 import {
   NodeResizer,
   NodeToolbar,
@@ -8,6 +8,7 @@ import {
 } from '@xyflow/react'
 import { Trash2, Pencil } from 'lucide-react'
 import type { UmlNodeData, NodeAccentColor } from '../../../types/game'
+import { useAutoFocusEdit } from './useAutoFocusEdit'
 
 const BOUNDARY_BORDER_COLOR: Record<NodeAccentColor, string> = {
   default: 'var(--border-strong)',
@@ -41,26 +42,13 @@ export const BoundaryNode = memo(({ id, data, selected }: NodeProps) => {
     }
   }
 
-  const [isEditing, setIsEditing] = useState(Boolean(nodeData.autoFocusEdit))
-  const editRef = useRef<HTMLSpanElement>(null)
-
-  useEffect(() => {
-    if (nodeData.autoFocusEdit) {
-      setIsEditing(true)
-      updateNodeData(id, { autoFocusEdit: false })
-    }
-  }, [id, nodeData.autoFocusEdit, updateNodeData])
-
-  useEffect(() => {
-    if (isEditing && editRef.current) {
-      editRef.current.focus()
-      const selection = window.getSelection()
-      const range = document.createRange()
-      range.selectNodeContents(editRef.current)
-      selection?.removeAllRanges()
-      selection?.addRange(range)
-    }
-  }, [isEditing])
+  const { isEditing, setIsEditing, editRef, shouldIgnoreBlur } =
+    useAutoFocusEdit<HTMLSpanElement>({
+      id,
+      autoFocusEdit: nodeData.autoFocusEdit,
+      selected: Boolean(selected),
+      updateNodeData,
+    })
 
   useEffect(() => {
     if (!isEditing && editRef.current) {
@@ -81,6 +69,7 @@ export const BoundaryNode = memo(({ id, data, selected }: NodeProps) => {
   }, [id, isLocked])
 
   const handleFinishEditing = () => {
+    if (shouldIgnoreBlur()) return
     setIsEditing(false)
     const raw = editRef.current?.innerText ?? ''
     const trimmed = raw.trim() || 'System Boundary'

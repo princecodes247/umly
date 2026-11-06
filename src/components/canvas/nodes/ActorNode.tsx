@@ -1,4 +1,4 @@
-import { memo, useState, useRef, useEffect } from 'react'
+import { memo, useEffect } from 'react'
 import {
   Handle,
   Position,
@@ -9,6 +9,7 @@ import {
 } from '@xyflow/react'
 import { Trash2, Copy, ShieldAlert, Pencil } from 'lucide-react'
 import type { UmlNodeData, NodeAccentColor } from '../../../types/game'
+import { useAutoFocusEdit } from './useAutoFocusEdit'
 
 const ACTOR_ACCENT_COLOR: Record<NodeAccentColor, string> = {
   default: 'var(--text-primary)',
@@ -24,26 +25,13 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
   const { updateNode, updateNodeData, deleteElements } = useReactFlow()
   const isLocked = Boolean(nodeData.isLocked)
 
-  const [isEditing, setIsEditing] = useState(Boolean(nodeData.autoFocusEdit))
-  const editRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (nodeData.autoFocusEdit) {
-      setIsEditing(true)
-      updateNodeData(id, { autoFocusEdit: false })
-    }
-  }, [id, nodeData.autoFocusEdit, updateNodeData])
-
-  useEffect(() => {
-    if (isEditing && editRef.current) {
-      editRef.current.focus()
-      const selection = window.getSelection()
-      const range = document.createRange()
-      range.selectNodeContents(editRef.current)
-      selection?.removeAllRanges()
-      selection?.addRange(range)
-    }
-  }, [isEditing])
+  const { isEditing, setIsEditing, editRef, shouldIgnoreBlur } =
+    useAutoFocusEdit<HTMLDivElement>({
+      id,
+      autoFocusEdit: nodeData.autoFocusEdit,
+      selected: Boolean(selected),
+      updateNodeData,
+    })
 
   useEffect(() => {
     if (!isEditing && editRef.current) {
@@ -63,6 +51,7 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
   }, [id, isLocked])
 
   const handleFinishEditing = () => {
+    if (shouldIgnoreBlur()) return
     setIsEditing(false)
     const raw = editRef.current?.innerText ?? ''
     const trimmed = raw.trim() || 'Actor'
