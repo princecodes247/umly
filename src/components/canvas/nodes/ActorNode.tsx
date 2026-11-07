@@ -149,11 +149,10 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
 
   return (
     <div
-      className={`group relative flex flex-col items-center justify-center p-2.5 rounded-[6px] transition-colors select-none ${
-        selected
+      className={`group relative flex flex-col items-center justify-center p-2.5 rounded-[6px] transition-colors select-none ${selected
           ? 'ring-2 ring-[var(--primary-btn)] bg-[var(--selection-bg)] shadow-xs'
           : 'hover:bg-[var(--hover-bg)]'
-      }`}
+        }`}
       style={{
         width: customW,
         height: customH,
@@ -389,7 +388,7 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
       {/* Actor Label */}
       <div className="text-center text-xs tracking-tight text-[var(--text-primary)] max-w-[130px] leading-tight font-sans">
         <div className="text-[10px] text-[var(--text-tertiary)] font-mono flex items-center justify-center gap-1">
-          <span>{stereotypeLabel}</span>
+          {/* <span>{stereotypeLabel}</span> */}
           {actorType === 'secondary' && (
             <span className="notion-tag notion-tag-orange text-[8.5px] uppercase font-mono px-1 py-0 font-semibold shadow-2xs">
               Sec
@@ -409,9 +408,8 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
           onBlur={handleFinishEditing}
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
-          className={`font-semibold text-xs text-[var(--text-primary)] mt-0.5 break-words cursor-text px-0.5 py-0 whitespace-pre-wrap outline-none caret-[var(--primary-btn)] ${
-            isEditing ? 'nodrag nopan select-text' : ''
-          }`}
+          className={`font-semibold text-xs text-[var(--text-primary)] mt-0.5 break-words cursor-text px-0.5 py-0 whitespace-pre-wrap outline-none caret-[var(--primary-btn)] ${isEditing ? 'nodrag nopan select-text' : ''
+            }`}
           title={!isLocked && !isEditing ? 'Double-click or press Enter to rename' : undefined}
         >
           {nodeData.label || 'Actor'}
