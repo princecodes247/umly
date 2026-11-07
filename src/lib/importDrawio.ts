@@ -17,7 +17,7 @@ export interface ImportedDrawioDiagram {
 
 function decodeHtmlText(raw: string): string {
   if (!raw) return ''
-  // Replace <br> / <div> / <p> boundaries with spaces or newlines before stripping tags
+  // Replace <br> / <div> / <p> boundaries with newlines before stripping tags
   const withBreaks = raw
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<\/(div|p|li|tr)>/gi, '\n')
@@ -58,7 +58,9 @@ async function decompressDiagramContent(encoded: string): Promise<string> {
   }
 
   if (typeof DecompressionStream === 'undefined') {
-    throw new Error('Compressed .drawio files require DecompressionStream support.')
+    throw new Error(
+      'Compressed .drawio files require DecompressionStream support.'
+    )
   }
 
   const ds = new DecompressionStream('deflate-raw')
@@ -101,8 +103,7 @@ function parseAttributeLine(
   const isUnique = /\bUQ\b|\bunique\b/i.test(combined)
   const isNullable = /\?/.test(text) || /\bnull(able)?\b/i.test(combined)
 
-  // Strip PK/FK/UQ prefixes and ?
-  let cleaned = text
+  const cleaned = text
     .replace(/^(PK|FK|UQ|🔑|\*|·)\s+/i, '')
     .replace(/\b(PK|FK|UQ)\b/gi, '')
     .replace(/\?/g, '')
@@ -111,7 +112,6 @@ function parseAttributeLine(
   let name = cleaned
   let dataType = 'varchar'
 
-  // Support "col_name: type" or "col_name type" or "col_name (type)"
   const colonMatch = cleaned.match(/^([^:]+):\s*(.+)$/)
   const parenMatch = cleaned.match(/^([^\s(]+)\s*\(([^)]+)\)$/)
   const spaceMatch = cleaned.match(/^([^\s]+)\s+([a-zA-Z0-9_()[\],]+)$/)
@@ -156,6 +156,29 @@ interface RawCell {
   height: number
 }
 
+function isActorCell(c: RawCell): boolean {
+  const shape = c.style['shape'] || ''
+  return (
+    shape === 'umlActor' ||
+    shape === 'actor' ||
+    /uml\.actor/i.test(shape)
+  )
+}
+
+function isUseCaseCell(c: RawCell): boolean {
+  const shape = c.style['shape'] || ''
+  return (
+    'ellipse' in c.style ||
+    shape === 'ellipse' ||
+    shape === 'umlUseCase' ||
+    (c.style['rounded'] === '1' && c.style['arcSize'] === '50')
+  )
+}
+
+function isNoteCell(c: RawCell): boolean {
+  return c.style['shape'] === 'note' || c.style['shape'] === 'note2'
+}
+
 export async function parseDrawioXml(
   xmlText: string,
   fallbackTitle = 'Imported Draw.io Diagram'
@@ -198,7 +221,11 @@ export async function parseDrawioXml(
   const rawCells: RawCell[] = []
   const cellMap = new Map<string, RawCell>()
 
-  const pushCellElement = (cellEl: Element, overrideId?: string, overrideValue?: string) => {
+  const pushCellElement = (
+    cellEl: Element,
+    overrideId?: string,
+    overrideValue?: string
+  ) => {
     const id = overrideId || cellEl.getAttribute('id') || ''
     if (!id || id === '0' || id === '1') return
 
@@ -251,7 +278,6 @@ export async function parseDrawioXml(
     }
   }
 
-  // Build parent -> children lookup
   const childrenByParent = new Map<string, RawCell[]>()
   for (const c of rawCells) {
     const list = childrenByParent.get(c.parent) || []
@@ -259,7 +285,6 @@ export async function parseDrawioXml(
     childrenByParent.set(c.parent, list)
   }
 
-  // Helper to get absolute coordinates by walking parent chain
   const getAbsPosition = (cell: RawCell): { x: number; y: number } => {
     let x = cell.x
     let y = cell.y
@@ -277,18 +302,29 @@ export async function parseDrawioXml(
     return { x, y }
   }
 
-  // Identify edgeLabel cells so we don't turn them into standalone nodes
+  // Any vertex whose parent is an edge (edgeLabel or text on an edge) is an edge label
   const edgeLabelByEdgeId = new Map<string, string>()
+  const edgeChildCellIds = new Set<string>()
   for (const c of rawCells) {
-    if (c.vertex && c.style['edgeLabel'] && cellMap.get(c.parent)?.edge) {
+    if (c.vertex && (c.style['edgeLabel'] || cellMap.get(c.parent)?.edge)) {
+      edgeChildCellIds.add(c.id)
       const txt = decodeHtmlText(c.value)
-      if (txt) {
+      if (txt && cellMap.get(c.parent)?.edge) {
         edgeLabelByEdgeId.set(c.parent, txt)
       }
     }
   }
 
-  // Detect whether this diagram is ER-oriented
+  const hasUseCaseHints = rawCells.some((c) => {
+    if (c.edge) {
+      const lbl = edgeLabelByEdgeId.get(c.id) || decodeHtmlText(c.value)
+      return /(«|<<)\s*(use|uses|include|includes|extend|extends)\s*(»|>>)/i.test(
+        lbl
+      )
+    }
+    return isActorCell(c) || isUseCaseCell(c)
+  })
+
   const hasErHints = rawCells.some((c) => {
     if (c.edge) {
       return (
@@ -303,30 +339,39 @@ export async function parseDrawioXml(
     )
   })
 
-  // Track which child cells were absorbed as table attributes
-  const absorbedCellIds = new Set<string>()
-  const nodes: Node[] = []
-  const cellIdToNodeId = new Map<string, string>()
-
   const isTableContainer = (c: RawCell): boolean => {
     if (c.style['shape'] === 'table') return true
-    if (c.style['swimlane'] === '1' || 'swimlane' in c.style) {
-      const kids = childrenByParent.get(c.id) || []
+    if ('swimlane' in c.style) {
+      const kids = (childrenByParent.get(c.id) || []).filter(
+        (k) => k.vertex && !edgeChildCellIds.has(k.id)
+      )
+      // If any child is an actor, use case, or note, this swimlane is a System Boundary, not an ER table
+      if (kids.some((k) => isActorCell(k) || isUseCaseCell(k) || isNoteCell(k))) {
+        return false
+      }
       if (
         kids.some(
           (k) =>
             k.style['shape'] === 'tableRow' ||
-            k.style['shape'] === 'partialRectangle' ||
-            (k.vertex && k.height > 0 && k.height <= 42)
+            k.style['shape'] === 'partialRectangle'
         )
       ) {
         return true
       }
-      // Empty swimlane with ER hints is likely a table too if no large child shapes inside
-      if (hasErHints && kids.length === 0 && c.width <= 360) return true
+      if (
+        hasErHints &&
+        !hasUseCaseHints &&
+        kids.every((k) => k.height > 0 && k.height <= 42)
+      ) {
+        return true
+      }
     }
     return false
   }
+
+  const absorbedCellIds = new Set<string>(edgeChildCellIds)
+  const nodes: Node[] = []
+  const cellIdToNodeId = new Map<string, string>()
 
   const collectTableAttributes = (tableCell: RawCell): ErAttribute[] => {
     const attrs: ErAttribute[] = []
@@ -354,7 +399,6 @@ export async function parseDrawioXml(
       } else {
         const text = decodeHtmlText(kid.value)
         if (text) {
-          // Sometimes a single cell has multiple lines of attributes
           for (const line of text.split('\n')) {
             const parsed = parseAttributeLine(line, attrs.length)
             if (parsed) attrs.push(parsed)
@@ -365,9 +409,25 @@ export async function parseDrawioXml(
     return attrs
   }
 
-  // First pass: mark all absorbed table sub-cells so they aren't emitted as standalone nodes
+  // Pre-compute absolute bounds for all vertex cells (used for geometric boundary containment)
+  const absBoundsMap = new Map<
+    string,
+    { x: number; y: number; w: number; h: number }
+  >()
   for (const c of rawCells) {
-    if (!c.vertex) continue
+    if (!c.vertex || absorbedCellIds.has(c.id)) continue
+    const pos = getAbsPosition(c)
+    absBoundsMap.set(c.id, {
+      x: pos.x,
+      y: pos.y,
+      w: c.width || 0,
+      h: c.height || 0,
+    })
+  }
+
+  // First pass: mark all absorbed table sub-cells
+  for (const c of rawCells) {
+    if (!c.vertex || absorbedCellIds.has(c.id)) continue
     if (isTableContainer(c)) {
       const kids = childrenByParent.get(c.id) || []
       for (const kid of kids) {
@@ -378,13 +438,52 @@ export async function parseDrawioXml(
     }
   }
 
+  // Helper: check if a rectangle cell geometrically wraps use cases / actors / notes
+  const geometricallyContainsDiagramElements = (c: RawCell): boolean => {
+    const b = absBoundsMap.get(c.id)
+    if (!b || b.w < 160 || b.h < 120) return false
+    for (const other of rawCells) {
+      if (
+        !other.vertex ||
+        other.id === c.id ||
+        absorbedCellIds.has(other.id)
+      ) {
+        continue
+      }
+      if (!isUseCaseCell(other) && !isActorCell(other) && !isNoteCell(other)) {
+        continue
+      }
+      const ob = absBoundsMap.get(other.id)
+      if (!ob) continue
+      const cx = ob.x + ob.w / 2
+      const cy = ob.y + ob.h / 2
+      if (cx >= b.x && cx <= b.x + b.w && cy >= b.y && cy <= b.y + b.h) {
+        return true
+      }
+    }
+    return false
+  }
+
   // Second pass: convert vertex cells to ReactFlow nodes
+  const standaloneStereotypeTextCells: RawCell[] = []
   for (const c of rawCells) {
-    if (!c.vertex) continue
-    if (absorbedCellIds.has(c.id)) continue
-    if (c.style['edgeLabel']) continue
+    if (!c.vertex || absorbedCellIds.has(c.id)) continue
 
     const label = decodeHtmlText(c.value)
+    const isTextLike =
+      ('text' in c.style || c.style['strokeColor'] === 'none') &&
+      !isActorCell(c) &&
+      !isUseCaseCell(c) &&
+      !isNoteCell(c)
+    if (
+      isTextLike &&
+      /^(«|<<)?\s*(use|uses|include|includes|extend|extends)\s*(»|>>)?$/i.test(
+        label
+      )
+    ) {
+      standaloneStereotypeTextCells.push(c)
+      continue
+    }
     const absPos = getAbsPosition(c)
     const nodeId = `drawio-${c.id}`
 
@@ -413,17 +512,24 @@ export async function parseDrawioXml(
       continue
     }
 
-    if (c.style['shape'] === 'umlActor') {
-      const isSystem = /<<\s*system\s*>>/i.test(label)
+    if (isActorCell(c)) {
+      const isSystem = /(«|<<)\s*system\s*(»|>>)/i.test(label)
+      const cleanLabel =
+        label.replace(/(«|<<)\s*system\s*(»|>>)/gi, '').trim() || 'Actor'
+      // Center Umly's ActorNode (~88x108) on draw.io's actor center
+      const actorX =
+        c.width > 0 ? absPos.x + c.width / 2 - 44 : absPos.x
+      const actorY =
+        c.height > 0 ? absPos.y + c.height / 2 - 54 : absPos.y
       const data: UmlNodeData = {
         nodeType: 'actor',
-        label: label.replace(/<<\s*system\s*>>/gi, '').trim() || 'Actor',
+        label: cleanLabel,
         actorType: isSystem ? 'system' : 'primary',
       }
       nodes.push({
         id: nodeId,
         type: 'actor',
-        position: { x: Math.round(absPos.x), y: Math.round(absPos.y) },
+        position: { x: Math.round(actorX), y: Math.round(actorY) },
         data: data as unknown as Record<string, unknown>,
         zIndex: 10,
       })
@@ -431,10 +537,12 @@ export async function parseDrawioXml(
       continue
     }
 
-    if ('ellipse' in c.style || c.style['shape'] === 'ellipse') {
+    if (isUseCaseCell(c)) {
       const data: UmlNodeData = {
         nodeType: 'useCase',
         label: label || 'Use Case',
+        width: Math.max(110, Math.round(c.width || 148)),
+        height: Math.max(48, Math.round(c.height || 64)),
       }
       nodes.push({
         id: nodeId,
@@ -447,7 +555,7 @@ export async function parseDrawioXml(
       continue
     }
 
-    if (c.style['shape'] === 'note') {
+    if (isNoteCell(c)) {
       const data: UmlNodeData = {
         nodeType: 'note',
         label: label || 'Note',
@@ -467,20 +575,43 @@ export async function parseDrawioXml(
     const hasChildVertices = (childrenByParent.get(c.id) || []).some(
       (k) => k.vertex && !absorbedCellIds.has(k.id)
     )
-    const isContainerLike =
-      hasChildVertices ||
-      'swimlane' in c.style ||
-      c.style['container'] === '1' ||
-      c.style['shape'] === 'umlFrame' ||
-      (c.style['dashed'] === '1' && c.width >= 240 && c.height >= 180)
+    const isTextOnly = 'text' in c.style && c.style['strokeColor'] === 'none'
+    const isBoundaryLike =
+      !isTextOnly &&
+      (hasChildVertices ||
+        'swimlane' in c.style ||
+        c.style['container'] === '1' ||
+        c.style['shape'] === 'umlFrame' ||
+        geometricallyContainsDiagramElements(c) ||
+        (c.width >= 220 &&
+          c.height >= 160 &&
+          (c.style['dashed'] === '1' || c.style['fillColor'] === 'none')))
 
-    if (isContainerLike) {
+    if (isBoundaryLike) {
+      let boundaryTitle = label
+      // If boundary has no direct value, check if a text child near its top serves as its title
+      if (!boundaryTitle) {
+        const kids = childrenByParent.get(c.id) || []
+        const titleCandidate = kids.find(
+          (k) =>
+            k.vertex &&
+            !absorbedCellIds.has(k.id) &&
+            !isUseCaseCell(k) &&
+            !isActorCell(k) &&
+            'text' in k.style &&
+            k.y <= 50
+        )
+        if (titleCandidate) {
+          boundaryTitle = decodeHtmlText(titleCandidate.value)
+          absorbedCellIds.add(titleCandidate.id)
+        }
+      }
       const data: UmlNodeData = {
         nodeType: 'boundary',
-        boundaryTitle: label || 'System Boundary',
-        label: label || 'System Boundary',
-        width: Math.max(260, Math.round(c.width || 440)),
-        height: Math.max(200, Math.round(c.height || 380)),
+        boundaryTitle: boundaryTitle || 'System Boundary',
+        label: boundaryTitle || 'System Boundary',
+        width: Math.max(240, Math.round(c.width || 440)),
+        height: Math.max(180, Math.round(c.height || 380)),
       }
       nodes.push({
         id: nodeId,
@@ -494,8 +625,11 @@ export async function parseDrawioXml(
     }
 
     // Fallback for generic rectangles/text shapes
-    if (hasErHints) {
-      const lines = label.split('\n').map((l) => l.trim()).filter(Boolean)
+    if (hasErHints && !hasUseCaseHints) {
+      const lines = label
+        .split('\n')
+        .map((l) => l.trim())
+        .filter(Boolean)
       const titleLine = lines[0] || 'Entity'
       const attrs = lines
         .slice(1)
@@ -535,15 +669,76 @@ export async function parseDrawioXml(
   }
 
   const isErDiagram =
-    hasErHints || nodes.some((n) => n.type === 'erEntity')
+    (hasErHints && !hasUseCaseHints) ||
+    nodes.some((n) => n.type === 'erEntity')
   const diagramType: DiagramType = isErDiagram ? 'er' : 'use_case'
+
+  const nodeById = new Map(nodes.map((n) => [n.id, n]))
+
+  // Attach floating stereotype text cells (e.g. standalone "Use" / "Extends" boxes) to the nearest dashed edge
+  if (!isErDiagram && standaloneStereotypeTextCells.length > 0) {
+    const pointToSegmentDist = (
+      px: number,
+      py: number,
+      x1: number,
+      y1: number,
+      x2: number,
+      y2: number
+    ) => {
+      const dx = x2 - x1
+      const dy = y2 - y1
+      const lenSq = dx * dx + dy * dy
+      if (lenSq === 0) return Math.hypot(px - x1, py - y1)
+      const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / lenSq))
+      return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy))
+    }
+
+    for (const tc of standaloneStereotypeTextCells) {
+      const tPos = getAbsPosition(tc)
+      const tx = tPos.x + (tc.width || 40) / 2
+      const ty = tPos.y + (tc.height || 20) / 2
+      let bestEdgeId: string | null = null
+      let bestDist = 140
+
+      for (const ec of rawCells) {
+        if (!ec.edge || ec.style['dashed'] !== '1') continue
+        const sNodeId = cellIdToNodeId.get(ec.source)
+        const tNodeId = cellIdToNodeId.get(ec.target)
+        if (!sNodeId || !tNodeId) continue
+        const sNode = nodeById.get(sNodeId)
+        const tNode = nodeById.get(tNodeId)
+        if (!sNode || !tNode) continue
+
+        const sw = Number(sNode.data?.width) || 140
+        const sh = Number(sNode.data?.height) || 64
+        const tw = Number(tNode.data?.width) || 140
+        const th = Number(tNode.data?.height) || 64
+        const dist = pointToSegmentDist(
+          tx,
+          ty,
+          sNode.position.x + sw / 2,
+          sNode.position.y + sh / 2,
+          tNode.position.x + tw / 2,
+          tNode.position.y + th / 2
+        )
+        if (dist < bestDist) {
+          bestDist = dist
+          bestEdgeId = ec.id
+        }
+      }
+
+      if (bestEdgeId && !edgeLabelByEdgeId.has(bestEdgeId)) {
+        edgeLabelByEdgeId.set(bestEdgeId, decodeHtmlText(tc.value))
+      }
+    }
+  }
 
   // Convert edges
   const edges: Edge[] = []
   for (const c of rawCells) {
     if (!c.edge) continue
-    const sourceId = cellIdToNodeId.get(c.source)
-    const targetId = cellIdToNodeId.get(c.target)
+    let sourceId = cellIdToNodeId.get(c.source)
+    let targetId = cellIdToNodeId.get(c.target)
     if (!sourceId || !targetId) continue
 
     const rawLabel = edgeLabelByEdgeId.get(c.id) || decodeHtmlText(c.value)
@@ -571,19 +766,48 @@ export async function parseDrawioXml(
         routingStyle,
       }
     } else {
+      const sNode = nodeById.get(sourceId)
+      const tNode = nodeById.get(targetId)
+      const hasEndArrow =
+        Boolean(c.style['endArrow']) && c.style['endArrow'] !== 'none'
+      const hasStartArrow =
+        Boolean(c.style['startArrow']) && c.style['startArrow'] !== 'none'
+
+      // If draw.io edge has only startArrow (pointing from target -> source), flip endpoints
+      if (hasStartArrow && !hasEndArrow) {
+        ;[sourceId, targetId] = [targetId, sourceId]
+      }
+
+      const isIncludeText =
+        /\b(use|uses|include|includes)\b/i.test(rawLabel) ||
+        /(«|<<)\s*(use|uses|include|includes)\s*(»|>>)/i.test(rawLabel)
+      const isExtendText =
+        /\b(extend|extends)\b/i.test(rawLabel) ||
+        /(«|<<)\s*(extend|extends)\s*(»|>>)/i.test(rawLabel)
+
       let relType: UmlRelationshipType = 'association'
-      if (isDashed && /include/i.test(rawLabel)) {
-        relType = 'include'
-      } else if (isDashed && /extend/i.test(rawLabel)) {
+      if (isExtendText || (isDashed && /\bext/i.test(rawLabel))) {
         relType = 'extend'
+      } else if (isIncludeText || isDashed) {
+        relType = 'include'
       } else if (
-        c.style['endArrow'] === 'block' &&
-        c.style['endFill'] === '0'
+        (c.style['endArrow'] === 'block' &&
+          (c.style['endFill'] === '0' || c.style['fillColor'] === '#ffffff')) ||
+        ((hasEndArrow || hasStartArrow) &&
+          sNode &&
+          tNode &&
+          ((sNode.type === 'useCase' && tNode.type === 'useCase') ||
+            (sNode.type === 'actor' && tNode.type === 'actor')))
       ) {
         relType = 'generalization'
       }
+
       const cleanLabel = rawLabel
-        .replace(/<<\s*(include|extend)\s*>>/gi, '')
+        .replace(
+          /^(«|<<)?\s*(use|uses|include|includes|extend|extends)\s*(»|>>)?$/gi,
+          ''
+        )
+        .replace(/(«|<<)\s*(use|uses|include|includes|extend|extends)\s*(»|>>)/gi, '')
         .trim()
       edgeData = {
         relationshipType: relType,
@@ -596,7 +820,7 @@ export async function parseDrawioXml(
       id: `drawio-edge-${c.id}`,
       source: sourceId,
       target: targetId,
-      type: 'uml',
+      type: 'umlEdge',
       data: edgeData as unknown as Record<string, unknown>,
     })
   }
@@ -608,4 +832,3 @@ export async function parseDrawioXml(
     edges,
   }
 }
-
