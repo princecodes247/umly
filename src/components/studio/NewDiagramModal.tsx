@@ -17,6 +17,7 @@ import {
   type DiagramType,
 } from '../../lib/diagramStorage'
 import { parseDiagramJson } from '../../lib/exportDiagram'
+import { parseDrawioXml } from '../../lib/importDrawio'
 import { DIAGRAM_TEMPLATES } from '../../data/templates'
 
 interface NewDiagramModalProps {
@@ -118,10 +119,36 @@ export const NewDiagramModal: React.FC<NewDiagramModalProps> = ({
   const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+    e.target.value = ''
     const reader = new FileReader()
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const text = event.target?.result as string
+        const isDrawio =
+          /\.(drawio|xml)$/i.test(file.name) ||
+          text.trimStart().startsWith('<')
+
+        if (isDrawio) {
+          const fileTitle = file.name.replace(/\.(drawio|xml)$/i, '')
+          const imported = await parseDrawioXml(text, fileTitle)
+          if (imported && imported.nodes.length > 0) {
+            const draft = createDiagramDraft(
+              imported.title || fileTitle || 'Imported Draw.io Diagram',
+              imported.diagramType
+            )
+            draft.nodes = imported.nodes
+            draft.edges = imported.edges
+            saveDiagramDraft(draft)
+            onClose()
+            onCreated(draft.id)
+            return
+          }
+          alert(
+            'Could not import Draw.io file. Please select a valid .drawio or .xml file.'
+          )
+          return
+        }
+
         const parsed = parseDiagramJson(text)
         if (parsed) {
           const fileTitle = file.name.replace(/\.(umly\.)?json$/i, '')
@@ -137,7 +164,7 @@ export const NewDiagramModal: React.FC<NewDiagramModalProps> = ({
           onCreated(draft.id)
         } else {
           alert(
-            'Invalid diagram JSON file. Please select a valid .umly.json file.'
+            'Invalid diagram file. Please select a valid .umly.json or .drawio file.'
           )
         }
       } catch (err) {
@@ -196,10 +223,10 @@ export const NewDiagramModal: React.FC<NewDiagramModalProps> = ({
                 </div>
                 <div className="min-w-0">
                   <div className="font-semibold text-xs text-[var(--text-primary)]">
-                    Open Existing Project (.umly.json)
+                    Open Existing Project (.umly.json, .drawio)
                   </div>
                   <div className="text-[11px] text-[var(--text-tertiary)] truncate">
-                    Import and edit a previously saved UML diagram file from your computer
+                    Import and edit a saved Umly or Draw.io diagram file from your computer
                   </div>
                 </div>
               </div>
@@ -209,7 +236,7 @@ export const NewDiagramModal: React.FC<NewDiagramModalProps> = ({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".json,application/json"
+                accept=".json,application/json,.drawio,.xml,text/xml,application/xml"
                 className="hidden"
                 onChange={handleFileImport}
               />

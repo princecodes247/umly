@@ -4,6 +4,7 @@ import {
   Undo2,
   Redo2,
   Download,
+  Upload,
   Trash2,
   ChevronDown,
   Check,
@@ -60,6 +61,7 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
   onExportPng,
   onExportSvg,
   onExportJson,
+  onImportJson,
   onExportPlantUml,
   onExportMermaid,
   onCopyPlantUml,
@@ -84,6 +86,7 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
   const exportMenuRef = useRef<HTMLDivElement>(null)
   const moreMenuRef = useRef<HTMLDivElement>(null)
   const historyMenuRef = useRef<HTMLDivElement>(null)
+  const importInputRef = useRef<HTMLInputElement>(null)
 
   const handleDiagramCreated = (newId: string) => {
     navigate({ to: '/studio/$diagramId', params: { diagramId: newId } })
@@ -541,6 +544,41 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
 
             {showMoreMenu && (
               <div className="absolute right-0 mt-1.5 w-60 rounded-[6px] bg-[var(--bg-primary)] border border-[var(--border-default)] shadow-lg py-1 z-50 text-xs">
+                {/* Import Diagram (.umly.json, .drawio) */}
+                {onImportJson && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        importInputRef.current?.click()
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-[var(--hover-bg)] flex items-center gap-2.5 text-[var(--text-primary)] cursor-pointer"
+                    >
+                      <Upload className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
+                      <div className="flex flex-col">
+                        <span className="font-medium">Import Diagram</span>
+                        <span className="text-[10px] text-[var(--text-tertiary)]">
+                          Open .umly.json or .drawio file
+                        </span>
+                      </div>
+                    </button>
+                    <input
+                      ref={importInputRef}
+                      type="file"
+                      accept=".json,application/json,.drawio,.xml,text/xml,application/xml"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        e.target.value = ''
+                        if (file) {
+                          setShowMoreMenu(false)
+                          onImportJson(file)
+                        }
+                      }}
+                    />
+                  </>
+                )}
+
                 {/* Notation Guide */}
                 <button
                   type="button"

@@ -66,6 +66,7 @@ import {
   generateMermaid,
   downloadTextFile,
 } from '../../lib/exportDiagram'
+import { parseDrawioXml } from '../../lib/importDrawio'
 import {
   getDiagramDraft,
   saveDiagramDraft,
@@ -2166,21 +2167,52 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
   const handleImportJson = useCallback(
     (file: File) => {
       const reader = new FileReader()
-      reader.onload = (e) => {
-        const text = e.target?.result as string
-        const parsed = parseDiagramJson(text)
-        if (parsed) {
-          pushSnapshot()
-          setTitle(parsed.title || 'Imported Diagram')
-          setNodes(parsed.nodes)
-          setEdges(parsed.edges)
-          setTimeout(() => {
-            reactFlowInstance.fitView({ padding: 0.2 })
-          }, 50)
-        } else {
-          alert(
-            'Invalid diagram JSON file. Please select a valid .umly.json file.'
-          )
+      reader.onload = async (e) => {
+        try {
+          const text = e.target?.result as string
+          const isDrawio =
+            /\.(drawio|xml)$/i.test(file.name) ||
+            text.trimStart().startsWith('<')
+
+          if (isDrawio) {
+            const fileTitle = file.name.replace(/\.(drawio|xml)$/i, '')
+            const imported = await parseDrawioXml(text, fileTitle)
+            if (imported && imported.nodes.length > 0) {
+              pushSnapshot()
+              setTitle(imported.title || fileTitle || 'Imported Draw.io Diagram')
+              setDiagramType(imported.diagramType)
+              setNodes(imported.nodes)
+              setEdges(imported.edges)
+              setTimeout(() => {
+                reactFlowInstance.fitView({ padding: 0.2 })
+              }, 50)
+              return
+            }
+            alert(
+              'Could not import Draw.io file. Please select a valid .drawio or .xml file.'
+            )
+            return
+          }
+
+          const parsed = parseDiagramJson(text)
+          if (parsed) {
+            pushSnapshot()
+            setTitle(parsed.title || 'Imported Diagram')
+            const hasErEntity = parsed.nodes?.some((n) => n.type === 'erEntity')
+            setDiagramType(hasErEntity ? 'er' : 'use_case')
+            setNodes(parsed.nodes)
+            setEdges(parsed.edges)
+            setTimeout(() => {
+              reactFlowInstance.fitView({ padding: 0.2 })
+            }, 50)
+          } else {
+            alert(
+              'Invalid diagram file. Please select a valid .umly.json or .drawio file.'
+            )
+          }
+        } catch (err) {
+          console.error('Import error:', err)
+          alert('Failed to read the diagram file.')
         }
       }
       reader.readAsText(file)
