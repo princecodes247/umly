@@ -6,6 +6,7 @@ import {
   SquareDashed,
   StickyNote,
   Table2,
+  Boxes,
   Wand2,
   Command,
   HelpCircle,
@@ -18,6 +19,7 @@ export type StudioElementKind =
   | 'boundary'
   | 'note'
   | 'erEntity'
+  | 'umlClass'
 
 interface StudioBottomDockProps {
   diagramType?: DiagramType
@@ -53,6 +55,27 @@ export const StudioBottomDock: React.FC<StudioBottomDockProps> = ({
           {
             id: 'boundary',
             label: 'Schema',
+            shortcut: 'B',
+            icon: <SquareDashed className="w-3.5 h-3.5 text-[#9065b0]" />,
+          },
+          {
+            id: 'note',
+            label: 'Note',
+            shortcut: 'N',
+            icon: <StickyNote className="w-3.5 h-3.5 text-[#cb912f]" />,
+          },
+        ]
+      : diagramType === 'class'
+      ? [
+          {
+            id: 'umlClass',
+            label: 'Class',
+            shortcut: 'C',
+            icon: <Boxes className="w-3.5 h-3.5 text-[#2383e2]" />,
+          },
+          {
+            id: 'boundary',
+            label: 'Package',
             shortcut: 'B',
             icon: <SquareDashed className="w-3.5 h-3.5 text-[#9065b0]" />,
           },

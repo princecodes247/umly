@@ -57,7 +57,7 @@ const DIAGRAM_TYPES: DiagramTypeOption[] = [
     description:
       'Model static structure: classes, attributes, operations, inheritance, and associations.',
     icon: Boxes,
-    status: 'coming_soon',
+    status: 'available',
   },
   {
     type: 'sequence',
@@ -152,10 +152,11 @@ export const NewDiagramModal: React.FC<NewDiagramModalProps> = ({
         const parsed = parseDiagramJson(text)
         if (parsed) {
           const fileTitle = file.name.replace(/\.(umly\.)?json$/i, '')
+          const hasUmlClass = parsed.nodes?.some((n) => n.type === 'umlClass')
           const hasErEntity = parsed.nodes?.some((n) => n.type === 'erEntity')
           const draft = createDiagramDraft(
             parsed.title || fileTitle || 'Imported Diagram',
-            hasErEntity ? 'er' : 'use_case'
+            hasUmlClass ? 'class' : hasErEntity ? 'er' : 'use_case'
           )
           draft.nodes = parsed.nodes
           draft.edges = parsed.edges || []

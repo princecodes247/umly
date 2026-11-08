@@ -204,6 +204,70 @@ export function generatePlantUml(
   nodes: Node[],
   edges: Edge[]
 ): string {
+  const classNodes = nodes.filter((n) => n.type === 'umlClass')
+  if (classNodes.length > 0) {
+    const safeName = (s: string) =>
+      (s || 'Class').replace(/[^a-zA-Z0-9_]/g, '_')
+    const classMap = new Map(
+      classNodes.map((n) => {
+        const d = n.data as unknown as UmlNodeData
+        return [n.id, safeName(d.label || n.id)]
+      })
+    )
+    const lines: string[] = [
+      '@startuml',
+      `title ${title || 'Class Diagram'}`,
+      '',
+    ]
+
+    classNodes.forEach((n) => {
+      const d = n.data as unknown as UmlNodeData
+      const name = classMap.get(n.id) || 'Class'
+      const keyword =
+        d.classKind === 'interface'
+          ? 'interface'
+          : d.classKind === 'abstract'
+            ? 'abstract class'
+            : d.classKind === 'enum'
+              ? 'enum'
+              : 'class'
+      lines.push(`${keyword} ${name} {`)
+      ;(d.classAttributes || []).forEach((a) => {
+        lines.push(`  ${a.visibility}${a.name}: ${a.type}`)
+      })
+      ;(d.classMethods || []).forEach((m) => {
+        lines.push(`  ${m.visibility}${m.name}(${m.params}): ${m.returnType}`)
+      })
+      lines.push('}')
+      lines.push('')
+    })
+
+    edges.forEach((e) => {
+      const s = classMap.get(e.source)
+      const t = classMap.get(e.target)
+      if (!s || !t) return
+      const ed = e.data as unknown as UmlEdgeData
+      const rel = ed?.relationshipType || 'association'
+      const arrow =
+        rel === 'generalization'
+          ? '--|>'
+          : rel === 'realization'
+            ? '..|>'
+            : rel === 'aggregation'
+              ? 'o--'
+              : rel === 'composition'
+                ? '*--'
+                : rel === 'dependency'
+                  ? '..>'
+                  : '--'
+      const lbl = ed?.label ? ` : ${ed.label}` : ''
+      lines.push(`${s} ${arrow} ${t}${lbl}`)
+    })
+
+    lines.push('@enduml')
+    return lines.join('\n')
+  }
+
   const lines: string[] = [
     '@startuml',
     `title ${title || 'Use Case Diagram'}`,
@@ -372,6 +436,64 @@ export function generateMermaid(
       lines.push(
         `  ${sName} ${leftCard(ed?.erSourceCardinality)}${link}${rightCard(ed?.erTargetCardinality)} ${tName} : "${lbl}"`
       )
+    })
+
+    return lines.join('\n')
+  }
+
+  const classNodes = nodes.filter((n) => n.type === 'umlClass')
+  if (classNodes.length > 0) {
+    const safeName = (s: string) =>
+      (s || 'Class').replace(/[^a-zA-Z0-9_]/g, '_')
+    const classMap = new Map(
+      classNodes.map((n) => {
+        const d = n.data as unknown as UmlNodeData
+        return [n.id, safeName(d.label || n.id)]
+      })
+    )
+    const lines: string[] = [
+      '---',
+      `title: ${title || 'Class Diagram'}`,
+      '---',
+      'classDiagram',
+    ]
+
+    classNodes.forEach((n) => {
+      const d = n.data as unknown as UmlNodeData
+      const name = classMap.get(n.id) || 'Class'
+      lines.push(`  class ${name} {`)
+      if (d.classKind === 'interface') lines.push('    <<interface>>')
+      if (d.classKind === 'abstract') lines.push('    <<abstract>>')
+      if (d.classKind === 'enum') lines.push('    <<enumeration>>')
+      ;(d.classAttributes || []).forEach((a) => {
+        lines.push(`    ${a.visibility}${a.type} ${a.name}`)
+      })
+      ;(d.classMethods || []).forEach((m) => {
+        lines.push(`    ${m.visibility}${m.name}(${m.params}) ${m.returnType}`)
+      })
+      lines.push('  }')
+    })
+
+    edges.forEach((e) => {
+      const s = classMap.get(e.source)
+      const t = classMap.get(e.target)
+      if (!s || !t) return
+      const ed = e.data as unknown as UmlEdgeData
+      const rel = ed?.relationshipType || 'association'
+      const arrow =
+        rel === 'generalization'
+          ? '--|>'
+          : rel === 'realization'
+            ? '..|>'
+            : rel === 'aggregation'
+              ? 'o--'
+              : rel === 'composition'
+                ? '*--'
+                : rel === 'dependency'
+                  ? '..>'
+                  : '--'
+      const lbl = ed?.label ? ` : ${ed.label}` : ''
+      lines.push(`  ${s} ${arrow} ${t}${lbl}`)
     })
 
     return lines.join('\n')

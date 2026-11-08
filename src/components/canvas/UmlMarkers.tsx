@@ -24,7 +24,7 @@ export const UmlMarkers: React.FC = () => {
           />
         </marker>
 
-        {/* Generalization hollow triangle arrow */}
+        {/* Generalization / Realization hollow triangle arrow */}
         <marker
           id="uml-generalization"
           viewBox="0 0 14 14"
@@ -39,6 +39,44 @@ export const UmlMarkers: React.FC = () => {
             fill="var(--bg-primary, #ffffff)"
             stroke="currentColor"
             strokeWidth="1.8"
+            strokeLinejoin="round"
+          />
+        </marker>
+
+        {/* Aggregation hollow diamond */}
+        <marker
+          id="uml-aggregation"
+          viewBox="0 0 16 14"
+          refX="14"
+          refY="7"
+          markerWidth="12"
+          markerHeight="10"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M 2 7 L 8 2 L 14 7 L 8 12 Z"
+            fill="var(--bg-primary, #ffffff)"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinejoin="round"
+          />
+        </marker>
+
+        {/* Composition filled diamond */}
+        <marker
+          id="uml-composition"
+          viewBox="0 0 16 14"
+          refX="14"
+          refY="7"
+          markerWidth="12"
+          markerHeight="10"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M 2 7 L 8 2 L 14 7 L 8 12 Z"
+            fill="currentColor"
+            stroke="currentColor"
+            strokeWidth="1.7"
             strokeLinejoin="round"
           />
         </marker>

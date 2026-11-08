@@ -453,8 +453,32 @@ export const UmlEdge = memo(
       case 'generalization':
         strokeDasharray = 'none'
         markerEnd = 'url(#uml-generalization)'
-        stereotypeText = ''
+        stereotypeText = data?.label || ''
         textColor = 'var(--notion-green-text)'
+        break
+      case 'realization':
+        strokeDasharray = '6,4'
+        markerEnd = 'url(#uml-generalization)'
+        stereotypeText = data?.label || ''
+        textColor = 'var(--notion-purple-text)'
+        break
+      case 'aggregation':
+        strokeDasharray = 'none'
+        markerEnd = 'url(#uml-aggregation)'
+        stereotypeText = data?.label || ''
+        textColor = 'var(--text-primary)'
+        break
+      case 'composition':
+        strokeDasharray = 'none'
+        markerEnd = 'url(#uml-composition)'
+        stereotypeText = data?.label || ''
+        textColor = 'var(--text-primary)'
+        break
+      case 'dependency':
+        strokeDasharray = '6,4'
+        markerEnd = 'url(#uml-arrowhead)'
+        stereotypeText = data?.label || ''
+        textColor = 'var(--notion-blue-text)'
         break
       case 'er':
         strokeDasharray = erIdentifying ? 'none' : '5,4'
@@ -476,13 +500,15 @@ export const UmlEdge = memo(
       ? 'var(--primary-btn)'
       : isHovered
         ? 'var(--primary-btn)'
-        : relationshipType === 'include'
+        : relationshipType === 'include' || relationshipType === 'dependency'
           ? 'var(--notion-blue-text)'
           : relationshipType === 'extend'
             ? 'var(--notion-yellow-text)'
             : relationshipType === 'generalization'
               ? 'var(--notion-green-text)'
-              : 'var(--text-secondary)'
+              : relationshipType === 'realization'
+                ? 'var(--notion-purple-text)'
+                : 'var(--text-secondary)'
 
     // Stagger along the line segment if another edge midpoint or node overlaps the exact center
     const { resolvedX, resolvedY } = useMemo(() => {
@@ -1415,7 +1441,15 @@ export const UmlEdge = memo(
                                   ? '«extend»'
                                   : t === 'generalization'
                                     ? 'Inherit'
-                                    : 'Assoc'
+                                    : t === 'realization'
+                                      ? 'Impl'
+                                      : t === 'aggregation'
+                                        ? 'Aggreg'
+                                        : t === 'composition'
+                                          ? 'Compos'
+                                          : t === 'dependency'
+                                            ? 'Dep'
+                                            : 'Assoc'
                             return (
                               <button
                                 key={t}
@@ -1619,6 +1653,57 @@ export const UmlEdge = memo(
             </div>
           </EdgeLabelRenderer>
         )}
+
+        {/* Class Diagram Multiplicity Badges (source & target ends) */}
+        {(data?.sourceMultiplicity || data?.targetMultiplicity) && (() => {
+          const offsetAlongEnd = (
+            x1: number,
+            y1: number,
+            x2: number,
+            y2: number,
+            dist: number
+          ) => {
+            const dx = x2 - x1
+            const dy = y2 - y1
+            const len = Math.hypot(dx, dy) || 1
+            return {
+              x: x1 + (dx / len) * dist,
+              y: y1 + (dy / len) * dist - 10,
+            }
+          }
+          const sPos = offsetAlongEnd(sx, sy, tx, ty, 22)
+          const tPos = offsetAlongEnd(tx, ty, sx, sy, 22)
+          return (
+            <EdgeLabelRenderer>
+              {data?.sourceMultiplicity && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    transform: `translate(-50%, -50%) translate(${sPos.x}px,${sPos.y}px)`,
+                    pointerEvents: 'none',
+                    zIndex: 9998,
+                  }}
+                  className="px-1 py-0 rounded bg-[var(--bg-primary)]/90 border border-[var(--border-subtle)] text-[9.5px] font-mono font-semibold text-[var(--text-primary)] shadow-2xs"
+                >
+                  {data.sourceMultiplicity}
+                </div>
+              )}
+              {data?.targetMultiplicity && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    transform: `translate(-50%, -50%) translate(${tPos.x}px,${tPos.y}px)`,
+                    pointerEvents: 'none',
+                    zIndex: 9998,
+                  }}
+                  className="px-1 py-0 rounded bg-[var(--bg-primary)]/90 border border-[var(--border-subtle)] text-[9.5px] font-mono font-semibold text-[var(--text-primary)] shadow-2xs"
+                >
+                  {data.targetMultiplicity}
+                </div>
+              )}
+            </EdgeLabelRenderer>
+          )
+        })()}
       </>
     )
   }

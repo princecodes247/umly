@@ -132,12 +132,6 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
     ? 'opacity-100'
     : 'opacity-0 group-hover:opacity-100'
 
-  const stereotypeLabel = nodeData.stereotype
-    ? `«${nodeData.stereotype.replace(/^[«<]+|[»>]+$/g, '')}»`
-    : actorType === 'system'
-      ? '«system»'
-      : '«actor»'
-
   const customW =
     typeof nodeData.width === 'number' ? nodeData.width : undefined
   const customH =

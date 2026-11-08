@@ -24,6 +24,7 @@ import {
   Route,
   Palette,
   Table2,
+  Boxes,
   Plus,
   KeyRound,
   X,
@@ -37,6 +38,10 @@ import type {
   NodeAccentColor,
   ErCardinality,
   ErAttribute,
+  ClassKind,
+  ClassVisibility,
+  ClassAttribute,
+  ClassMethod,
 } from '../../types/game'
 
 interface StudioInspectorProps {
@@ -122,6 +127,8 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
 
   // Node stats
   const isErDiagram = diagramType === 'er' || allNodes.some((n) => n.type === 'erEntity')
+  const isClassDiagram =
+    diagramType === 'class' || allNodes.some((n) => n.type === 'umlClass')
   const actorsCount = allNodes.filter((n) => n.type === 'actor').length
   const useCasesCount = allNodes.filter((n) => n.type === 'useCase').length
   const boundariesCount = allNodes.filter((n) => n.type === 'boundary').length
@@ -134,6 +141,18 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
     (sum, n) => sum + (Array.isArray(n.data?.attributes) ? n.data.attributes.length : 0),
     0
   )
+  const classNodes = allNodes.filter((n) => n.type === 'umlClass')
+  const classesCount = classNodes.length
+  const classAttrsCount = classNodes.reduce(
+    (sum, n) =>
+      sum + (Array.isArray(n.data?.classAttributes) ? n.data.classAttributes.length : 0),
+    0
+  )
+  const classMethodsCount = classNodes.reduce(
+    (sum, n) =>
+      sum + (Array.isArray(n.data?.classMethods) ? n.data.classMethods.length : 0),
+    0
+  )
   const edgesCount = allEdges.length
   const overviewStats = isErDiagram
     ? [
@@ -142,12 +161,19 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
       { label: 'Weak', value: weakEntitiesCount },
       { label: 'Links', value: edgesCount },
     ]
-    : [
-      { label: 'Actors', value: actorsCount },
-      { label: 'Cases', value: useCasesCount },
-      { label: 'Bounds', value: boundariesCount },
-      { label: 'Links', value: edgesCount },
-    ]
+    : isClassDiagram
+      ? [
+        { label: 'Classes', value: classesCount },
+        { label: 'Attrs', value: classAttrsCount },
+        { label: 'Methods', value: classMethodsCount },
+        { label: 'Links', value: edgesCount },
+      ]
+      : [
+        { label: 'Actors', value: actorsCount },
+        { label: 'Cases', value: useCasesCount },
+        { label: 'Bounds', value: boundariesCount },
+        { label: 'Links', value: edgesCount },
+      ]
 
   // Always resolve the freshest node and edge data from source arrays
   const activeEdge = selectedEdge
@@ -374,6 +400,12 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                   <span>Entity Table</span>
                 </div>
               )}
+              {selectedNode.type === 'umlClass' && (
+                <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-[var(--notion-blue-bg)] text-[var(--notion-blue-text)] font-semibold text-xs whitespace-nowrap">
+                  <Boxes className="w-3.5 h-3.5" />
+                  <span>UML Class</span>
+                </div>
+              )}
             </div>
             {/* Element Position & Size */}
             {(() => {
@@ -385,7 +417,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                     ? 148
                     : targetNode.type === 'boundary'
                       ? 440
-                      : targetNode.type === 'erEntity'
+                      : targetNode.type === 'erEntity' || targetNode.type === 'umlClass'
                         ? 230
                         : targetNode.type === 'note'
                           ? 150
@@ -400,9 +432,11 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                       ? 380
                       : targetNode.type === 'erEntity'
                         ? 140
-                        : targetNode.type === 'note'
-                          ? 76
-                          : 60
+                        : targetNode.type === 'umlClass'
+                          ? 160
+                          : targetNode.type === 'note'
+                            ? 76
+                            : 60
 
               const minW =
                 targetNode.type === 'actor'
@@ -411,7 +445,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                     ? 90
                     : targetNode.type === 'boundary'
                       ? 200
-                      : targetNode.type === 'erEntity'
+                      : targetNode.type === 'erEntity' || targetNode.type === 'umlClass'
                         ? 190
                         : targetNode.type === 'note'
                           ? 80
@@ -426,9 +460,11 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                       ? 150
                       : targetNode.type === 'erEntity'
                         ? 88
-                        : targetNode.type === 'note'
-                          ? 40
-                          : 30
+                        : targetNode.type === 'umlClass'
+                          ? 100
+                          : targetNode.type === 'note'
+                            ? 40
+                            : 30
 
               const currentWidth =
                 typeof nodeData.width === 'number'
@@ -718,6 +754,244 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                 </div>
               </div>
             )}
+            {/* UML Class Kind, Attributes & Methods */}
+            {selectedNode.type === 'umlClass' && (() => {
+              const classKind: ClassKind = nodeData.classKind || 'class'
+              const attrs: ClassAttribute[] = Array.isArray(nodeData.classAttributes)
+                ? nodeData.classAttributes
+                : []
+              const methods: ClassMethod[] = Array.isArray(nodeData.classMethods)
+                ? nodeData.classMethods
+                : []
+              const visOptions: ClassVisibility[] = ['+', '-', '#', '~']
+
+              const updateAttrs = (next: ClassAttribute[]) => {
+                onUpdateNodeData(selectedNode.id, { classAttributes: next })
+              }
+              const updateMethods = (next: ClassMethod[]) => {
+                onUpdateNodeData(selectedNode.id, { classMethods: next })
+              }
+
+              return (
+                <div className="space-y-3 pt-3 border-t border-[var(--border-subtle)]">
+                  {/* Class Kind */}
+                  <div className="space-y-1.5">
+                    <span className="text-[11px] font-medium text-[var(--text-secondary)]">
+                      Class Stereotype
+                    </span>
+                    <div className="grid grid-cols-2 gap-1">
+                      {(
+                        [
+                          { id: 'class', label: 'Class' },
+                          { id: 'abstract', label: '«abstract»' },
+                          { id: 'interface', label: '«interface»' },
+                          { id: 'enum', label: '«enum»' },
+                        ] as const
+                      ).map((opt) => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() =>
+                            onUpdateNodeData(selectedNode.id, { classKind: opt.id })
+                          }
+                          className={`px-2 py-1 rounded-[4px] text-[10px] font-mono transition-colors cursor-pointer ${
+                            classKind === opt.id
+                              ? 'bg-[var(--selection-bg)] text-[var(--primary-btn)] font-semibold border border-[var(--primary-btn)]'
+                              : 'border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--hover-bg)]'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Attributes */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-medium text-[var(--text-secondary)]">
+                        Attributes ({attrs.length})
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateAttrs([
+                            ...attrs,
+                            {
+                              id: `attr-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+                              visibility: '-',
+                              name: 'field',
+                              type: 'string',
+                            },
+                          ])
+                        }
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[4px] text-[10px] font-medium text-[var(--primary-btn)] hover:bg-[var(--selection-bg)] transition-colors cursor-pointer"
+                      >
+                        <Plus className="w-3 h-3" />
+                        <span>Add</span>
+                      </button>
+                    </div>
+                    <div className="space-y-1 max-h-44 overflow-y-auto pr-0.5">
+                      {attrs.map((attr) => (
+                        <div
+                          key={attr.id}
+                          className="flex items-center gap-1 bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-[5px] px-1.5 py-1"
+                        >
+                          <button
+                            type="button"
+                            title="Cycle visibility (+, -, #, ~)"
+                            onClick={() => {
+                              const nextVis =
+                                visOptions[
+                                  (visOptions.indexOf(attr.visibility) + 1) %
+                                    visOptions.length
+                                ]
+                              updateAttrs(
+                                attrs.map((a) =>
+                                  a.id === attr.id ? { ...a, visibility: nextVis } : a
+                                )
+                              )
+                            }}
+                            className="w-5 h-5 shrink-0 rounded-[3px] bg-[var(--bg-primary)] border border-[var(--border-subtle)] text-[11px] font-mono font-semibold text-[var(--text-primary)] hover:bg-[var(--hover-bg)] cursor-pointer"
+                          >
+                            {attr.visibility}
+                          </button>
+                          <input
+                            type="text"
+                            value={attr.name}
+                            onChange={(e) =>
+                              updateAttrs(
+                                attrs.map((a) =>
+                                  a.id === attr.id ? { ...a, name: e.target.value } : a
+                                )
+                              )
+                            }
+                            placeholder="name"
+                            className="min-w-0 flex-1 bg-transparent text-[11px] font-mono text-[var(--text-primary)] outline-none"
+                          />
+                          <input
+                            type="text"
+                            value={attr.type}
+                            onChange={(e) =>
+                              updateAttrs(
+                                attrs.map((a) =>
+                                  a.id === attr.id ? { ...a, type: e.target.value } : a
+                                )
+                              )
+                            }
+                            placeholder="type"
+                            className="w-16 shrink-0 bg-transparent text-[10px] font-mono text-[var(--text-secondary)] text-right outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateAttrs(attrs.filter((a) => a.id !== attr.id))
+                            }
+                            className="p-0.5 text-[var(--text-tertiary)] hover:text-[var(--notion-red-text)] cursor-pointer"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Methods */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-medium text-[var(--text-secondary)]">
+                        Methods ({methods.length})
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateMethods([
+                            ...methods,
+                            {
+                              id: `meth-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+                              visibility: '+',
+                              name: 'method',
+                              params: '',
+                              returnType: 'void',
+                            },
+                          ])
+                        }
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[4px] text-[10px] font-medium text-[var(--primary-btn)] hover:bg-[var(--selection-bg)] transition-colors cursor-pointer"
+                      >
+                        <Plus className="w-3 h-3" />
+                        <span>Add</span>
+                      </button>
+                    </div>
+                    <div className="space-y-1 max-h-44 overflow-y-auto pr-0.5">
+                      {methods.map((meth) => (
+                        <div
+                          key={meth.id}
+                          className="flex items-center gap-1 bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-[5px] px-1.5 py-1"
+                        >
+                          <button
+                            type="button"
+                            title="Cycle visibility (+, -, #, ~)"
+                            onClick={() => {
+                              const nextVis =
+                                visOptions[
+                                  (visOptions.indexOf(meth.visibility) + 1) %
+                                    visOptions.length
+                                ]
+                              updateMethods(
+                                methods.map((m) =>
+                                  m.id === meth.id ? { ...m, visibility: nextVis } : m
+                                )
+                              )
+                            }}
+                            className="w-5 h-5 shrink-0 rounded-[3px] bg-[var(--bg-primary)] border border-[var(--border-subtle)] text-[11px] font-mono font-semibold text-[var(--text-primary)] hover:bg-[var(--hover-bg)] cursor-pointer"
+                          >
+                            {meth.visibility}
+                          </button>
+                          <input
+                            type="text"
+                            value={meth.name}
+                            onChange={(e) =>
+                              updateMethods(
+                                methods.map((m) =>
+                                  m.id === meth.id ? { ...m, name: e.target.value } : m
+                                )
+                              )
+                            }
+                            placeholder="method"
+                            className="min-w-0 flex-1 bg-transparent text-[11px] font-mono text-[var(--text-primary)] outline-none"
+                          />
+                          <input
+                            type="text"
+                            value={meth.returnType}
+                            onChange={(e) =>
+                              updateMethods(
+                                methods.map((m) =>
+                                  m.id === meth.id
+                                    ? { ...m, returnType: e.target.value }
+                                    : m
+                                )
+                              )
+                            }
+                            placeholder="void"
+                            className="w-14 shrink-0 bg-transparent text-[10px] font-mono text-[var(--text-secondary)] text-right outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateMethods(methods.filter((m) => m.id !== meth.id))
+                            }
+                            className="p-0.5 text-[var(--text-tertiary)] hover:text-[var(--notion-red-text)] cursor-pointer"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
+
             {/* ER Entity Attributes & Weak Entity toggle */}
             {selectedNode.type === 'erEntity' && (() => {
               const attrs: ErAttribute[] = Array.isArray(nodeData.attributes)
@@ -1081,6 +1355,89 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                             {opt.symbol}
                           </button>
                         ))}
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
+
+              if (sNode?.type === 'umlClass' || tNode?.type === 'umlClass') {
+                return (
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-medium text-[var(--text-secondary)]">
+                        Relationship Type
+                      </label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {(
+                          [
+                            { id: 'association', label: 'Association', badge: '──' },
+                            { id: 'generalization', label: 'Inheritance', badge: '──▷' },
+                            { id: 'realization', label: 'Realization', badge: '- -▷' },
+                            { id: 'aggregation', label: 'Aggregation', badge: '◇──' },
+                            { id: 'composition', label: 'Composition', badge: '◆──' },
+                            { id: 'dependency', label: 'Dependency', badge: '- - >' },
+                          ] as const
+                        ).map((rel) => {
+                          const isActive =
+                            (edgeData.relationshipType || 'association') === rel.id
+                          return (
+                            <button
+                              key={rel.id}
+                              type="button"
+                              onClick={() =>
+                                onUpdateEdgeData(activeEdge.id, {
+                                  relationshipType: rel.id,
+                                })
+                              }
+                              className={`px-2 py-1.5 rounded-[4px] text-xs font-medium text-left transition-colors flex items-center justify-between cursor-pointer ${
+                                isActive
+                                  ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] font-semibold'
+                                  : 'border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--hover-bg)]'
+                              }`}
+                            >
+                              <span>{rel.label}</span>
+                              <span className="font-mono text-[10px] opacity-75">
+                                {rel.badge}
+                              </span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-medium text-[var(--text-secondary)]">
+                          Source Multiplicity
+                        </label>
+                        <input
+                          type="text"
+                          value={edgeData.sourceMultiplicity || ''}
+                          onChange={(e) =>
+                            onUpdateEdgeData(activeEdge.id, {
+                              sourceMultiplicity: e.target.value,
+                            })
+                          }
+                          placeholder="e.g. 1"
+                          className="w-full px-2 py-1 rounded-[4px] bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-xs font-mono text-[var(--text-primary)] outline-none focus:border-[var(--primary-btn)]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-medium text-[var(--text-secondary)]">
+                          Target Multiplicity
+                        </label>
+                        <input
+                          type="text"
+                          value={edgeData.targetMultiplicity || ''}
+                          onChange={(e) =>
+                            onUpdateEdgeData(activeEdge.id, {
+                              targetMultiplicity: e.target.value,
+                            })
+                          }
+                          placeholder="e.g. 0..*"
+                          className="w-full px-2 py-1 rounded-[4px] bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-xs font-mono text-[var(--text-primary)] outline-none focus:border-[var(--primary-btn)]"
+                        />
                       </div>
                     </div>
                   </div>

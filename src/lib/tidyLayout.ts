@@ -15,6 +15,31 @@ function computeErEntitySize(node: Node): { w: number; h: number } {
       10
     return { w, h: 44 }
   }
+  if (node.type === 'umlClass') {
+    const cAttrs = Array.isArray(d.classAttributes) ? d.classAttributes : []
+    const cMethods = Array.isArray(d.classMethods) ? d.classMethods : []
+    const stereoExtra = d.classKind && d.classKind !== 'class' ? 16 : 0
+    let maxRowW = label.length * 7.8 + 64
+    for (const a of cAttrs) {
+      const rw = ((a.name?.length || 0) + (a.type?.length || 0) + 5) * 6.8 + 32
+      if (rw > maxRowW) maxRowW = rw
+    }
+    for (const m of cMethods) {
+      const rw =
+        ((m.name?.length || 0) +
+          (m.params?.length || 0) +
+          (m.returnType?.length || 0) +
+          7) *
+          6.8 +
+        32
+      if (rw > maxRowW) maxRowW = rw
+    }
+    const w = Math.ceil(Math.max(210, Math.min(340, maxRowW)) / 10) * 10
+    const attrH = Math.max(1, cAttrs.length) * 24
+    const methodH = d.classKind === 'enum' ? 0 : Math.max(1, cMethods.length) * 24
+    const h = Math.ceil(Math.max(110, 44 + stereoExtra + attrH + methodH) / 10) * 10
+    return { w, h }
+  }
   const attrs: ErAttribute[] = Array.isArray(d.attributes) ? d.attributes : []
   const weakExtra = d.isWeakEntity ? 44 : 0
   const titleW = label.length * 7.5 + 64 + weakExtra
@@ -140,7 +165,9 @@ export function computeTidyEdges(tidiedNodes: Node[], edges: Edge[]): Edge[] {
 export function computeTidyLayout(nodes: Node[], edges: Edge[]): Node[] {
   if (nodes.length === 0) return nodes
 
-  const erEntities = nodes.filter((n) => n.type === 'erEntity')
+  const erEntities = nodes.filter(
+    (n) => n.type === 'erEntity' || n.type === 'umlClass'
+  )
   if (erEntities.length > 0) {
     const boundaries = nodes.filter((n) => n.type === 'boundary')
     const notes = nodes.filter((n) => n.type === 'note')

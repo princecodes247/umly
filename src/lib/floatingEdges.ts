@@ -15,7 +15,8 @@ export function getNodeBox(node: Node): BoxMetrics {
   const customW =
     typeof node.data?.width === 'number' ? node.data.width : undefined
   const customH =
-    node.type === 'erEntity' && node.data?.isMinimized
+    (node.type === 'erEntity' || node.type === 'umlClass') &&
+    node.data?.isMinimized
       ? 44
       : typeof node.data?.height === 'number'
         ? node.data.height
@@ -30,7 +31,7 @@ export function getNodeBox(node: Node): BoxMetrics {
         ? 148
         : node.type === 'boundary'
           ? 440
-          : node.type === 'erEntity'
+          : node.type === 'erEntity' || node.type === 'umlClass'
             ? 230
             : 150)
   const h =
@@ -44,7 +45,9 @@ export function getNodeBox(node: Node): BoxMetrics {
           ? 380
           : node.type === 'erEntity'
             ? 140
-            : 76)
+            : node.type === 'umlClass'
+              ? 160
+              : 76)
 
   const x = node.position.x
   const y = node.position.y

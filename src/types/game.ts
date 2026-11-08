@@ -3,7 +3,33 @@ export type UmlRelationshipType =
   | 'include'
   | 'extend'
   | 'generalization'
+  | 'aggregation'
+  | 'composition'
+  | 'realization'
+  | 'dependency'
   | 'er'
+
+export type ClassVisibility = '+' | '-' | '#' | '~'
+
+export type ClassKind = 'class' | 'abstract' | 'interface' | 'enum'
+
+export interface ClassAttribute {
+  id: string
+  visibility: ClassVisibility
+  name: string
+  type: string
+  isStatic?: boolean
+}
+
+export interface ClassMethod {
+  id: string
+  visibility: ClassVisibility
+  name: string
+  params?: string
+  returnType: string
+  isStatic?: boolean
+  isAbstract?: boolean
+}
 
 export type ErCardinality =
   | 'one'
@@ -35,7 +61,7 @@ export type NodeAccentColor =
 
 export interface UmlNodeData {
   label: string
-  nodeType: 'actor' | 'useCase' | 'boundary' | 'note' | 'erEntity'
+  nodeType: 'actor' | 'useCase' | 'boundary' | 'note' | 'erEntity' | 'umlClass'
   actorType?: 'primary' | 'secondary' | 'system'
   stereotype?: string
   accentColor?: NodeAccentColor
@@ -43,6 +69,9 @@ export interface UmlNodeData {
   attributes?: ErAttribute[]
   isWeakEntity?: boolean
   isMinimized?: boolean
+  classKind?: ClassKind
+  classAttributes?: ClassAttribute[]
+  classMethods?: ClassMethod[]
   width?: number
   height?: number
   description?: string
@@ -59,6 +88,8 @@ export interface UmlEdgeData {
   erSourceCardinality?: ErCardinality
   erTargetCardinality?: ErCardinality
   erIdentifying?: boolean
+  sourceMultiplicity?: string
+  targetMultiplicity?: string
   routingStyle?: 'straight' | 'orthogonal' | 'bezier'
   orthogonalOffset?: number
   curveOffset?: { x: number; y: number }

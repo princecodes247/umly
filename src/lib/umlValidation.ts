@@ -43,6 +43,18 @@ export function getAllowedRelationshipTypes(
     return ['er']
   }
 
+  // UML Class <-> UML Class: Class Diagram relationships
+  if (sourceType === 'umlClass' && targetType === 'umlClass') {
+    return [
+      'association',
+      'generalization',
+      'realization',
+      'aggregation',
+      'composition',
+      'dependency',
+    ]
+  }
+
   return []
 }
 
@@ -74,6 +86,10 @@ const RELATIONSHIP_LABELS: Record<UmlRelationshipType, string> = {
   include: '«include»',
   extend: '«extend»',
   generalization: 'Generalization',
+  aggregation: 'Aggregation',
+  composition: 'Composition',
+  realization: 'Realization',
+  dependency: 'Dependency',
   er: 'ER Relationship',
 }
 
@@ -83,6 +99,7 @@ const NODE_TYPE_LABELS: Record<string, string> = {
   boundary: 'System Boundary',
   note: 'Note',
   erEntity: 'Entity',
+  umlClass: 'Class',
 }
 
 /**

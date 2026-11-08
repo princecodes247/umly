@@ -4,7 +4,7 @@ export interface DiagramTemplate {
   id: string
   name: string
   description: string
-  diagramType?: 'use_case' | 'er'
+  diagramType?: 'use_case' | 'er' | 'class'
   nodes: Node[]
   edges: Edge[]
 }
@@ -652,6 +652,174 @@ export const DIAGRAM_TEMPLATES: DiagramTemplate[] = [
           erTargetCardinality: 'one_or_many',
           erIdentifying: true,
           routingStyle: 'orthogonal',
+        },
+      },
+    ],
+  },
+  {
+    id: 'ecommerce-class-model',
+    name: 'E-Commerce Class Model',
+    description: 'Domain model with Users, Orders, OrderItems, Products, and Payment interface',
+    diagramType: 'class',
+    nodes: [
+      {
+        id: 'cls-user',
+        type: 'umlClass',
+        position: { x: 80, y: 80 },
+        data: {
+          nodeType: 'umlClass',
+          label: 'User',
+          classKind: 'class',
+          classAttributes: [
+            { id: 'u-a1', visibility: '-', name: 'id', type: 'UUID' },
+            { id: 'u-a2', visibility: '-', name: 'email', type: 'string' },
+            { id: 'u-a3', visibility: '+', name: 'name', type: 'string' },
+          ],
+          classMethods: [
+            { id: 'u-m1', visibility: '+', name: 'register', params: '', returnType: 'void' },
+            { id: 'u-m2', visibility: '+', name: 'placeOrder', params: 'cart: Cart', returnType: 'Order' },
+          ],
+        },
+      },
+      {
+        id: 'cls-order',
+        type: 'umlClass',
+        position: { x: 400, y: 80 },
+        data: {
+          nodeType: 'umlClass',
+          label: 'Order',
+          classKind: 'class',
+          classAttributes: [
+            { id: 'o-a1', visibility: '-', name: 'id', type: 'UUID' },
+            { id: 'o-a2', visibility: '-', name: 'createdAt', type: 'Date' },
+            { id: 'o-a3', visibility: '+', name: 'status', type: 'OrderStatus' },
+          ],
+          classMethods: [
+            { id: 'o-m1', visibility: '+', name: 'calculateTotal', params: '', returnType: 'number' },
+            { id: 'o-m2', visibility: '+', name: 'cancel', params: '', returnType: 'void' },
+          ],
+        },
+      },
+      {
+        id: 'cls-item',
+        type: 'umlClass',
+        position: { x: 720, y: 80 },
+        data: {
+          nodeType: 'umlClass',
+          label: 'OrderItem',
+          classKind: 'class',
+          classAttributes: [
+            { id: 'oi-a1', visibility: '-', name: 'quantity', type: 'number' },
+            { id: 'oi-a2', visibility: '-', name: 'unitPrice', type: 'number' },
+          ],
+          classMethods: [
+            { id: 'oi-m1', visibility: '+', name: 'getSubtotal', params: '', returnType: 'number' },
+          ],
+        },
+      },
+      {
+        id: 'cls-product',
+        type: 'umlClass',
+        position: { x: 720, y: 310 },
+        data: {
+          nodeType: 'umlClass',
+          label: 'Product',
+          classKind: 'class',
+          classAttributes: [
+            { id: 'p-a1', visibility: '-', name: 'sku', type: 'string' },
+            { id: 'p-a2', visibility: '+', name: 'title', type: 'string' },
+            { id: 'p-a3', visibility: '+', name: 'price', type: 'number' },
+          ],
+          classMethods: [
+            { id: 'p-m1', visibility: '+', name: 'inStock', params: 'qty: number', returnType: 'boolean' },
+          ],
+        },
+      },
+      {
+        id: 'cls-payable',
+        type: 'umlClass',
+        position: { x: 80, y: 310 },
+        data: {
+          nodeType: 'umlClass',
+          label: 'Payable',
+          classKind: 'interface',
+          classAttributes: [],
+          classMethods: [
+            { id: 'pay-m1', visibility: '+', name: 'charge', params: 'amount: number', returnType: 'boolean' },
+          ],
+        },
+      },
+      {
+        id: 'cls-card-payment',
+        type: 'umlClass',
+        position: { x: 400, y: 310 },
+        data: {
+          nodeType: 'umlClass',
+          label: 'CardPayment',
+          classKind: 'class',
+          classAttributes: [
+            { id: 'cp-a1', visibility: '-', name: 'last4', type: 'string' },
+          ],
+          classMethods: [
+            { id: 'cp-m1', visibility: '+', name: 'charge', params: 'amount: number', returnType: 'boolean' },
+          ],
+        },
+      },
+    ],
+    edges: [
+      {
+        id: 'e-user-order',
+        source: 'cls-user',
+        target: 'cls-order',
+        type: 'umlEdge',
+        data: {
+          relationshipType: 'association',
+          label: 'places',
+          sourceMultiplicity: '1',
+          targetMultiplicity: '0..*',
+        },
+      },
+      {
+        id: 'e-order-item',
+        source: 'cls-order',
+        target: 'cls-item',
+        type: 'umlEdge',
+        data: {
+          relationshipType: 'composition',
+          label: 'contains',
+          sourceMultiplicity: '1',
+          targetMultiplicity: '1..*',
+        },
+      },
+      {
+        id: 'e-item-product',
+        source: 'cls-item',
+        target: 'cls-product',
+        type: 'umlEdge',
+        data: {
+          relationshipType: 'association',
+          label: 'references',
+          sourceMultiplicity: '*',
+          targetMultiplicity: '1',
+        },
+      },
+      {
+        id: 'e-card-payable',
+        source: 'cls-card-payment',
+        target: 'cls-payable',
+        type: 'umlEdge',
+        data: {
+          relationshipType: 'realization',
+        },
+      },
+      {
+        id: 'e-order-card',
+        source: 'cls-order',
+        target: 'cls-card-payment',
+        type: 'umlEdge',
+        data: {
+          relationshipType: 'dependency',
+          label: 'uses',
         },
       },
     ],
