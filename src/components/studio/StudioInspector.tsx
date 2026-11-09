@@ -1362,6 +1362,27 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
               }
 
               if (sNode?.type === 'umlClass' || tNode?.type === 'umlClass') {
+                const relType = edgeData.relationshipType || 'association'
+                const supportsMultiplicity =
+                  relType === 'association' ||
+                  relType === 'aggregation' ||
+                  relType === 'composition'
+                const multiplicityPresets = ['1', '0..1', '*', '0..*', '1..*'] as const
+                const multiplicityEnds = [
+                  {
+                    key: 'sourceMultiplicity' as const,
+                    title: `Source (${String(sNode?.data?.label || 'Source')})`,
+                    value: edgeData.sourceMultiplicity || '',
+                    placeholder: 'e.g. 1',
+                  },
+                  {
+                    key: 'targetMultiplicity' as const,
+                    title: `Target (${String(tNode?.data?.label || 'Target')})`,
+                    value: edgeData.targetMultiplicity || '',
+                    placeholder: 'e.g. 0..*',
+                  },
+                ]
+
                 return (
                   <div className="space-y-3">
                     <div className="space-y-1.5">
@@ -1379,8 +1400,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                             { id: 'dependency', label: 'Dependency', badge: '- - >' },
                           ] as const
                         ).map((rel) => {
-                          const isActive =
-                            (edgeData.relationshipType || 'association') === rel.id
+                          const isActive = relType === rel.id
                           return (
                             <button
                               key={rel.id}
@@ -1406,40 +1426,67 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-medium text-[var(--text-secondary)]">
-                          Source Multiplicity
-                        </label>
-                        <input
-                          type="text"
-                          value={edgeData.sourceMultiplicity || ''}
-                          onChange={(e) =>
-                            onUpdateEdgeData(activeEdge.id, {
-                              sourceMultiplicity: e.target.value,
-                            })
-                          }
-                          placeholder="e.g. 1"
-                          className="w-full px-2 py-1 rounded-[4px] bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-xs font-mono text-[var(--text-primary)] outline-none focus:border-[var(--primary-btn)]"
-                        />
+                    {supportsMultiplicity && (
+                      <div className="space-y-2.5 pt-2 border-t border-[var(--border-subtle)]">
+                        {multiplicityEnds.map((end) => (
+                          <div key={end.key} className="space-y-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <label className="text-[10.5px] font-medium text-[var(--text-secondary)] truncate">
+                                {end.title}
+                              </label>
+                              {end.value && (
+                                <button
+                                  type="button"
+                                  title="Clear multiplicity"
+                                  onClick={() =>
+                                    onUpdateEdgeData(activeEdge.id, {
+                                      [end.key]: '',
+                                    })
+                                  }
+                                  className="text-[10px] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] cursor-pointer"
+                                >
+                                  Clear
+                                </button>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-5 gap-1">
+                              {multiplicityPresets.map((preset) => {
+                                const isActive = end.value === preset
+                                return (
+                                  <button
+                                    key={preset}
+                                    type="button"
+                                    onClick={() =>
+                                      onUpdateEdgeData(activeEdge.id, {
+                                        [end.key]: isActive ? '' : preset,
+                                      })
+                                    }
+                                    className={`py-1 rounded-[4px] text-[10px] font-mono transition-colors cursor-pointer ${
+                                      isActive
+                                        ? 'bg-[var(--selection-bg)] text-[var(--primary-btn)] font-semibold border border-[var(--primary-btn)]'
+                                        : 'border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--hover-bg)]'
+                                    }`}
+                                  >
+                                    {preset}
+                                  </button>
+                                )
+                              })}
+                            </div>
+                            <input
+                              type="text"
+                              value={end.value}
+                              onChange={(e) =>
+                                onUpdateEdgeData(activeEdge.id, {
+                                  [end.key]: e.target.value,
+                                })
+                              }
+                              placeholder={`Custom (${end.placeholder})`}
+                              className="w-full px-2 py-1 rounded-[4px] bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-[11px] font-mono text-[var(--text-primary)] outline-none focus:border-[var(--primary-btn)]"
+                            />
+                          </div>
+                        ))}
                       </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-medium text-[var(--text-secondary)]">
-                          Target Multiplicity
-                        </label>
-                        <input
-                          type="text"
-                          value={edgeData.targetMultiplicity || ''}
-                          onChange={(e) =>
-                            onUpdateEdgeData(activeEdge.id, {
-                              targetMultiplicity: e.target.value,
-                            })
-                          }
-                          placeholder="e.g. 0..*"
-                          className="w-full px-2 py-1 rounded-[4px] bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-xs font-mono text-[var(--text-primary)] outline-none focus:border-[var(--primary-btn)]"
-                        />
-                      </div>
-                    </div>
+                    )}
                   </div>
                 )
               }
