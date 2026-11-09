@@ -1669,21 +1669,21 @@ export const UmlEdge = memo(
                   position: 'absolute',
                   transform: `translate(0%, -100%) translate(${x + d}px, ${y - 6}px)`,
                   pointerEvents: 'none',
-                  zIndex: 9998,
+                  zIndex: 5,
                 }
               case Position.Left:
                 return {
                   position: 'absolute',
                   transform: `translate(-100%, -100%) translate(${x - d}px, ${y - 6}px)`,
                   pointerEvents: 'none',
-                  zIndex: 9998,
+                  zIndex: 5,
                 }
               case Position.Top:
                 return {
                   position: 'absolute',
                   transform: `translate(0%, -100%) translate(${x + 7}px, ${y - d}px)`,
                   pointerEvents: 'none',
-                  zIndex: 9998,
+                  zIndex: 5,
                 }
               case Position.Bottom:
               default:
@@ -1691,7 +1691,7 @@ export const UmlEdge = memo(
                   position: 'absolute',
                   transform: `translate(0%, 0%) translate(${x + 7}px, ${y + d}px)`,
                   pointerEvents: 'none',
-                  zIndex: 9998,
+                  zIndex: 5,
                 }
             }
           }

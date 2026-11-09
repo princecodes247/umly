@@ -693,14 +693,19 @@ export const ClassNode = memo(({ id, data, selected }: NodeProps) => {
             </div>
           )}
 
-          {/* Floating Add Bar below node when selected (out of flow so node height never shifts) */}
+          {/* Floating Add Bar below node when selected (out of flow & above edge labels) */}
           {selected && !isLocked && (
-            <div className="nodrag nopan absolute left-0 right-0 top-full mt-2 z-20 flex items-center divide-x divide-[var(--border-subtle)] bg-[var(--bg-primary)] border border-[var(--border-default)] rounded-[5px] shadow-md overflow-hidden">
+            <NodeToolbar
+              isVisible={selected && !isLocked && !isMinimized}
+              position={Position.Bottom}
+              offset={10}
+              className="nodrag nopan flex items-center divide-x divide-[var(--border-subtle)] bg-[var(--bg-primary)] border border-[var(--border-default)] rounded-[5px] shadow-md overflow-hidden z-[99999]"
+            >
               <button
                 type="button"
                 onClick={handleAddAttribute}
                 onPointerDown={(e) => e.stopPropagation()}
-                className="flex-1 flex items-center justify-center gap-1 py-1 text-[10px] font-medium text-[var(--text-secondary)] hover:text-[var(--primary-btn)] hover:bg-[var(--hover-bg)] transition-colors cursor-pointer"
+                className="flex items-center justify-center gap-1 px-3 py-1 text-[10px] font-medium text-[var(--text-secondary)] hover:text-[var(--primary-btn)] hover:bg-[var(--hover-bg)] transition-colors cursor-pointer"
               >
                 <Plus className="w-3 h-3" />
                 <span>{classKind === 'enum' ? 'Value' : 'Attr'}</span>
@@ -710,13 +715,13 @@ export const ClassNode = memo(({ id, data, selected }: NodeProps) => {
                   type="button"
                   onClick={handleAddMethod}
                   onPointerDown={(e) => e.stopPropagation()}
-                  className="flex-1 flex items-center justify-center gap-1 py-1 text-[10px] font-medium text-[var(--text-secondary)] hover:text-[var(--primary-btn)] hover:bg-[var(--hover-bg)] transition-colors cursor-pointer"
+                  className="flex items-center justify-center gap-1 px-3 py-1 text-[10px] font-medium text-[var(--text-secondary)] hover:text-[var(--primary-btn)] hover:bg-[var(--hover-bg)] transition-colors cursor-pointer"
                 >
                   <Plus className="w-3 h-3" />
                   <span>Method</span>
                 </button>
               )}
-            </div>
+            </NodeToolbar>
           )}
         </>
       )}
