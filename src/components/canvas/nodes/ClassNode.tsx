@@ -265,13 +265,11 @@ export const ClassNode = memo(({ id, data, selected }: NodeProps) => {
 
   return (
     <div
-      className={`group relative flex flex-col rounded-[6px] bg-[var(--bg-primary)] transition-colors select-none border-[1.5px] ${
-        isMinimized ? 'justify-center' : ''
-      } ${
-        selected
+      className={`group relative flex flex-col rounded-[6px] bg-[var(--bg-primary)] transition-colors select-none border-[1.5px] ${isMinimized ? 'justify-center' : ''
+        } ${selected
           ? 'ring-2 ring-[var(--primary-btn)] shadow-md'
           : 'hover:border-[var(--text-primary)] shadow-sm'
-      }`}
+        }`}
       style={{
         width: customW ?? 230,
         height: isMinimized ? 44 : customH,
@@ -395,13 +393,11 @@ export const ClassNode = memo(({ id, data, selected }: NodeProps) => {
               if (isEditingTitle) e.stopPropagation()
             }}
             style={{ color: accent.headerText }}
-            className={`text-xs font-bold leading-snug outline-none text-center truncate max-w-full ${
-              classKind === 'abstract' ? 'italic' : ''
-            } ${
-              isEditingTitle
+            className={`text-xs font-bold leading-snug outline-none text-center truncate max-w-full ${classKind === 'abstract' ? 'italic' : ''
+              } ${isEditingTitle
                 ? 'nodrag select-text cursor-text bg-[var(--bg-primary)] px-1 rounded-[3px] ring-1 ring-[var(--primary-btn)] min-w-[60px]'
                 : 'cursor-inherit'
-            }`}
+              }`}
           >
             {nodeData.label || 'ClassName'}
           </div>
@@ -457,13 +453,11 @@ export const ClassNode = memo(({ id, data, selected }: NodeProps) => {
                   if (isEditingTitle) e.stopPropagation()
                 }}
                 style={{ color: accent.headerText }}
-                className={`flex-1 text-center text-xs font-bold leading-snug outline-none truncate ${
-                  classKind === 'abstract' ? 'italic' : ''
-                } ${
-                  isEditingTitle
+                className={`flex-1 text-center text-xs font-bold leading-snug outline-none truncate ${classKind === 'abstract' ? 'italic' : ''
+                  } ${isEditingTitle
                     ? 'nodrag select-text cursor-text bg-[var(--bg-primary)] px-1 rounded-[3px] ring-1 ring-[var(--primary-btn)] min-w-[60px]'
                     : 'cursor-inherit'
-                }`}
+                  }`}
               >
                 {nodeData.label || 'ClassName'}
               </div>
@@ -472,7 +466,7 @@ export const ClassNode = memo(({ id, data, selected }: NodeProps) => {
           </div>
 
           {/* Attributes Compartment */}
-          <div className="flex flex-col divide-y divide-[var(--border-subtle)]/50 border-b border-[var(--border-default)]">
+          <div className="flex flex-col divide-y divide-[var(--border-subtle)]/50 border-b-2 border-[var(--border-default)]">
             {classAttributes.length === 0 ? (
               <div className="px-2.5 py-1.5 text-[10.5px] text-[var(--text-tertiary)] italic text-center">
                 {classKind === 'enum' ? 'No enum values' : 'No attributes'}
@@ -505,9 +499,9 @@ export const ClassNode = memo(({ id, data, selected }: NodeProps) => {
                             classAttributes: classAttributes.map((a) =>
                               a.id === attr.id
                                 ? {
-                                    ...a,
-                                    visibility: nextVisibility(a.visibility),
-                                  }
+                                  ...a,
+                                  visibility: nextVisibility(a.visibility),
+                                }
                                 : a
                             ),
                           })
@@ -520,7 +514,7 @@ export const ClassNode = memo(({ id, data, selected }: NodeProps) => {
                     )}
 
                     {editingMember?.kind === 'attr' &&
-                    editingMember.id === attr.id ? (
+                      editingMember.id === attr.id ? (
                       <input
                         type="text"
                         autoFocus
@@ -547,9 +541,8 @@ export const ClassNode = memo(({ id, data, selected }: NodeProps) => {
                       />
                     ) : (
                       <span
-                        className={`truncate text-[var(--text-primary)] ${
-                          attr.isStatic ? 'underline' : ''
-                        }`}
+                        className={`truncate text-[var(--text-primary)] ${attr.isStatic ? 'underline' : ''
+                          }`}
                       >
                         {attr.name}
                       </span>
@@ -620,9 +613,9 @@ export const ClassNode = memo(({ id, data, selected }: NodeProps) => {
                             classMethods: classMethods.map((m) =>
                               m.id === method.id
                                 ? {
-                                    ...m,
-                                    visibility: nextVisibility(m.visibility),
-                                  }
+                                  ...m,
+                                  visibility: nextVisibility(m.visibility),
+                                }
                                 : m
                             ),
                           })
@@ -634,7 +627,7 @@ export const ClassNode = memo(({ id, data, selected }: NodeProps) => {
                       </button>
 
                       {editingMember?.kind === 'method' &&
-                      editingMember.id === method.id ? (
+                        editingMember.id === method.id ? (
                         <input
                           type="text"
                           autoFocus
@@ -661,9 +654,8 @@ export const ClassNode = memo(({ id, data, selected }: NodeProps) => {
                         />
                       ) : (
                         <span
-                          className={`truncate text-[var(--text-primary)] ${
-                            method.isAbstract ? 'italic' : ''
-                          } ${method.isStatic ? 'underline' : ''}`}
+                          className={`truncate text-[var(--text-primary)] ${method.isAbstract ? 'italic' : ''
+                            } ${method.isStatic ? 'underline' : ''}`}
                         >
                           {method.name}({method.params || ''})
                         </span>
