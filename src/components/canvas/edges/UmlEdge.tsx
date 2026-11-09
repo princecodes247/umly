@@ -1654,49 +1654,71 @@ export const UmlEdge = memo(
           </EdgeLabelRenderer>
         )}
 
-        {/* Class Diagram Multiplicity Badges (source & target ends) */}
+        {/* Class Diagram Multiplicity Labels (source & target ends) */}
         {(data?.sourceMultiplicity || data?.targetMultiplicity) && (() => {
-          const offsetAlongEnd = (
-            x1: number,
-            y1: number,
-            x2: number,
-            y2: number,
-            dist: number
-          ) => {
-            const dx = x2 - x1
-            const dy = y2 - y1
-            const len = Math.hypot(dx, dy) || 1
-            return {
-              x: x1 + (dx / len) * dist,
-              y: y1 + (dy / len) * dist - 10,
+          const getEndLabelStyle = (
+            x: number,
+            y: number,
+            pos: Position,
+            extraOffset = 0
+          ): React.CSSProperties => {
+            const d = 10 + extraOffset
+            switch (pos) {
+              case Position.Right:
+                return {
+                  position: 'absolute',
+                  transform: `translate(0%, -100%) translate(${x + d}px, ${y - 6}px)`,
+                  pointerEvents: 'none',
+                  zIndex: 9998,
+                }
+              case Position.Left:
+                return {
+                  position: 'absolute',
+                  transform: `translate(-100%, -100%) translate(${x - d}px, ${y - 6}px)`,
+                  pointerEvents: 'none',
+                  zIndex: 9998,
+                }
+              case Position.Top:
+                return {
+                  position: 'absolute',
+                  transform: `translate(0%, -100%) translate(${x + 7}px, ${y - d}px)`,
+                  pointerEvents: 'none',
+                  zIndex: 9998,
+                }
+              case Position.Bottom:
+              default:
+                return {
+                  position: 'absolute',
+                  transform: `translate(0%, 0%) translate(${x + 7}px, ${y + d}px)`,
+                  pointerEvents: 'none',
+                  zIndex: 9998,
+                }
             }
           }
-          const sPos = offsetAlongEnd(sx, sy, tx, ty, 22)
-          const tPos = offsetAlongEnd(tx, ty, sx, sy, 22)
+
+          const targetMarkerPad =
+            data?.relationshipType === 'composition' ||
+            data?.relationshipType === 'aggregation' ||
+            data?.relationshipType === 'generalization' ||
+            data?.relationshipType === 'realization' ||
+            data?.relationshipType === 'dependency'
+              ? 8
+              : 0
+
           return (
             <EdgeLabelRenderer>
               {data?.sourceMultiplicity && (
                 <div
-                  style={{
-                    position: 'absolute',
-                    transform: `translate(-50%, -50%) translate(${sPos.x}px,${sPos.y}px)`,
-                    pointerEvents: 'none',
-                    zIndex: 9998,
-                  }}
-                  className="px-1 py-0 rounded bg-[var(--bg-primary)]/90 border border-[var(--border-subtle)] text-[9.5px] font-mono font-semibold text-[var(--text-primary)] shadow-2xs"
+                  style={getEndLabelStyle(sx, sy, sourcePos, 0)}
+                  className="text-[10.5px] font-mono font-semibold text-[var(--text-primary)] leading-none select-none"
                 >
                   {data.sourceMultiplicity}
                 </div>
               )}
               {data?.targetMultiplicity && (
                 <div
-                  style={{
-                    position: 'absolute',
-                    transform: `translate(-50%, -50%) translate(${tPos.x}px,${tPos.y}px)`,
-                    pointerEvents: 'none',
-                    zIndex: 9998,
-                  }}
-                  className="px-1 py-0 rounded bg-[var(--bg-primary)]/90 border border-[var(--border-subtle)] text-[9.5px] font-mono font-semibold text-[var(--text-primary)] shadow-2xs"
+                  style={getEndLabelStyle(tx, ty, targetPos, targetMarkerPad)}
+                  className="text-[10.5px] font-mono font-semibold text-[var(--text-primary)] leading-none select-none"
                 >
                   {data.targetMultiplicity}
                 </div>
