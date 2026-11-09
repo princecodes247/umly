@@ -693,14 +693,14 @@ export const ClassNode = memo(({ id, data, selected }: NodeProps) => {
             </div>
           )}
 
-          {/* Inline Add Footer when selected */}
+          {/* Floating Add Bar below node when selected (out of flow so node height never shifts) */}
           {selected && !isLocked && (
-            <div className="nodrag flex items-center divide-x divide-[var(--border-subtle)] border-t border-[var(--border-subtle)] rounded-b-[5px] overflow-hidden">
+            <div className="nodrag nopan absolute left-0 right-0 top-full mt-2 z-20 flex items-center divide-x divide-[var(--border-subtle)] bg-[var(--bg-primary)] border border-[var(--border-default)] rounded-[5px] shadow-md overflow-hidden">
               <button
                 type="button"
                 onClick={handleAddAttribute}
                 onPointerDown={(e) => e.stopPropagation()}
-                className="flex-1 flex items-center justify-center gap-1 py-1 text-[10px] font-medium text-[var(--text-tertiary)] hover:text-[var(--primary-btn)] hover:bg-[var(--hover-bg)] transition-colors cursor-pointer"
+                className="flex-1 flex items-center justify-center gap-1 py-1 text-[10px] font-medium text-[var(--text-secondary)] hover:text-[var(--primary-btn)] hover:bg-[var(--hover-bg)] transition-colors cursor-pointer"
               >
                 <Plus className="w-3 h-3" />
                 <span>{classKind === 'enum' ? 'Value' : 'Attr'}</span>
@@ -710,7 +710,7 @@ export const ClassNode = memo(({ id, data, selected }: NodeProps) => {
                   type="button"
                   onClick={handleAddMethod}
                   onPointerDown={(e) => e.stopPropagation()}
-                  className="flex-1 flex items-center justify-center gap-1 py-1 text-[10px] font-medium text-[var(--text-tertiary)] hover:text-[var(--primary-btn)] hover:bg-[var(--hover-bg)] transition-colors cursor-pointer"
+                  className="flex-1 flex items-center justify-center gap-1 py-1 text-[10px] font-medium text-[var(--text-secondary)] hover:text-[var(--primary-btn)] hover:bg-[var(--hover-bg)] transition-colors cursor-pointer"
                 >
                   <Plus className="w-3 h-3" />
                   <span>Method</span>
