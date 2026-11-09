@@ -706,17 +706,24 @@ export const ErEntityNode = memo(({ id, data, selected }: NodeProps) => {
             )}
           </div>
 
-          {/* Inline Add Attribute footer when selected */}
+          {/* Floating Add Attribute bar below node when selected */}
           {selected && !isLocked && (
-            <button
-              type="button"
-              onClick={handleAddAttribute}
-              onPointerDown={(e) => e.stopPropagation()}
-              className="nodrag flex items-center justify-center gap-1 py-1 text-[10px] font-medium text-[var(--text-tertiary)] hover:text-[var(--primary-btn)] hover:bg-[var(--hover-bg)] border-t border-[var(--border-subtle)] rounded-b-[5px] transition-colors cursor-pointer"
+            <NodeToolbar
+              isVisible={selected && !isLocked && !isMinimized}
+              position={Position.Bottom}
+              offset={10}
+              className="nodrag nopan flex items-center bg-[var(--bg-primary)] border border-[var(--border-default)] rounded-[5px] shadow-md overflow-hidden z-[99999]"
             >
-              <Plus className="w-3 h-3" />
-              <span>Add attribute</span>
-            </button>
+              <button
+                type="button"
+                onClick={handleAddAttribute}
+                onPointerDown={(e) => e.stopPropagation()}
+                className="flex items-center justify-center gap-1 px-3 py-1 text-[10px] font-medium text-[var(--text-secondary)] hover:text-[var(--primary-btn)] hover:bg-[var(--hover-bg)] transition-colors cursor-pointer"
+              >
+                <Plus className="w-3 h-3" />
+                <span>Add attribute</span>
+              </button>
+            </NodeToolbar>
           )}
         </>
       )}
