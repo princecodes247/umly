@@ -114,7 +114,7 @@ export const UmlEdge = memo(
       )
       if (pairEdges.length <= 1) return 0
       const idx = pairEdges.findIndex((e) => e.id === id)
-      return (idx - (pairEdges.length - 1) / 2) * 18
+      return (idx - (pairEdges.length - 1) / 2) * 28
     }, [edges, source, target, id])
 
     const routingStyle = data?.routingStyle || 'straight'

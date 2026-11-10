@@ -908,6 +908,8 @@ export const DIAGRAM_TEMPLATES: DiagramTemplate[] = [
         data: {
           relationshipType: 'data_flow',
           label: 'Order Request',
+          routingStyle: 'bezier',
+          curveOffset: -28,
         },
       },
       {
@@ -918,6 +920,8 @@ export const DIAGRAM_TEMPLATES: DiagramTemplate[] = [
         data: {
           relationshipType: 'data_flow',
           label: 'Confirmation',
+          routingStyle: 'bezier',
+          curveOffset: 28,
         },
       },
       {
