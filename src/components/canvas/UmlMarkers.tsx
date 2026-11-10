@@ -24,6 +24,25 @@ export const UmlMarkers: React.FC = () => {
           />
         </marker>
 
+        {/* Filled triangle arrow for Data Flow */}
+        <marker
+          id="dfd-arrow"
+          viewBox="0 0 12 12"
+          refX="10"
+          refY="6"
+          markerWidth="8"
+          markerHeight="8"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M 1 2 L 10 6 L 1 10 Z"
+            fill="currentColor"
+            stroke="currentColor"
+            strokeWidth="1.2"
+            strokeLinejoin="round"
+          />
+        </marker>
+
         {/* Generalization / Realization hollow triangle arrow */}
         <marker
           id="uml-generalization"

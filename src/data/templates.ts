@@ -4,7 +4,7 @@ export interface DiagramTemplate {
   id: string
   name: string
   description: string
-  diagramType?: 'use_case' | 'er' | 'class'
+  diagramType?: 'use_case' | 'er' | 'class' | 'dfd'
   nodes: Node[]
   edges: Edge[]
 }
@@ -820,6 +820,154 @@ export const DIAGRAM_TEMPLATES: DiagramTemplate[] = [
         data: {
           relationshipType: 'dependency',
           label: 'uses',
+        },
+      },
+    ],
+  },
+  {
+    id: 'order-processing-dfd',
+    name: 'Order Processing DFD',
+    description: 'Level-1 Data Flow Diagram with Customer, Processes, Data Stores, and Warehouse',
+    diagramType: 'dfd',
+    nodes: [
+      {
+        id: 'dfd-ext-customer',
+        type: 'dfdExternalEntity',
+        position: { x: 60, y: 180 },
+        data: {
+          nodeType: 'dfdExternalEntity',
+          label: 'Customer',
+        },
+      },
+      {
+        id: 'dfd-proc-validate',
+        type: 'dfdProcess',
+        position: { x: 300, y: 172 },
+        data: {
+          nodeType: 'dfdProcess',
+          processNumber: '1.0',
+          label: 'Validate Order',
+        },
+      },
+      {
+        id: 'dfd-proc-payment',
+        type: 'dfdProcess',
+        position: { x: 560, y: 90 },
+        data: {
+          nodeType: 'dfdProcess',
+          processNumber: '2.0',
+          label: 'Process Payment',
+        },
+      },
+      {
+        id: 'dfd-proc-fulfill',
+        type: 'dfdProcess',
+        position: { x: 560, y: 260 },
+        data: {
+          nodeType: 'dfdProcess',
+          processNumber: '3.0',
+          label: 'Fulfill Order',
+        },
+      },
+      {
+        id: 'dfd-store-orders',
+        type: 'dfdDataStore',
+        position: { x: 290, y: 340 },
+        data: {
+          nodeType: 'dfdDataStore',
+          dataStoreId: 'D1',
+          label: 'Orders',
+        },
+      },
+      {
+        id: 'dfd-store-inventory',
+        type: 'dfdDataStore',
+        position: { x: 550, y: 410 },
+        data: {
+          nodeType: 'dfdDataStore',
+          dataStoreId: 'D2',
+          label: 'Inventory',
+        },
+      },
+      {
+        id: 'dfd-ext-warehouse',
+        type: 'dfdExternalEntity',
+        position: { x: 820, y: 268 },
+        data: {
+          nodeType: 'dfdExternalEntity',
+          label: 'Warehouse',
+        },
+      },
+    ],
+    edges: [
+      {
+        id: 'e-cust-validate',
+        source: 'dfd-ext-customer',
+        target: 'dfd-proc-validate',
+        type: 'umlEdge',
+        data: {
+          relationshipType: 'data_flow',
+          label: 'Order Request',
+        },
+      },
+      {
+        id: 'e-validate-cust',
+        source: 'dfd-proc-validate',
+        target: 'dfd-ext-customer',
+        type: 'umlEdge',
+        data: {
+          relationshipType: 'data_flow',
+          label: 'Confirmation',
+        },
+      },
+      {
+        id: 'e-validate-payment',
+        source: 'dfd-proc-validate',
+        target: 'dfd-proc-payment',
+        type: 'umlEdge',
+        data: {
+          relationshipType: 'data_flow',
+          label: 'Payment Details',
+        },
+      },
+      {
+        id: 'e-validate-orders',
+        source: 'dfd-proc-validate',
+        target: 'dfd-store-orders',
+        type: 'umlEdge',
+        data: {
+          relationshipType: 'data_flow',
+          label: 'New Order',
+        },
+      },
+      {
+        id: 'e-payment-fulfill',
+        source: 'dfd-proc-payment',
+        target: 'dfd-proc-fulfill',
+        type: 'umlEdge',
+        data: {
+          relationshipType: 'data_flow',
+          label: 'Payment Receipt',
+        },
+      },
+      {
+        id: 'e-fulfill-inventory',
+        source: 'dfd-proc-fulfill',
+        target: 'dfd-store-inventory',
+        type: 'umlEdge',
+        data: {
+          relationshipType: 'data_flow',
+          label: 'Stock Update',
+        },
+      },
+      {
+        id: 'e-fulfill-warehouse',
+        source: 'dfd-proc-fulfill',
+        target: 'dfd-ext-warehouse',
+        type: 'umlEdge',
+        data: {
+          relationshipType: 'data_flow',
+          label: 'Packing Slip',
         },
       },
     ],

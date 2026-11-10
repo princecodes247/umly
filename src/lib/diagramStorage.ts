@@ -5,6 +5,7 @@ export type DiagramType =
   | 'use_case'
   | 'er'
   | 'class'
+  | 'dfd'
   | 'sequence'
   | 'activity'
   | 'state_machine'

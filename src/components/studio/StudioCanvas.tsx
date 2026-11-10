@@ -42,6 +42,9 @@ import {
   Check,
   Table2,
   Boxes,
+  Cpu,
+  HardDrive,
+  SquareUser,
 } from 'lucide-react'
 
 import { ActorNode } from '../canvas/nodes/ActorNode'
@@ -50,6 +53,11 @@ import { BoundaryNode } from '../canvas/nodes/BoundaryNode'
 import { NoteNode } from '../canvas/nodes/NoteNode'
 import { ErEntityNode } from '../canvas/nodes/ErEntityNode'
 import { ClassNode } from '../canvas/nodes/ClassNode'
+import {
+  DfdProcessNode,
+  DfdDataStoreNode,
+  DfdExternalEntityNode,
+} from '../canvas/nodes/DfdNodes'
 import { UmlEdge } from '../canvas/edges/UmlEdge'
 import { UmlMarkers } from '../canvas/UmlMarkers'
 import { StudioToolbar } from './StudioToolbar'
@@ -103,6 +111,9 @@ const nodeTypes: NodeTypes = {
   note: NoteNode,
   erEntity: ErEntityNode,
   umlClass: ClassNode,
+  dfdProcess: DfdProcessNode,
+  dfdDataStore: DfdDataStoreNode,
+  dfdExternalEntity: DfdExternalEntityNode,
 }
 
 const edgeTypes: EdgeTypes = {
@@ -163,6 +174,24 @@ function getNodeDimensions(n: Node): { w: number; h: number } {
     return {
       w: (n.data?.width as number) || n.measured?.width || 230,
       h: (n.data?.height as number) || n.measured?.height || 160,
+    }
+  }
+  if (n.type === 'dfdProcess') {
+    return {
+      w: (n.data?.width as number) || n.measured?.width || 160,
+      h: (n.data?.height as number) || n.measured?.height || 84,
+    }
+  }
+  if (n.type === 'dfdDataStore') {
+    return {
+      w: (n.data?.width as number) || n.measured?.width || 184,
+      h: (n.data?.height as number) || n.measured?.height || 54,
+    }
+  }
+  if (n.type === 'dfdExternalEntity') {
+    return {
+      w: (n.data?.width as number) || n.measured?.width || 148,
+      h: (n.data?.height as number) || n.measured?.height || 68,
     }
   }
   return {
@@ -856,7 +885,16 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
   // Add Node helper: auto-drops at visible viewport center (avoiding overlap) or at explicit drag-drop position
   const handleAddNode = useCallback(
     (
-      type: 'actor' | 'useCase' | 'boundary' | 'note' | 'erEntity' | 'umlClass',
+      type:
+        | 'actor'
+        | 'useCase'
+        | 'boundary'
+        | 'note'
+        | 'erEntity'
+        | 'umlClass'
+        | 'dfdProcess'
+        | 'dfdDataStore'
+        | 'dfdExternalEntity',
       options?: {
         actorType?: 'primary' | 'secondary' | 'system'
         position?: { x: number; y: number }
@@ -871,11 +909,15 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
           ? 440
           : type === 'erEntity' || type === 'umlClass'
             ? 230
-            : type === 'useCase'
-              ? 148
-              : type === 'actor'
-                ? 88
-                : 150
+            : type === 'dfdDataStore'
+              ? 184
+              : type === 'dfdProcess'
+                ? 160
+                : type === 'dfdExternalEntity' || type === 'useCase'
+                  ? 148
+                  : type === 'actor'
+                    ? 88
+                    : 150
       const nodeH =
         type === 'boundary'
           ? 380
@@ -883,11 +925,17 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
             ? 140
             : type === 'umlClass'
               ? 160
-              : type === 'useCase'
-                ? 64
-                : type === 'actor'
-                  ? 108
-                  : 76
+              : type === 'dfdProcess'
+                ? 84
+                : type === 'dfdExternalEntity'
+                  ? 68
+                  : type === 'dfdDataStore'
+                    ? 54
+                    : type === 'useCase'
+                      ? 64
+                      : type === 'actor'
+                        ? 108
+                        : 76
 
       let posX: number
       let posY: number
@@ -1015,6 +1063,33 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
             autoFocusEdit: options?.autoFocusEdit ?? true,
           }
           break
+        case 'dfdProcess': {
+          const procCount = nodes.filter((n) => n.type === 'dfdProcess').length + 1
+          initialData = {
+            nodeType: 'dfdProcess',
+            label: 'Process',
+            processNumber: `${procCount}.0`,
+            autoFocusEdit: options?.autoFocusEdit ?? true,
+          }
+          break
+        }
+        case 'dfdDataStore': {
+          const storeCount = nodes.filter((n) => n.type === 'dfdDataStore').length + 1
+          initialData = {
+            nodeType: 'dfdDataStore',
+            label: 'Data Store',
+            dataStoreId: `D${storeCount}`,
+            autoFocusEdit: options?.autoFocusEdit ?? true,
+          }
+          break
+        }
+        case 'dfdExternalEntity':
+          initialData = {
+            nodeType: 'dfdExternalEntity',
+            label: 'External Entity',
+            autoFocusEdit: options?.autoFocusEdit ?? true,
+          }
+          break
         case 'boundary':
           initialData = {
             nodeType: 'boundary',
@@ -1068,7 +1143,15 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
   const createConnectedElement = useCallback(
     (
       sourceNodeId: string,
-      targetType: 'useCase' | 'actor' | 'note' | 'erEntity' | 'umlClass',
+      targetType:
+        | 'useCase'
+        | 'actor'
+        | 'note'
+        | 'erEntity'
+        | 'umlClass'
+        | 'dfdProcess'
+        | 'dfdDataStore'
+        | 'dfdExternalEntity',
       relationshipType: UmlRelationshipType,
       flowPos?: { x: number; y: number }
     ) => {
@@ -1155,11 +1238,31 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
                   ],
                   autoFocusEdit: true,
                 }
-                : {
-                  nodeType: 'useCase',
-                  label: 'New Use Case',
-                  autoFocusEdit: true,
-                }
+                : targetType === 'dfdProcess'
+                  ? {
+                    nodeType: 'dfdProcess',
+                    label: 'Process',
+                    processNumber: `${nodes.filter((n) => n.type === 'dfdProcess').length + 1}.0`,
+                    autoFocusEdit: true,
+                  }
+                  : targetType === 'dfdDataStore'
+                    ? {
+                      nodeType: 'dfdDataStore',
+                      label: 'Data Store',
+                      dataStoreId: `D${nodes.filter((n) => n.type === 'dfdDataStore').length + 1}`,
+                      autoFocusEdit: true,
+                    }
+                    : targetType === 'dfdExternalEntity'
+                      ? {
+                        nodeType: 'dfdExternalEntity',
+                        label: 'External Entity',
+                        autoFocusEdit: true,
+                      }
+                      : {
+                        nodeType: 'useCase',
+                        label: 'New Use Case',
+                        autoFocusEdit: true,
+                      }
 
       const newNode: Node = {
         id: newNodeId,
@@ -1886,6 +1989,14 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
         createConnectedElement(nodeId, 'umlClass', 'association')
         return
       }
+      if (
+        sNode.type === 'dfdProcess' ||
+        sNode.type === 'dfdDataStore' ||
+        sNode.type === 'dfdExternalEntity'
+      ) {
+        createConnectedElement(nodeId, 'dfdProcess', 'data_flow')
+        return
+      }
       const rel = sNode.type === 'actor' ? 'association' : 'include'
       createConnectedElement(nodeId, 'useCase', rel)
     }
@@ -2279,9 +2390,23 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
           if (parsed) {
             pushSnapshot()
             setTitle(parsed.title || 'Imported Diagram')
+            const hasDfd = parsed.nodes?.some(
+              (n) =>
+                n.type === 'dfdProcess' ||
+                n.type === 'dfdDataStore' ||
+                n.type === 'dfdExternalEntity'
+            )
             const hasUmlClass = parsed.nodes?.some((n) => n.type === 'umlClass')
             const hasErEntity = parsed.nodes?.some((n) => n.type === 'erEntity')
-            setDiagramType(hasUmlClass ? 'class' : hasErEntity ? 'er' : 'use_case')
+            setDiagramType(
+              hasDfd
+                ? 'dfd'
+                : hasUmlClass
+                  ? 'class'
+                  : hasErEntity
+                    ? 'er'
+                    : 'use_case'
+            )
             setNodes(parsed.nodes)
             setEdges(parsed.edges)
             setTimeout(() => {
@@ -2400,6 +2525,21 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
         handleAddNode('umlClass')
         return
       }
+      if (keyLower === 'p' && diagramType === 'dfd') {
+        e.preventDefault()
+        handleAddNode('dfdProcess')
+        return
+      }
+      if (keyLower === 'd' && diagramType === 'dfd') {
+        e.preventDefault()
+        handleAddNode('dfdDataStore')
+        return
+      }
+      if (keyLower === 'e' && diagramType === 'dfd') {
+        e.preventDefault()
+        handleAddNode('dfdExternalEntity')
+        return
+      }
       if (keyLower === 'u' && diagramType === 'use_case') {
         e.preventDefault()
         handleAddNode('useCase')
@@ -2440,6 +2580,12 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
           createConnectedElement(sNode.id, 'erEntity', 'er')
         } else if (sNode.type === 'umlClass') {
           createConnectedElement(sNode.id, 'umlClass', 'association')
+        } else if (
+          sNode.type === 'dfdProcess' ||
+          sNode.type === 'dfdDataStore' ||
+          sNode.type === 'dfdExternalEntity'
+        ) {
+          createConnectedElement(sNode.id, 'dfdProcess', 'data_flow')
         } else if (sNode.type !== 'boundary') {
           const rel = sNode.type === 'actor' ? 'association' : 'include'
           createConnectedElement(sNode.id, 'useCase', rel)
@@ -2553,7 +2699,10 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
         rawType !== 'boundary' &&
         rawType !== 'note' &&
         rawType !== 'erEntity' &&
-        rawType !== 'umlClass'
+        rawType !== 'umlClass' &&
+        rawType !== 'dfdProcess' &&
+        rawType !== 'dfdDataStore' &&
+        rawType !== 'dfdExternalEntity'
       ) {
         return
       }
@@ -2567,9 +2716,13 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
           ? -220
           : rawType === 'erEntity' || rawType === 'umlClass'
             ? -115
-            : rawType === 'useCase'
-              ? -72
-              : -45
+            : rawType === 'dfdDataStore'
+              ? -92
+              : rawType === 'dfdProcess'
+                ? -80
+                : rawType === 'dfdExternalEntity' || rawType === 'useCase'
+                  ? -74
+                  : -45
       const offsetY =
         rawType === 'boundary'
           ? -190
@@ -2577,9 +2730,15 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
             ? -70
             : rawType === 'umlClass'
               ? -80
-              : rawType === 'useCase'
-                ? -32
-                : -50
+              : rawType === 'dfdProcess'
+                ? -42
+                : rawType === 'dfdExternalEntity'
+                  ? -34
+                  : rawType === 'dfdDataStore'
+                    ? -27
+                    : rawType === 'useCase'
+                      ? -32
+                      : -50
 
       handleAddNode(rawType, {
         position: { x: flowPos.x + offsetX, y: flowPos.y + offsetY },
@@ -2810,6 +2969,87 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
                         </span>
                       </button>
                     ))}
+                  </>
+                ) : dropCreateMenu.sourceNodeType === 'dfdProcess' ||
+                  dropCreateMenu.sourceNodeType === 'dfdDataStore' ||
+                  dropCreateMenu.sourceNodeType === 'dfdExternalEntity' ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        createConnectedElement(
+                          dropCreateMenu.sourceNodeId,
+                          'dfdProcess',
+                          'data_flow',
+                          {
+                            x: dropCreateMenu.flowX,
+                            y: dropCreateMenu.flowY,
+                          }
+                        )
+                        setDropCreateMenu(null)
+                      }}
+                      className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-[6px] hover:bg-[var(--hover-bg)] text-[var(--text-primary)] transition-colors cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2 font-medium">
+                        <Cpu className="w-3.5 h-3.5 text-[#2383e2]" />
+                        <span>Process</span>
+                      </span>
+                      <span className="text-[10px] font-mono text-[var(--text-tertiary)]">
+                        flow
+                      </span>
+                    </button>
+                    {dropCreateMenu.sourceNodeType === 'dfdProcess' && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            createConnectedElement(
+                              dropCreateMenu.sourceNodeId,
+                              'dfdDataStore',
+                              'data_flow',
+                              {
+                                x: dropCreateMenu.flowX,
+                                y: dropCreateMenu.flowY,
+                              }
+                            )
+                            setDropCreateMenu(null)
+                          }}
+                          className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-[6px] hover:bg-[var(--hover-bg)] text-[var(--text-primary)] transition-colors cursor-pointer"
+                        >
+                          <span className="flex items-center gap-2 font-medium">
+                            <HardDrive className="w-3.5 h-3.5 text-[#448361]" />
+                            <span>Data Store</span>
+                          </span>
+                          <span className="text-[10px] font-mono text-[var(--text-tertiary)]">
+                            flow
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            createConnectedElement(
+                              dropCreateMenu.sourceNodeId,
+                              'dfdExternalEntity',
+                              'data_flow',
+                              {
+                                x: dropCreateMenu.flowX,
+                                y: dropCreateMenu.flowY,
+                              }
+                            )
+                            setDropCreateMenu(null)
+                          }}
+                          className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-[6px] hover:bg-[var(--hover-bg)] text-[var(--text-primary)] transition-colors cursor-pointer"
+                        >
+                          <span className="flex items-center gap-2 font-medium">
+                            <SquareUser className="w-3.5 h-3.5 text-[#9065b0]" />
+                            <span>External Entity</span>
+                          </span>
+                          <span className="text-[10px] font-mono text-[var(--text-tertiary)]">
+                            flow
+                          </span>
+                        </button>
+                      </>
+                    )}
                   </>
                 ) : dropCreateMenu.sourceNodeType === 'actor' ? (
                   <>
@@ -3295,7 +3535,34 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
                     onSelect: () => handleAddNode('boundary'),
                   },
                 ]
-              : [
+              : diagramType === 'dfd'
+                ? [
+                    {
+                      id: 'add-dfd-process',
+                      category: 'Create',
+                      label: 'New Process',
+                      shortcut: 'P',
+                      icon: <Cpu className="w-3.5 h-3.5 text-[#2383e2]" />,
+                      onSelect: () => handleAddNode('dfdProcess'),
+                    },
+                    {
+                      id: 'add-dfd-store',
+                      category: 'Create',
+                      label: 'New Data Store',
+                      shortcut: 'D',
+                      icon: <HardDrive className="w-3.5 h-3.5 text-[#448361]" />,
+                      onSelect: () => handleAddNode('dfdDataStore'),
+                    },
+                    {
+                      id: 'add-dfd-external',
+                      category: 'Create',
+                      label: 'New External Entity',
+                      shortcut: 'E',
+                      icon: <SquareUser className="w-3.5 h-3.5 text-[#9065b0]" />,
+                      onSelect: () => handleAddNode('dfdExternalEntity'),
+                    },
+                  ]
+                : [
                 {
                   id: 'add-usecase',
                   category: 'Create',

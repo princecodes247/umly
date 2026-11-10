@@ -25,6 +25,9 @@ import {
   Palette,
   Table2,
   Boxes,
+  Cpu,
+  HardDrive,
+  SquareUser,
   Plus,
   KeyRound,
   X,
@@ -129,9 +132,20 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
   const isErDiagram = diagramType === 'er' || allNodes.some((n) => n.type === 'erEntity')
   const isClassDiagram =
     diagramType === 'class' || allNodes.some((n) => n.type === 'umlClass')
+  const isDfdDiagram =
+    diagramType === 'dfd' ||
+    allNodes.some(
+      (n) =>
+        n.type === 'dfdProcess' ||
+        n.type === 'dfdDataStore' ||
+        n.type === 'dfdExternalEntity'
+    )
   const actorsCount = allNodes.filter((n) => n.type === 'actor').length
   const useCasesCount = allNodes.filter((n) => n.type === 'useCase').length
   const boundariesCount = allNodes.filter((n) => n.type === 'boundary').length
+  const dfdProcessesCount = allNodes.filter((n) => n.type === 'dfdProcess').length
+  const dfdStoresCount = allNodes.filter((n) => n.type === 'dfdDataStore').length
+  const dfdExternalCount = allNodes.filter((n) => n.type === 'dfdExternalEntity').length
   const erEntityNodes = allNodes.filter((n) => n.type === 'erEntity')
   const entitiesCount = erEntityNodes.length
   const weakEntitiesCount = erEntityNodes.filter((n) =>
@@ -168,7 +182,14 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
         { label: 'Methods', value: classMethodsCount },
         { label: 'Links', value: edgesCount },
       ]
-      : [
+      : isDfdDiagram
+        ? [
+          { label: 'Process', value: dfdProcessesCount },
+          { label: 'Stores', value: dfdStoresCount },
+          { label: 'External', value: dfdExternalCount },
+          { label: 'Flows', value: edgesCount },
+        ]
+        : [
         { label: 'Actors', value: actorsCount },
         { label: 'Cases', value: useCasesCount },
         { label: 'Bounds', value: boundariesCount },
@@ -406,6 +427,24 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                   <span>UML Class</span>
                 </div>
               )}
+              {selectedNode.type === 'dfdProcess' && (
+                <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-[var(--notion-blue-bg)] text-[var(--notion-blue-text)] font-semibold text-xs whitespace-nowrap">
+                  <Cpu className="w-3.5 h-3.5" />
+                  <span>DFD Process</span>
+                </div>
+              )}
+              {selectedNode.type === 'dfdDataStore' && (
+                <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-[var(--notion-green-bg)] text-[var(--notion-green-text)] font-semibold text-xs whitespace-nowrap">
+                  <HardDrive className="w-3.5 h-3.5" />
+                  <span>Data Store</span>
+                </div>
+              )}
+              {selectedNode.type === 'dfdExternalEntity' && (
+                <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-[var(--notion-purple-bg)] text-[var(--notion-purple-text)] font-semibold text-xs whitespace-nowrap">
+                  <SquareUser className="w-3.5 h-3.5" />
+                  <span>External Entity</span>
+                </div>
+              )}
             </div>
             {/* Element Position & Size */}
             {(() => {
@@ -413,15 +452,19 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
               const defaultWidth =
                 targetNode.type === 'actor'
                   ? 88
-                  : targetNode.type === 'useCase'
+                  : targetNode.type === 'useCase' || targetNode.type === 'dfdExternalEntity'
                     ? 148
                     : targetNode.type === 'boundary'
                       ? 440
                       : targetNode.type === 'erEntity' || targetNode.type === 'umlClass'
                         ? 230
-                        : targetNode.type === 'note'
-                          ? 150
-                          : 120
+                        : targetNode.type === 'dfdProcess'
+                          ? 160
+                          : targetNode.type === 'dfdDataStore'
+                            ? 184
+                            : targetNode.type === 'note'
+                              ? 150
+                              : 120
 
               const defaultHeight =
                 targetNode.type === 'actor'
@@ -434,9 +477,15 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                         ? 140
                         : targetNode.type === 'umlClass'
                           ? 160
-                          : targetNode.type === 'note'
-                            ? 76
-                            : 60
+                          : targetNode.type === 'dfdProcess'
+                            ? 84
+                            : targetNode.type === 'dfdDataStore'
+                              ? 54
+                              : targetNode.type === 'dfdExternalEntity'
+                                ? 68
+                                : targetNode.type === 'note'
+                                  ? 76
+                                  : 60
 
               const minW =
                 targetNode.type === 'actor'
@@ -447,9 +496,15 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                       ? 200
                       : targetNode.type === 'erEntity' || targetNode.type === 'umlClass'
                         ? 190
-                        : targetNode.type === 'note'
-                          ? 80
-                          : 40
+                        : targetNode.type === 'dfdProcess'
+                          ? 110
+                          : targetNode.type === 'dfdDataStore'
+                            ? 130
+                            : targetNode.type === 'dfdExternalEntity'
+                              ? 100
+                              : targetNode.type === 'note'
+                                ? 80
+                                : 40
 
               const minH =
                 targetNode.type === 'actor'
@@ -462,9 +517,15 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                         ? 88
                         : targetNode.type === 'umlClass'
                           ? 100
-                          : targetNode.type === 'note'
-                            ? 40
-                            : 30
+                          : targetNode.type === 'dfdProcess'
+                            ? 60
+                            : targetNode.type === 'dfdDataStore'
+                              ? 42
+                              : targetNode.type === 'dfdExternalEntity'
+                                ? 48
+                                : targetNode.type === 'note'
+                                  ? 40
+                                  : 30
 
               const currentWidth =
                 typeof nodeData.width === 'number'
@@ -754,6 +815,36 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                 </div>
               </div>
             )}
+            {/* DFD Process Number / Data Store ID */}
+            {(selectedNode.type === 'dfdProcess' ||
+              selectedNode.type === 'dfdDataStore') && (
+              <div className="space-y-1.5 pt-3 border-t border-[var(--border-subtle)]">
+                <label className="text-[11px] font-medium text-[var(--text-secondary)]">
+                  {selectedNode.type === 'dfdProcess'
+                    ? 'Process Number'
+                    : 'Data Store ID'}
+                </label>
+                <input
+                  type="text"
+                  value={
+                    selectedNode.type === 'dfdProcess'
+                      ? nodeData.processNumber || ''
+                      : nodeData.dataStoreId || ''
+                  }
+                  onChange={(e) =>
+                    onUpdateNodeData(
+                      selectedNode.id,
+                      selectedNode.type === 'dfdProcess'
+                        ? { processNumber: e.target.value }
+                        : { dataStoreId: e.target.value }
+                    )
+                  }
+                  placeholder={selectedNode.type === 'dfdProcess' ? '1.0' : 'D1'}
+                  className="w-full px-2.5 py-1.5 rounded-[5px] bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-xs font-mono text-[var(--text-primary)] outline-none focus:border-[var(--primary-btn)]"
+                />
+              </div>
+            )}
+
             {/* UML Class Kind, Attributes & Methods */}
             {selectedNode.type === 'umlClass' && (() => {
               const classKind: ClassKind = nodeData.classKind || 'class'
@@ -1356,6 +1447,27 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                           </button>
                         ))}
                       </div>
+                    </div>
+                  </div>
+                )
+              }
+
+              if (
+                sNode?.type === 'dfdProcess' ||
+                sNode?.type === 'dfdDataStore' ||
+                sNode?.type === 'dfdExternalEntity' ||
+                tNode?.type === 'dfdProcess' ||
+                tNode?.type === 'dfdDataStore' ||
+                tNode?.type === 'dfdExternalEntity'
+              ) {
+                return (
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-medium text-[var(--text-secondary)]">
+                      Relationship Type
+                    </label>
+                    <div className="px-2.5 py-1.5 rounded-[4px] bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-semibold flex items-center justify-between">
+                      <span>Data Flow</span>
+                      <span className="font-mono text-[10px] opacity-75">──▶</span>
                     </div>
                   </div>
                 )

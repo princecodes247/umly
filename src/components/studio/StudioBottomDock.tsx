@@ -7,6 +7,9 @@ import {
   StickyNote,
   Table2,
   Boxes,
+  Cpu,
+  HardDrive,
+  SquareUser,
   Wand2,
   Command,
   HelpCircle,
@@ -20,6 +23,9 @@ export type StudioElementKind =
   | 'note'
   | 'erEntity'
   | 'umlClass'
+  | 'dfdProcess'
+  | 'dfdDataStore'
+  | 'dfdExternalEntity'
 
 interface StudioBottomDockProps {
   diagramType?: DiagramType
@@ -78,6 +84,33 @@ export const StudioBottomDock: React.FC<StudioBottomDockProps> = ({
             label: 'Package',
             shortcut: 'B',
             icon: <SquareDashed className="w-3.5 h-3.5 text-[#9065b0]" />,
+          },
+          {
+            id: 'note',
+            label: 'Note',
+            shortcut: 'N',
+            icon: <StickyNote className="w-3.5 h-3.5 text-[#cb912f]" />,
+          },
+        ]
+      : diagramType === 'dfd'
+      ? [
+          {
+            id: 'dfdProcess',
+            label: 'Process',
+            shortcut: 'P',
+            icon: <Cpu className="w-3.5 h-3.5 text-[#2383e2]" />,
+          },
+          {
+            id: 'dfdDataStore',
+            label: 'Data Store',
+            shortcut: 'D',
+            icon: <HardDrive className="w-3.5 h-3.5 text-[#448361]" />,
+          },
+          {
+            id: 'dfdExternalEntity',
+            label: 'External',
+            shortcut: 'E',
+            icon: <SquareUser className="w-3.5 h-3.5 text-[#9065b0]" />,
           },
           {
             id: 'note',

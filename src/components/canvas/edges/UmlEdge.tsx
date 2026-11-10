@@ -487,6 +487,12 @@ export const UmlEdge = memo(
         stereotypeText = data?.label || ''
         textColor = 'var(--text-primary)'
         break
+      case 'data_flow':
+        strokeDasharray = 'none'
+        markerEnd = 'url(#dfd-arrow)'
+        stereotypeText = data?.label || ''
+        textColor = 'var(--text-primary)'
+        break
       case 'association':
       default:
         strokeDasharray = 'none'
@@ -1449,7 +1455,9 @@ export const UmlEdge = memo(
                                           ? 'Compos'
                                           : t === 'dependency'
                                             ? 'Dep'
-                                            : 'Assoc'
+                                            : t === 'data_flow'
+                                              ? 'Flow'
+                                              : 'Assoc'
                             return (
                               <button
                                 key={t}

@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   FolderOpen,
   Database,
+  ArrowRightLeft,
 } from 'lucide-react'
 import {
   createDiagramDraft,
@@ -57,6 +58,14 @@ const DIAGRAM_TYPES: DiagramTypeOption[] = [
     description:
       'Model static structure: classes, attributes, operations, inheritance, and associations.',
     icon: Boxes,
+    status: 'available',
+  },
+  {
+    type: 'dfd',
+    name: 'Data Flow Diagram',
+    description:
+      'Model how data moves between external entities, processes, and data stores.',
+    icon: ArrowRightLeft,
     status: 'available',
   },
   {
@@ -152,11 +161,23 @@ export const NewDiagramModal: React.FC<NewDiagramModalProps> = ({
         const parsed = parseDiagramJson(text)
         if (parsed) {
           const fileTitle = file.name.replace(/\.(umly\.)?json$/i, '')
+          const hasDfd = parsed.nodes?.some(
+            (n) =>
+              n.type === 'dfdProcess' ||
+              n.type === 'dfdDataStore' ||
+              n.type === 'dfdExternalEntity'
+          )
           const hasUmlClass = parsed.nodes?.some((n) => n.type === 'umlClass')
           const hasErEntity = parsed.nodes?.some((n) => n.type === 'erEntity')
           const draft = createDiagramDraft(
             parsed.title || fileTitle || 'Imported Diagram',
-            hasUmlClass ? 'class' : hasErEntity ? 'er' : 'use_case'
+            hasDfd
+              ? 'dfd'
+              : hasUmlClass
+                ? 'class'
+                : hasErEntity
+                  ? 'er'
+                  : 'use_case'
           )
           draft.nodes = parsed.nodes
           draft.edges = parsed.edges || []

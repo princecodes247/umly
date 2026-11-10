@@ -33,7 +33,13 @@ export function getNodeBox(node: Node): BoxMetrics {
           ? 440
           : node.type === 'erEntity' || node.type === 'umlClass'
             ? 230
-            : 150)
+            : node.type === 'dfdProcess'
+              ? 160
+              : node.type === 'dfdDataStore'
+                ? 184
+                : node.type === 'dfdExternalEntity'
+                  ? 148
+                  : 150)
   const h =
     customH ??
     node.measured?.height ??
@@ -47,7 +53,13 @@ export function getNodeBox(node: Node): BoxMetrics {
             ? 140
             : node.type === 'umlClass'
               ? 160
-              : 76)
+              : node.type === 'dfdProcess'
+                ? 84
+                : node.type === 'dfdDataStore'
+                  ? 54
+                  : node.type === 'dfdExternalEntity'
+                    ? 68
+                    : 76)
 
   const x = node.position.x
   const y = node.position.y

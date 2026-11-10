@@ -8,6 +8,7 @@ export type UmlRelationshipType =
   | 'realization'
   | 'dependency'
   | 'er'
+  | 'data_flow'
 
 export type ClassVisibility = '+' | '-' | '#' | '~'
 
@@ -61,7 +62,16 @@ export type NodeAccentColor =
 
 export interface UmlNodeData {
   label: string
-  nodeType: 'actor' | 'useCase' | 'boundary' | 'note' | 'erEntity' | 'umlClass'
+  nodeType:
+    | 'actor'
+    | 'useCase'
+    | 'boundary'
+    | 'note'
+    | 'erEntity'
+    | 'umlClass'
+    | 'dfdProcess'
+    | 'dfdDataStore'
+    | 'dfdExternalEntity'
   actorType?: 'primary' | 'secondary' | 'system'
   stereotype?: string
   accentColor?: NodeAccentColor
@@ -72,6 +82,8 @@ export interface UmlNodeData {
   classKind?: ClassKind
   classAttributes?: ClassAttribute[]
   classMethods?: ClassMethod[]
+  processNumber?: string
+  dataStoreId?: string
   width?: number
   height?: number
   description?: string

@@ -55,6 +55,16 @@ export function getAllowedRelationshipTypes(
     ]
   }
 
+  // Data Flow Diagram: Process <-> Process | ExternalEntity | DataStore
+  const isDfdNode = (t: string) =>
+    t === 'dfdProcess' || t === 'dfdDataStore' || t === 'dfdExternalEntity'
+  if (isDfdNode(sourceType) && isDfdNode(targetType)) {
+    if (sourceType === 'dfdProcess' || targetType === 'dfdProcess') {
+      return ['data_flow']
+    }
+    return []
+  }
+
   return []
 }
 
@@ -91,6 +101,7 @@ const RELATIONSHIP_LABELS: Record<UmlRelationshipType, string> = {
   realization: 'Realization',
   dependency: 'Dependency',
   er: 'ER Relationship',
+  data_flow: 'Data Flow',
 }
 
 const NODE_TYPE_LABELS: Record<string, string> = {
@@ -100,6 +111,9 @@ const NODE_TYPE_LABELS: Record<string, string> = {
   note: 'Note',
   erEntity: 'Entity',
   umlClass: 'Class',
+  dfdProcess: 'Process',
+  dfdDataStore: 'Data Store',
+  dfdExternalEntity: 'External Entity',
 }
 
 /**

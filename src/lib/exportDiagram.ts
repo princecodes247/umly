@@ -268,6 +268,44 @@ export function generatePlantUml(
     return lines.join('\n')
   }
 
+  const dfdNodes = nodes.filter(
+    (n) =>
+      n.type === 'dfdProcess' ||
+      n.type === 'dfdDataStore' ||
+      n.type === 'dfdExternalEntity'
+  )
+  if (dfdNodes.length > 0) {
+    const safeId = (id: string) => id.replace(/[^a-zA-Z0-9_]/g, '_')
+    const lines: string[] = [
+      '@startuml',
+      `title ${title || 'Data Flow Diagram'}`,
+      'left to right direction',
+      '',
+    ]
+    dfdNodes.forEach((n) => {
+      const d = n.data as unknown as UmlNodeData
+      const id = safeId(n.id)
+      const label = (d.label || 'Node').replace(/"/g, "'")
+      if (n.type === 'dfdProcess') {
+        const num = d.processNumber ? `${d.processNumber} ` : ''
+        lines.push(`usecase "${num}${label}" as ${id}`)
+      } else if (n.type === 'dfdDataStore') {
+        const storeId = d.dataStoreId ? `${d.dataStoreId}: ` : ''
+        lines.push(`database "${storeId}${label}" as ${id}`)
+      } else {
+        lines.push(`rectangle "${label}" as ${id}`)
+      }
+    })
+    lines.push('')
+    edges.forEach((e) => {
+      const ed = e.data as unknown as UmlEdgeData
+      const lbl = ed?.label ? ` : ${ed.label}` : ''
+      lines.push(`${safeId(e.source)} --> ${safeId(e.target)}${lbl}`)
+    })
+    lines.push('@enduml')
+    return lines.join('\n')
+  }
+
   const lines: string[] = [
     '@startuml',
     `title ${title || 'Use Case Diagram'}`,
@@ -496,6 +534,42 @@ export function generateMermaid(
       lines.push(`  ${s} ${arrow} ${t}${lbl}`)
     })
 
+    return lines.join('\n')
+  }
+
+  const dfdNodes = nodes.filter(
+    (n) =>
+      n.type === 'dfdProcess' ||
+      n.type === 'dfdDataStore' ||
+      n.type === 'dfdExternalEntity'
+  )
+  if (dfdNodes.length > 0) {
+    const safeId = (id: string) => id.replace(/[^a-zA-Z0-9_]/g, '_')
+    const lines: string[] = [
+      '---',
+      `title: ${title || 'Data Flow Diagram'}`,
+      '---',
+      'flowchart LR',
+    ]
+    dfdNodes.forEach((n) => {
+      const d = n.data as unknown as UmlNodeData
+      const id = safeId(n.id)
+      const label = (d.label || 'Node').replace(/"/g, "'")
+      if (n.type === 'dfdProcess') {
+        const num = d.processNumber ? `${d.processNumber} ` : ''
+        lines.push(`  ${id}(["${num}${label}"])`)
+      } else if (n.type === 'dfdDataStore') {
+        const storeId = d.dataStoreId ? `${d.dataStoreId} | ` : ''
+        lines.push(`  ${id}[("${storeId}${label}")]`)
+      } else {
+        lines.push(`  ${id}["${label}"]`)
+      }
+    })
+    edges.forEach((e) => {
+      const ed = e.data as unknown as UmlEdgeData
+      const lbl = ed?.label ? `|"${ed.label.replace(/"/g, "'")}"|` : ''
+      lines.push(`  ${safeId(e.source)} -->${lbl} ${safeId(e.target)}`)
+    })
     return lines.join('\n')
   }
 
