@@ -109,12 +109,12 @@ export const NewDiagramModal: React.FC<NewDiagramModalProps> = ({
   const handleSelectType = (nextType: DiagramType) => {
     setSelectedType(nextType)
     setSelectedTemplate('blank')
-    if (
-      title === 'New Use Case Diagram' ||
-      title === 'New ER Diagram' ||
-      !title.trim()
-    ) {
-      setTitle(nextType === 'er' ? 'New ER Diagram' : 'New Use Case Diagram')
+    const isDefaultTitle =
+      !title.trim() || DIAGRAM_TYPES.some((d) => title === `New ${d.name}`)
+    if (isDefaultTitle) {
+      const nextName =
+        DIAGRAM_TYPES.find((d) => d.type === nextType)?.name || 'Diagram'
+      setTitle(`New ${nextName}`)
     }
   }
 
