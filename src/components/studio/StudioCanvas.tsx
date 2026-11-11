@@ -237,32 +237,47 @@ function expandIdsWithBoundaryChildren(
 
 const MULTI_SELECTION_KEY_CODES = ['Meta', 'Control', 'Shift']
 
-interface StudioCanvasProps {
-  diagramId?: string
+export interface StudioCanvasPuzzleProps {
+  initialNodes: Node[]
+  initialEdges: Edge[]
+  diagramType?: DiagramType
+  title?: string
+  resetKey?: string | number
+  onDiagramChange?: (nodes: Node[], edges: Edge[]) => void
+  customHeader?: React.ReactNode
+  leftSidebar?: React.ReactNode
+  hideInspector?: boolean
 }
 
-function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
+interface StudioCanvasProps {
+  diagramId?: string
+  puzzle?: StudioCanvasPuzzleProps
+}
+
+function StudioCanvasInner({ diagramId, puzzle }: StudioCanvasProps) {
   const reactFlowInstance = useReactFlow()
   const storeApi = useStoreApi()
   const canvasRef = useRef<HTMLDivElement>(null)
 
+  const isPuzzleMode = Boolean(puzzle)
+
   // Resolve active diagram draft ID
   const activeDraftId = diagramId || getLastActiveDiagramId()
-  const initialDraft = getDiagramDraft(activeDraftId)
+  const initialDraft = isPuzzleMode ? null : getDiagramDraft(activeDraftId)
 
   const defaultTemplate = DIAGRAM_TEMPLATES[1]
 
   const [title, setTitle] = useState<string>(
-    initialDraft?.title || defaultTemplate.name
+    puzzle?.title || initialDraft?.title || defaultTemplate.name
   )
   const [diagramType, setDiagramType] = useState<DiagramType>(
-    initialDraft?.type || 'use_case'
+    puzzle?.diagramType || initialDraft?.type || 'use_case'
   )
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>(
-    initialDraft?.nodes || defaultTemplate.nodes
+    puzzle?.initialNodes || initialDraft?.nodes || defaultTemplate.nodes
   )
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(
-    initialDraft?.edges || defaultTemplate.edges
+    puzzle?.initialEdges || initialDraft?.edges || defaultTemplate.edges
   )
 
   // Default routing style for edges ('straight' | 'orthogonal' | 'bezier')
@@ -457,8 +472,25 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
     ])
   }, [pushSnapshot, setNodes, setEdges])
 
-  // When diagramId changes (e.g. switching drafts), load new draft
+  // When diagramId or puzzle resetKey changes, load new draft or reset puzzle
   useEffect(() => {
+    if (puzzle) {
+      setTitle(puzzle.title || 'Puzzle')
+      setDiagramType(puzzle.diagramType || 'use_case')
+      setNodes(puzzle.initialNodes)
+      setEdges(puzzle.initialEdges)
+      pastRef.current = []
+      futureRef.current = []
+      setCanUndo(false)
+      setCanRedo(false)
+      setSelectedNodes([])
+      setSelectedEdges([])
+      setTimeout(() => {
+        reactFlowInstance.fitView({ padding: 0.2 })
+      }, 50)
+      return
+    }
+
     const draft = getDiagramDraft(activeDraftId)
     if (draft) {
       setTitle(draft.title)
@@ -476,11 +508,18 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
         reactFlowInstance.fitView({ padding: 0.2 })
       }, 50)
     }
-  }, [activeDraftId, setNodes, setEdges, reactFlowInstance])
+  }, [activeDraftId, isPuzzleMode, puzzle?.resetKey, setNodes, setEdges, reactFlowInstance])
+
+  // Notify puzzle host when nodes/edges change
+  useEffect(() => {
+    if (!isPuzzleMode) return
+    puzzle?.onDiagramChange?.(nodes, edges)
+  }, [isPuzzleMode, nodes, edges, puzzle?.onDiagramChange])
 
   // Auto-save to diagram draft storage + periodic version history snapshots
   const lastSnapshotTimeRef = useRef<number>(Date.now())
   useEffect(() => {
+    if (isPuzzleMode) return
     setIsSaved(false)
     const timeout = setTimeout(() => {
       try {
@@ -515,7 +554,7 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
     }, 450)
 
     return () => clearTimeout(timeout)
-  }, [activeDraftId, title, nodes, edges])
+  }, [isPuzzleMode, activeDraftId, title, nodes, edges])
 
   // Close floating menus on outside pointerdown
   useEffect(() => {
@@ -2751,32 +2790,35 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
   return (
     <div className="flex-1 flex flex-col h-full w-full min-h-0 overflow-hidden bg-[var(--bg-primary)]">
       {/* Top Document Bar */}
-      <StudioToolbar
-        title={title}
-        onTitleChange={setTitle}
-        onUndo={handleUndo}
-        onRedo={handleRedo}
-        canUndo={canUndo}
-        canRedo={canRedo}
-        onClearCanvas={handleClearCanvas}
-        onLoadTemplate={handleLoadTemplate}
-        onExportPng={handleExportPng}
-        onCopyImageToClipboard={handleCopyPngClipboard}
-        onExportSvg={handleExportSvg}
-        onExportPlantUml={handleExportPlantUml}
-        onCopyPlantUml={handleCopyPlantUml}
-        onExportMermaid={handleExportMermaid}
-        onCopyMermaid={handleCopyMermaid}
-        onExportJson={handleExportJson}
-        onImportJson={handleImportJson}
-        isSaved={isSaved}
-        snapshots={snapshots}
-        onSaveSnapshot={handleSaveSnapshot}
-        onRestoreSnapshot={handleRestoreSnapshot}
-      />
+      {puzzle?.customHeader ?? (
+        <StudioToolbar
+          title={title}
+          onTitleChange={setTitle}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          onClearCanvas={handleClearCanvas}
+          onLoadTemplate={handleLoadTemplate}
+          onExportPng={handleExportPng}
+          onCopyImageToClipboard={handleCopyPngClipboard}
+          onExportSvg={handleExportSvg}
+          onExportPlantUml={handleExportPlantUml}
+          onCopyPlantUml={handleCopyPlantUml}
+          onExportMermaid={handleExportMermaid}
+          onCopyMermaid={handleCopyMermaid}
+          onExportJson={handleExportJson}
+          onImportJson={handleImportJson}
+          isSaved={isSaved}
+          snapshots={snapshots}
+          onSaveSnapshot={handleSaveSnapshot}
+          onRestoreSnapshot={handleRestoreSnapshot}
+        />
+      )}
 
-      {/* Main Studio Workspace: Canvas + Inspector */}
+      {/* Main Studio Workspace: Optional Left Sidebar + Canvas + Inspector */}
       <div className="flex-1 flex p-1.5 sm:p-2 gap-2 min-h-0 overflow-hidden h-full relative">
+        {puzzle?.leftSidebar}
         {/* Canvas Area */}
         <div
           ref={canvasRef}
@@ -3730,10 +3772,10 @@ function StudioCanvasInner({ diagramId }: StudioCanvasProps) {
   )
 }
 
-export function StudioCanvas({ diagramId }: StudioCanvasProps) {
+export function StudioCanvas({ diagramId, puzzle }: StudioCanvasProps) {
   return (
     <ReactFlowProvider>
-      <StudioCanvasInner diagramId={diagramId} />
+      <StudioCanvasInner diagramId={diagramId} puzzle={puzzle} />
     </ReactFlowProvider>
   )
 }
