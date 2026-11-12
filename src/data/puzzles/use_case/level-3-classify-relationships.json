@@ -3,7 +3,7 @@
   "number": 3,
   "title": "Classify: Include vs. Extend Dilemma",
   "type": "classify",
-  "difficulty": "Intermediate",
+  "difficulty": "Easy",
   "category": "Relationship Semantics",
   "scenario": "In an online store checkout system:\n1. Every shopper who performs \"Checkout\" MUST have their inventory deducted via \"Update Inventory\" (mandatory).\n2. During \"Checkout\", shoppers CAN OPTIONALLY choose to \"Apply Discount Coupon\" if they happen to have a coupon code (optional/conditional enhancement).",
   "goal": "Classify and connect the relationships between Checkout and its two related use cases using either «include» or «extend» in the correct directions.",

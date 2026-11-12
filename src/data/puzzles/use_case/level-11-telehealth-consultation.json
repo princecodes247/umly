@@ -1,0 +1,234 @@
+{
+  "id": "level-11-telehealth-consultation",
+  "number": 11,
+  "title": "Telehealth & E-Prescribing Architecture",
+  "diagramType": "use_case",
+  "type": "build",
+  "difficulty": "Advanced",
+  "category": "Healthcare Systems",
+  "scenario": "A Telehealth platform serves both Patients and Physicians, who share common capabilities as an Authenticated User (signing in via SSO). Both Video Consultation and Async Chat Consultation are specialized forms of Conduct Consultation. Every consultation mandatorily includes Record Clinical Notes and Verify Insurance, and Verify Insurance itself mandatorily includes Log Audit Trail. Optionally, a consultation may be extended by Issue E-Prescription (which also interacts with the external Pharmacy Network system), and a Video Consultation may be extended by Escalate to Emergency Dispatch if a patient is in distress.",
+  "goal": "Model the complete Telehealth Use Case diagram combining Actor Generalization, Use Case Generalization, chained «include» dependencies, conditional «extend» hooks, and secondary system Associations.",
+  "learningObjective": "Synthesize Actor Generalization, Use Case Generalization, transitive «include» chains, and «extend» extension points in a multi-actor system.",
+  "hints": [
+    "Actor & Use Case Generalization: Patient and Physician point to Authenticated User; Video Consultation and Async Chat Consultation point to Conduct Consultation.",
+    "Associations: Authenticated User -> Sign In (SSO); Patient & Physician -> Conduct Consultation (or inherit via Authenticated User? Keep Patient and Physician connected to Conduct Consultation); Pharmacy Network -> Issue E-Prescription.",
+    "Include chains go Base -> Included: Conduct Consultation -> Record Clinical Notes, Conduct Consultation -> Verify Insurance, and Verify Insurance -> Log Audit Trail.",
+    "Extend arrows go Extension -> Base: Issue E-Prescription -> Conduct Consultation, and Escalate to Emergency Dispatch -> Video Consultation."
+  ],
+  "solutionExplanation": "Authenticated User generalizes Patient and Physician for Sign In (SSO). Conduct Consultation generalizes Video and Async Chat consultations, includes Record Clinical Notes and Verify Insurance (which in turn includes Log Audit Trail), and is optionally extended by Issue E-Prescription (linked to Pharmacy Network). Video Consultation has a specific «extend» from Escalate to Emergency Dispatch.",
+  "initialNodes": [
+    {
+      "id": "boundary-telehealth",
+      "type": "boundary",
+      "position": { "x": 220, "y": 30 },
+      "data": {
+        "label": "Telehealth Platform",
+        "nodeType": "boundary",
+        "width": 560,
+        "height": 520
+      }
+    },
+    {
+      "id": "actor-auth-user",
+      "type": "actor",
+      "position": { "x": 50, "y": 80 },
+      "data": {
+        "label": "Authenticated User",
+        "nodeType": "actor",
+        "actorType": "primary"
+      }
+    },
+    {
+      "id": "actor-patient",
+      "type": "actor",
+      "position": { "x": 50, "y": 240 },
+      "data": {
+        "label": "Patient",
+        "nodeType": "actor",
+        "actorType": "primary"
+      }
+    },
+    {
+      "id": "actor-physician",
+      "type": "actor",
+      "position": { "x": 50, "y": 390 },
+      "data": {
+        "label": "Physician",
+        "nodeType": "actor",
+        "actorType": "primary"
+      }
+    },
+    {
+      "id": "actor-pharmacy",
+      "type": "actor",
+      "position": { "x": 850, "y": 420 },
+      "data": {
+        "label": "Pharmacy Network",
+        "nodeType": "actor",
+        "actorType": "system"
+      }
+    },
+    {
+      "id": "uc-sso",
+      "type": "useCase",
+      "position": { "x": 280, "y": 70 },
+      "data": {
+        "label": "Sign In (SSO)",
+        "nodeType": "useCase"
+      }
+    },
+    {
+      "id": "uc-consult",
+      "type": "useCase",
+      "position": { "x": 280, "y": 220 },
+      "data": {
+        "label": "Conduct Consultation",
+        "nodeType": "useCase"
+      }
+    },
+    {
+      "id": "uc-video",
+      "type": "useCase",
+      "position": { "x": 240, "y": 370 },
+      "data": {
+        "label": "Video Consultation",
+        "nodeType": "useCase"
+      }
+    },
+    {
+      "id": "uc-chat",
+      "type": "useCase",
+      "position": { "x": 420, "y": 370 },
+      "data": {
+        "label": "Async Chat Consultation",
+        "nodeType": "useCase"
+      }
+    },
+    {
+      "id": "uc-notes",
+      "type": "useCase",
+      "position": { "x": 560, "y": 130 },
+      "data": {
+        "label": "Record Clinical Notes",
+        "nodeType": "useCase"
+      }
+    },
+    {
+      "id": "uc-insurance",
+      "type": "useCase",
+      "position": { "x": 560, "y": 220 },
+      "data": {
+        "label": "Verify Insurance",
+        "nodeType": "useCase"
+      }
+    },
+    {
+      "id": "uc-audit",
+      "type": "useCase",
+      "position": { "x": 580, "y": 310 },
+      "data": {
+        "label": "Log Audit Trail",
+        "nodeType": "useCase"
+      }
+    },
+    {
+      "id": "uc-rx",
+      "type": "useCase",
+      "position": { "x": 560, "y": 440 },
+      "data": {
+        "label": "Issue E-Prescription",
+        "nodeType": "useCase"
+      }
+    },
+    {
+      "id": "uc-emergency",
+      "type": "useCase",
+      "position": { "x": 240, "y": 480 },
+      "data": {
+        "label": "Escalate to Emergency Dispatch",
+        "nodeType": "useCase"
+      }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Complete Telehealth Use Case Architecture",
+      "edges": [
+        {
+          "source": "actor-patient",
+          "target": "actor-auth-user",
+          "type": "generalization",
+          "description": "Patient specializes Authenticated User"
+        },
+        {
+          "source": "actor-physician",
+          "target": "actor-auth-user",
+          "type": "generalization",
+          "description": "Physician specializes Authenticated User"
+        },
+        {
+          "source": "actor-auth-user",
+          "target": "uc-sso",
+          "type": "association",
+          "bidirectional": true
+        },
+        {
+          "source": "actor-patient",
+          "target": "uc-consult",
+          "type": "association",
+          "bidirectional": true
+        },
+        {
+          "source": "actor-physician",
+          "target": "uc-consult",
+          "type": "association",
+          "bidirectional": true
+        },
+        {
+          "source": "uc-video",
+          "target": "uc-consult",
+          "type": "generalization",
+          "description": "Video Consultation specializes Conduct Consultation"
+        },
+        {
+          "source": "uc-chat",
+          "target": "uc-consult",
+          "type": "generalization",
+          "description": "Async Chat Consultation specializes Conduct Consultation"
+        },
+        {
+          "source": "uc-consult",
+          "target": "uc-notes",
+          "type": "include"
+        },
+        {
+          "source": "uc-consult",
+          "target": "uc-insurance",
+          "type": "include"
+        },
+        {
+          "source": "uc-insurance",
+          "target": "uc-audit",
+          "type": "include"
+        },
+        {
+          "source": "uc-rx",
+          "target": "uc-consult",
+          "type": "extend"
+        },
+        {
+          "source": "uc-emergency",
+          "target": "uc-video",
+          "type": "extend"
+        },
+        {
+          "source": "actor-pharmacy",
+          "target": "uc-rx",
+          "type": "association",
+          "bidirectional": true
+        }
+      ]
+    }
+  ]
+}
+

@@ -3,7 +3,7 @@
   "number": 9,
   "title": "Build: University Library Management",
   "type": "build",
-  "difficulty": "Advanced",
+  "difficulty": "Intermediate",
   "category": "Freeform Modeling",
   "scenario": "Design a University Library system with two actors: Student (primary) and Librarian (secondary staff). Students \"Borrow Book\". Borrowing a book unconditionally «includes» \"Check Student Fine Balance\". If the student returns a book late during \"Return Book\", they are optionally triggered to \"Pay Overdue Fine\" via «extend».",
   "goal": "Build the entire relationship structure using the canvas tools: connect Student, Librarian, Borrow Book, Return Book, Check Fine Balance, and Pay Overdue Fine.",

@@ -3,7 +3,7 @@
   "number": 10,
   "title": "Master Challenge: Luxury Hotel & Smart Keys",
   "type": "build",
-  "difficulty": "Advanced",
+  "difficulty": "Intermediate",
   "category": "Mastery",
   "scenario": "A Grand Hotel offers digital reservations. A Guest can \"Book Room\". Booking a room strictly «includes» \"Process Deposit\". When arriving, the Guest executes \"Check In\". During Check In, if the room is equipped with IoT locks, the system can optionally \"Issue Digital Key\" via «extend». The Hotel Receptionist participates as secondary actor in \"Check In\".",
   "goal": "Assemble the full diagram connecting Guest, Receptionist, Book Room, Process Deposit, Check In, and Issue Digital Key.",

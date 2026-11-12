@@ -3,7 +3,7 @@
   "number": 7,
   "title": "Fix: Music Streaming App Chaos",
   "type": "fix",
-  "difficulty": "Advanced",
+  "difficulty": "Intermediate",
   "category": "Diagram Debugging",
   "scenario": "A streaming platform has a Subscriber actor. \"Stream Song\" requires \"Authenticate User\" (mandatory). When streaming a song, a subscriber can optionally \"Download for Offline Play\". However, the edges are totally scrambled! Clean up the incorrect relationship types and directions.",
   "goal": "1. Replace the invalid generalization between Subscriber and Stream Song with an Association.\n2. Change the relationship to Authenticate User to «include».\n3. Orient «extend» properly from Download for Offline Play to Stream Song.",

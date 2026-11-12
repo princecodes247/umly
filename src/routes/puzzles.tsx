@@ -95,6 +95,8 @@ function PuzzlesPage() {
     switch (diff) {
       case 'Beginner':
         return 'notion-tag-green'
+      case 'Easy':
+        return 'notion-tag-blue'
       case 'Intermediate':
         return 'notion-tag-orange'
       case 'Advanced':

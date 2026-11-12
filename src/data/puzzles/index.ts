@@ -28,7 +28,7 @@ export const PUZZLE_SUMMARIES: LevelSummary[] = [
     "title": "Classify: Include vs. Extend Dilemma",
     "diagramType": "use_case",
     "type": "classify",
-    "difficulty": "Intermediate",
+    "difficulty": "Easy",
     "category": "Relationship Semantics",
     "scenario": "In an online store checkout system:\n1. Every shopper who performs \"Checkout\" MUST have their inventory deducted via \"Update Inventory\" (mandatory).\n2. During \"Checkout\", shoppers CAN OPTIONALLY choose to \"Apply Discount Coupon\" if they happen to have a coupon code (optional/conditional enhancement)."
   },
@@ -38,7 +38,7 @@ export const PUZZLE_SUMMARIES: LevelSummary[] = [
     "title": "Fix: The Glitched Online Bookstore",
     "diagramType": "use_case",
     "type": "fix",
-    "difficulty": "Intermediate",
+    "difficulty": "Easy",
     "category": "Diagram Debugging",
     "scenario": "An inexperienced intern drafted this Use Case diagram for a Bookstore system. A Customer searches books and checks out. \"Process Payment\" is mandatory for Checkout, and \"Gift Wrap\" is an optional add-on during Checkout. But the intern made 3 glaring UML mistakes! Find and correct them."
   },
@@ -48,7 +48,7 @@ export const PUZZLE_SUMMARIES: LevelSummary[] = [
     "title": "Specialization: Hospital Medical Staff",
     "diagramType": "use_case",
     "type": "build",
-    "difficulty": "Intermediate",
+    "difficulty": "Easy",
     "category": "Generalization",
     "scenario": "In a hospital system, a generic Doctor can \"View Patient Records\". A Cardiologist is a specialized type of Doctor who inherits all capabilities of a Doctor, and additionally can \"Perform Heart Angioplasty\"."
   },
@@ -58,7 +58,7 @@ export const PUZZLE_SUMMARIES: LevelSummary[] = [
     "title": "Ride-Sharing: The Complete Lifecycle",
     "diagramType": "use_case",
     "type": "build",
-    "difficulty": "Advanced",
+    "difficulty": "Intermediate",
     "category": "Comprehensive",
     "scenario": "In a ride-hailing app, a Passenger triggers \"Request Ride\". As an unavoidable requirement, \"Request Ride\" MUST «include» \"Calculate Fare\". After completing the trip, the Passenger can OPTIONALLY \"Tip Driver\" as an «extend» to the trip completion (\"Complete Ride\"). The Driver receives and executes \"Complete Ride\"."
   },
@@ -68,7 +68,7 @@ export const PUZZLE_SUMMARIES: LevelSummary[] = [
     "title": "Fix: Music Streaming App Chaos",
     "diagramType": "use_case",
     "type": "fix",
-    "difficulty": "Advanced",
+    "difficulty": "Intermediate",
     "category": "Diagram Debugging",
     "scenario": "A streaming platform has a Subscriber actor. \"Stream Song\" requires \"Authenticate User\" (mandatory). When streaming a song, a subscriber can optionally \"Download for Offline Play\". However, the edges are totally scrambled! Clean up the incorrect relationship types and directions."
   },
@@ -78,7 +78,7 @@ export const PUZZLE_SUMMARIES: LevelSummary[] = [
     "title": "Classify: Use Case Generalization",
     "diagramType": "use_case",
     "type": "classify",
-    "difficulty": "Intermediate",
+    "difficulty": "Easy",
     "category": "Generalization",
     "scenario": "A Customer can execute \"Pay for Order\". In modern systems, this can be fulfilled in several specific ways: \"Pay via Credit Card\" or \"Pay via PayPal\". Each specific payment type is a specialization of the generic \"Pay for Order\" use case."
   },
@@ -88,7 +88,7 @@ export const PUZZLE_SUMMARIES: LevelSummary[] = [
     "title": "Build: University Library Management",
     "diagramType": "use_case",
     "type": "build",
-    "difficulty": "Advanced",
+    "difficulty": "Intermediate",
     "category": "Freeform Modeling",
     "scenario": "Design a University Library system with two actors: Student (primary) and Librarian (secondary staff). Students \"Borrow Book\". Borrowing a book unconditionally «includes» \"Check Student Fine Balance\". If the student returns a book late during \"Return Book\", they are optionally triggered to \"Pay Overdue Fine\" via «extend»."
   },
@@ -98,13 +98,43 @@ export const PUZZLE_SUMMARIES: LevelSummary[] = [
     "title": "Master Challenge: Luxury Hotel & Smart Keys",
     "diagramType": "use_case",
     "type": "build",
-    "difficulty": "Advanced",
+    "difficulty": "Intermediate",
     "category": "Mastery",
     "scenario": "A Grand Hotel offers digital reservations. A Guest can \"Book Room\". Booking a room strictly «includes» \"Process Deposit\". When arriving, the Guest executes \"Check In\". During Check In, if the room is equipped with IoT locks, the system can optionally \"Issue Digital Key\" via «extend». The Hotel Receptionist participates as secondary actor in \"Check In\"."
   },
   {
-    "id": "er-1-ecommerce-orders",
+    "id": "level-11-telehealth-consultation",
     "number": 11,
+    "title": "Telehealth & E-Prescribing Architecture",
+    "diagramType": "use_case",
+    "type": "build",
+    "difficulty": "Advanced",
+    "category": "Healthcare Systems",
+    "scenario": "A Telehealth platform serves both Patients and Physicians, who share common capabilities as an Authenticated User (signing in via SSO). Both Video Consultation and Async Chat Consultation are specialized forms of Conduct Consultation. Every consultation mandatorily includes Record Clinical Notes and Verify Insurance, and Verify Insurance itself mandatorily includes Log Audit Trail. Optionally, a consultation may be extended by Issue E-Prescription (which also interacts with the external Pharmacy Network system), and a Video Consultation may be extended by Escalate to Emergency Dispatch if a patient is in distress."
+  },
+  {
+    "id": "level-12-fix-air-traffic-control",
+    "number": 12,
+    "title": "Fix: Air Traffic & Weather Advisory",
+    "diagramType": "use_case",
+    "type": "fix",
+    "difficulty": "Advanced",
+    "category": "Safety-Critical Systems",
+    "scenario": "A junior engineer modeled an Air Traffic Control system with 5 serious UML violations: (1) Tower Supervisor should specialize Air Traffic Controller, not the reverse; (2) Radar Sensor is an Actor and cannot have an «include» relationship with Track Aircraft; (3) Log Flight Telemetry is mandatory for Track Aircraft, not an optional «extend»; (4) Issue Storm Reroute optionally extends Track Aircraft, so its arrow direction is backwards; and (5) Authorize Emergency Landing must «include» Clear Runway, not the other way around."
+  },
+  {
+    "id": "level-13-enterprise-ci-cd-pipeline",
+    "number": 13,
+    "title": "Enterprise CI/CD & Release Governance",
+    "diagramType": "use_case",
+    "type": "build",
+    "difficulty": "Advanced",
+    "category": "DevOps & Cloud",
+    "scenario": "In an Enterprise CI/CD platform, both Developer and Release Manager inherit from Engineering Staff, who can View Build Logs. Developers specifically Trigger Pipeline, while Release Managers specifically Deploy Artifact. Trigger Pipeline mandatorily includes Run Security Scan, which in turn mandatorily includes Sign Artifact (interacting with the Container Registry system). Canary Deploy and Blue-Green Deploy are specialized types of Deploy Artifact. Finally, Deploy Artifact may optionally be extended by Manual Approval Gate (for production) or Rollback Release (triggered when the Monitoring System detects regressions)."
+  },
+  {
+    "id": "er-1-ecommerce-orders",
+    "number": 14,
     "title": "E-Commerce Order Relationships",
     "diagramType": "er",
     "type": "build",
@@ -114,7 +144,7 @@ export const PUZZLE_SUMMARIES: LevelSummary[] = [
   },
   {
     "id": "er-2-university-enrollment",
-    "number": 12,
+    "number": 15,
     "title": "University Course & Department Schema",
     "diagramType": "er",
     "type": "fix",
@@ -124,7 +154,7 @@ export const PUZZLE_SUMMARIES: LevelSummary[] = [
   },
   {
     "id": "class-1-payment-strategy",
-    "number": 13,
+    "number": 16,
     "title": "Payment Gateway Interface",
     "diagramType": "class",
     "type": "build",
@@ -134,7 +164,7 @@ export const PUZZLE_SUMMARIES: LevelSummary[] = [
   },
   {
     "id": "class-2-composition-vs-inheritance",
-    "number": 14,
+    "number": 17,
     "title": "Document Composition & Inheritance",
     "diagramType": "class",
     "type": "classify",
@@ -144,7 +174,7 @@ export const PUZZLE_SUMMARIES: LevelSummary[] = [
   },
   {
     "id": "dfd-1-checkout-flow",
-    "number": 15,
+    "number": 18,
     "title": "Online Order Data Flow",
     "diagramType": "dfd",
     "type": "build",
@@ -154,7 +184,7 @@ export const PUZZLE_SUMMARIES: LevelSummary[] = [
   },
   {
     "id": "dfd-2-fix-illegal-store-flow",
-    "number": 16,
+    "number": 19,
     "title": "Fix Illegal Direct Store Flow",
     "diagramType": "dfd",
     "type": "fix",
@@ -175,6 +205,9 @@ export const PUZZLE_FILE_BY_ID: Record<string, string> = {
   "level-8-classify-payment-generalization": "./puzzles/use_case/level-8-classify-payment-generalization.json",
   "level-9-palette-library": "./puzzles/use_case/level-9-palette-library.json",
   "level-10-hotel-boss": "./puzzles/use_case/level-10-hotel-boss.json",
+  "level-11-telehealth-consultation": "./puzzles/use_case/level-11-telehealth-consultation.json",
+  "level-12-fix-air-traffic-control": "./puzzles/use_case/level-12-fix-air-traffic-control.json",
+  "level-13-enterprise-ci-cd-pipeline": "./puzzles/use_case/level-13-enterprise-ci-cd-pipeline.json",
   "er-1-ecommerce-orders": "./puzzles/er/er-1-ecommerce-orders.json",
   "er-2-university-enrollment": "./puzzles/er/er-2-university-enrollment.json",
   "class-1-payment-strategy": "./puzzles/class/class-1-payment-strategy.json",

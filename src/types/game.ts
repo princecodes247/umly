@@ -146,7 +146,7 @@ export interface LevelDefinition {
   title: string
   diagramType?: PuzzleDiagramType
   type: LevelType
-  difficulty: 'Beginner' | 'Intermediate' | 'Advanced'
+  difficulty: 'Beginner' | 'Easy' | 'Intermediate' | 'Advanced'
   category: string
   scenario: string
   goal: string

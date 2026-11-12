@@ -3,7 +3,7 @@
   "number": 4,
   "title": "Fix: The Glitched Online Bookstore",
   "type": "fix",
-  "difficulty": "Intermediate",
+  "difficulty": "Easy",
   "category": "Diagram Debugging",
   "scenario": "An inexperienced intern drafted this Use Case diagram for a Bookstore system. A Customer searches books and checks out. \"Process Payment\" is mandatory for Checkout, and \"Gift Wrap\" is an optional add-on during Checkout. But the intern made 3 glaring UML mistakes! Find and correct them.",
   "goal": "1. Remove the invalid «include» between Customer and \"Search Catalog\" (Actors must use Associations!).\n2. Fix the reversed «extend» arrow between Checkout and Gift Wrap.\n3. Make sure Process Payment is an «include» from Checkout.",

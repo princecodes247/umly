@@ -1,0 +1,241 @@
+{
+  "id": "level-13-enterprise-ci-cd-pipeline",
+  "number": 13,
+  "title": "Enterprise CI/CD & Release Governance",
+  "diagramType": "use_case",
+  "type": "build",
+  "difficulty": "Advanced",
+  "category": "DevOps & Cloud",
+  "scenario": "In an Enterprise CI/CD platform, both Developer and Release Manager inherit from Engineering Staff, who can View Build Logs. Developers specifically Trigger Pipeline, while Release Managers specifically Deploy Artifact. Trigger Pipeline mandatorily includes Run Security Scan, which in turn mandatorily includes Sign Artifact (interacting with the Container Registry system). Canary Deploy and Blue-Green Deploy are specialized types of Deploy Artifact. Finally, Deploy Artifact may optionally be extended by Manual Approval Gate (for production) or Rollback Release (triggered when the Monitoring System detects regressions).",
+  "goal": "Wire all 12 relationships across the Engineering actors, external systems, generalizations, mandatory «include» chain, and optional «extend» hooks.",
+  "learningObjective": "Architect a realistic multi-tier Use Case model separating inherited permissions from role-specific workflows and automated system triggers.",
+  "hints": [
+    "Actor Generalization: Developer -> Engineering Staff and Release Manager -> Engineering Staff. Engineering Staff associates with View Build Logs.",
+    "Role Associations: Developer -> Trigger Pipeline; Release Manager -> Deploy Artifact.",
+    "Include chain: Trigger Pipeline -> Run Security Scan -> Sign Artifact (and Container Registry associates with Sign Artifact).",
+    "Use Case Generalization: Canary Deploy -> Deploy Artifact, Blue-Green Deploy -> Deploy Artifact. Extend hooks: Manual Approval Gate -> Deploy Artifact, Rollback Release -> Deploy Artifact (and Monitoring System associates with Rollback Release)."
+  ],
+  "solutionExplanation": "Engineering Staff generalizes Developer and Release Manager for shared log viewing, while keeping Trigger Pipeline and Deploy Artifact scoped to their respective roles. Security scanning and artifact signing form a mandatory «include» chain, deployment strategies specialize Deploy Artifact, and approval/rollback workflows attach as «extend» hooks.",
+  "initialNodes": [
+    {
+      "id": "boundary-cicd",
+      "type": "boundary",
+      "position": { "x": 220, "y": 30 },
+      "data": {
+        "label": "Enterprise CI/CD Platform",
+        "nodeType": "boundary",
+        "width": 560,
+        "height": 500
+      }
+    },
+    {
+      "id": "actor-staff",
+      "type": "actor",
+      "position": { "x": 50, "y": 80 },
+      "data": {
+        "label": "Engineering Staff",
+        "nodeType": "actor",
+        "actorType": "primary"
+      }
+    },
+    {
+      "id": "actor-dev",
+      "type": "actor",
+      "position": { "x": 50, "y": 230 },
+      "data": {
+        "label": "Developer",
+        "nodeType": "actor",
+        "actorType": "primary"
+      }
+    },
+    {
+      "id": "actor-rm",
+      "type": "actor",
+      "position": { "x": 50, "y": 380 },
+      "data": {
+        "label": "Release Manager",
+        "nodeType": "actor",
+        "actorType": "primary"
+      }
+    },
+    {
+      "id": "actor-registry",
+      "type": "actor",
+      "position": { "x": 850, "y": 170 },
+      "data": {
+        "label": "Container Registry",
+        "nodeType": "actor",
+        "actorType": "system"
+      }
+    },
+    {
+      "id": "actor-monitoring",
+      "type": "actor",
+      "position": { "x": 850, "y": 420 },
+      "data": {
+        "label": "Monitoring System",
+        "nodeType": "actor",
+        "actorType": "system"
+      }
+    },
+    {
+      "id": "uc-logs",
+      "type": "useCase",
+      "position": { "x": 270, "y": 60 },
+      "data": {
+        "label": "View Build Logs",
+        "nodeType": "useCase"
+      }
+    },
+    {
+      "id": "uc-trigger",
+      "type": "useCase",
+      "position": { "x": 270, "y": 170 },
+      "data": {
+        "label": "Trigger Pipeline",
+        "nodeType": "useCase"
+      }
+    },
+    {
+      "id": "uc-scan",
+      "type": "useCase",
+      "position": { "x": 450, "y": 170 },
+      "data": {
+        "label": "Run Security Scan",
+        "nodeType": "useCase"
+      }
+    },
+    {
+      "id": "uc-sign",
+      "type": "useCase",
+      "position": { "x": 620, "y": 170 },
+      "data": {
+        "label": "Sign Artifact",
+        "nodeType": "useCase"
+      }
+    },
+    {
+      "id": "uc-deploy",
+      "type": "useCase",
+      "position": { "x": 270, "y": 320 },
+      "data": {
+        "label": "Deploy Artifact",
+        "nodeType": "useCase"
+      }
+    },
+    {
+      "id": "uc-canary",
+      "type": "useCase",
+      "position": { "x": 240, "y": 440 },
+      "data": {
+        "label": "Canary Deploy",
+        "nodeType": "useCase"
+      }
+    },
+    {
+      "id": "uc-bluegreen",
+      "type": "useCase",
+      "position": { "x": 400, "y": 440 },
+      "data": {
+        "label": "Blue-Green Deploy",
+        "nodeType": "useCase"
+      }
+    },
+    {
+      "id": "uc-approval",
+      "type": "useCase",
+      "position": { "x": 570, "y": 300 },
+      "data": {
+        "label": "Manual Approval Gate",
+        "nodeType": "useCase"
+      }
+    },
+    {
+      "id": "uc-rollback",
+      "type": "useCase",
+      "position": { "x": 570, "y": 410 },
+      "data": {
+        "label": "Rollback Release",
+        "nodeType": "useCase"
+      }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Complete Enterprise CI/CD Use Case Diagram",
+      "edges": [
+        {
+          "source": "actor-dev",
+          "target": "actor-staff",
+          "type": "generalization"
+        },
+        {
+          "source": "actor-rm",
+          "target": "actor-staff",
+          "type": "generalization"
+        },
+        {
+          "source": "actor-staff",
+          "target": "uc-logs",
+          "type": "association",
+          "bidirectional": true
+        },
+        {
+          "source": "actor-dev",
+          "target": "uc-trigger",
+          "type": "association",
+          "bidirectional": true
+        },
+        {
+          "source": "actor-rm",
+          "target": "uc-deploy",
+          "type": "association",
+          "bidirectional": true
+        },
+        {
+          "source": "uc-trigger",
+          "target": "uc-scan",
+          "type": "include"
+        },
+        {
+          "source": "uc-scan",
+          "target": "uc-sign",
+          "type": "include"
+        },
+        {
+          "source": "actor-registry",
+          "target": "uc-sign",
+          "type": "association",
+          "bidirectional": true
+        },
+        {
+          "source": "uc-canary",
+          "target": "uc-deploy",
+          "type": "generalization"
+        },
+        {
+          "source": "uc-bluegreen",
+          "target": "uc-deploy",
+          "type": "generalization"
+        },
+        {
+          "source": "uc-approval",
+          "target": "uc-deploy",
+          "type": "extend"
+        },
+        {
+          "source": "uc-rollback",
+          "target": "uc-deploy",
+          "type": "extend"
+        },
+        {
+          "source": "actor-monitoring",
+          "target": "uc-rollback",
+          "type": "association",
+          "bidirectional": true
+        }
+      ]
+    }
+  ]
+}
+

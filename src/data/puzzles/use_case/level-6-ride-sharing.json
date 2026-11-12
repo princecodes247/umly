@@ -3,7 +3,7 @@
   "number": 6,
   "title": "Ride-Sharing: The Complete Lifecycle",
   "type": "build",
-  "difficulty": "Advanced",
+  "difficulty": "Intermediate",
   "category": "Comprehensive",
   "scenario": "In a ride-hailing app, a Passenger triggers \"Request Ride\". As an unavoidable requirement, \"Request Ride\" MUST «include» \"Calculate Fare\". After completing the trip, the Passenger can OPTIONALLY \"Tip Driver\" as an «extend» to the trip completion (\"Complete Ride\"). The Driver receives and executes \"Complete Ride\".",
   "goal": "Construct the diagram with Associations from Passenger to Request Ride, Driver to Complete Ride, include from Request Ride to Calculate Fare, and extend from Tip Driver to Complete Ride.",

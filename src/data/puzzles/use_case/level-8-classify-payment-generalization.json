@@ -3,7 +3,7 @@
   "number": 8,
   "title": "Classify: Use Case Generalization",
   "type": "classify",
-  "difficulty": "Intermediate",
+  "difficulty": "Easy",
   "category": "Generalization",
   "scenario": "A Customer can execute \"Pay for Order\". In modern systems, this can be fulfilled in several specific ways: \"Pay via Credit Card\" or \"Pay via PayPal\". Each specific payment type is a specialization of the generic \"Pay for Order\" use case.",
   "goal": "Classify the relationship between the specific payment methods and the generic payment use case using Use Case Generalization.",

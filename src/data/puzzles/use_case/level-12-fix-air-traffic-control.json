@@ -1,0 +1,219 @@
+{
+  "id": "level-12-fix-air-traffic-control",
+  "number": 12,
+  "title": "Fix: Air Traffic & Weather Advisory",
+  "diagramType": "use_case",
+  "type": "fix",
+  "difficulty": "Advanced",
+  "category": "Safety-Critical Systems",
+  "scenario": "A junior engineer modeled an Air Traffic Control system with 5 serious UML violations: (1) Tower Supervisor should specialize Air Traffic Controller, not the reverse; (2) Radar Sensor is an Actor and cannot have an «include» relationship with Track Aircraft; (3) Log Flight Telemetry is mandatory for Track Aircraft, not an optional «extend»; (4) Issue Storm Reroute optionally extends Track Aircraft, so its arrow direction is backwards; and (5) Authorize Emergency Landing must «include» Clear Runway, not the other way around.",
+  "goal": "Find and fix all 5 broken relationships while preserving the valid Associations (Controller -> Track Aircraft, Tower Supervisor -> Authorize Emergency Landing, Weather Feed -> Issue Storm Reroute).",
+  "learningObjective": "Audit complex Use Case diagrams for inverted generalizations, actor-to-use-case stereotype misuse, and reversed «include»/«extend» semantics.",
+  "hints": [
+    "Generalization: Tower Supervisor inherits from Air Traffic Controller (Supervisor -> Controller).",
+    "Actors only use Associations: replace Radar Sensor «include» Track Aircraft with an Association.",
+    "Track Aircraft mandatorily includes Log Flight Telemetry (Track Aircraft --«include»--> Log Flight Telemetry).",
+    "Issue Storm Reroute optionally extends Track Aircraft (Issue Storm Reroute --«extend»--> Track Aircraft), and Authorize Emergency Landing --«include»--> Clear Runway."
+  ],
+  "solutionExplanation": "Tower Supervisor specializes Air Traffic Controller; Radar Sensor connects via Association; Track Aircraft «includes» Log Flight Telemetry; Issue Storm Reroute «extends» Track Aircraft; and Authorize Emergency Landing «includes» Clear Runway.",
+  "initialNodes": [
+    {
+      "id": "boundary-atc",
+      "type": "boundary",
+      "position": { "x": 220, "y": 40 },
+      "data": {
+        "label": "Air Traffic Control System",
+        "nodeType": "boundary",
+        "width": 520,
+        "height": 420
+      }
+    },
+    {
+      "id": "actor-controller",
+      "type": "actor",
+      "position": { "x": 50, "y": 110 },
+      "data": {
+        "label": "Air Traffic Controller",
+        "nodeType": "actor",
+        "actorType": "primary"
+      }
+    },
+    {
+      "id": "actor-supervisor",
+      "type": "actor",
+      "position": { "x": 50, "y": 310 },
+      "data": {
+        "label": "Tower Supervisor",
+        "nodeType": "actor",
+        "actorType": "primary"
+      }
+    },
+    {
+      "id": "actor-radar",
+      "type": "actor",
+      "position": { "x": 800, "y": 90 },
+      "data": {
+        "label": "Radar Sensor",
+        "nodeType": "actor",
+        "actorType": "system"
+      }
+    },
+    {
+      "id": "actor-weather",
+      "type": "actor",
+      "position": { "x": 800, "y": 250 },
+      "data": {
+        "label": "Weather Feed",
+        "nodeType": "actor",
+        "actorType": "system"
+      }
+    },
+    {
+      "id": "uc-track",
+      "type": "useCase",
+      "position": { "x": 270, "y": 100 },
+      "data": {
+        "label": "Track Aircraft",
+        "nodeType": "useCase"
+      }
+    },
+    {
+      "id": "uc-telemetry",
+      "type": "useCase",
+      "position": { "x": 530, "y": 80 },
+      "data": {
+        "label": "Log Flight Telemetry",
+        "nodeType": "useCase"
+      }
+    },
+    {
+      "id": "uc-reroute",
+      "type": "useCase",
+      "position": { "x": 530, "y": 210 },
+      "data": {
+        "label": "Issue Storm Reroute",
+        "nodeType": "useCase"
+      }
+    },
+    {
+      "id": "uc-emergency",
+      "type": "useCase",
+      "position": { "x": 270, "y": 320 },
+      "data": {
+        "label": "Authorize Emergency Landing",
+        "nodeType": "useCase"
+      }
+    },
+    {
+      "id": "uc-runway",
+      "type": "useCase",
+      "position": { "x": 530, "y": 340 },
+      "data": {
+        "label": "Clear Runway",
+        "nodeType": "useCase"
+      }
+    }
+  ],
+  "initialEdges": [
+    {
+      "id": "e-ctrl-track",
+      "source": "actor-controller",
+      "target": "uc-track",
+      "data": { "relationshipType": "association" }
+    },
+    {
+      "id": "e-sup-emerg",
+      "source": "actor-supervisor",
+      "target": "uc-emergency",
+      "data": { "relationshipType": "association" }
+    },
+    {
+      "id": "e-weather-reroute",
+      "source": "actor-weather",
+      "target": "uc-reroute",
+      "data": { "relationshipType": "association" }
+    },
+    {
+      "id": "e-bad-gen",
+      "source": "actor-controller",
+      "target": "actor-supervisor",
+      "data": { "relationshipType": "generalization" }
+    },
+    {
+      "id": "e-bad-radar",
+      "source": "actor-radar",
+      "target": "uc-track",
+      "data": { "relationshipType": "include" }
+    },
+    {
+      "id": "e-bad-telemetry",
+      "source": "uc-telemetry",
+      "target": "uc-track",
+      "data": { "relationshipType": "extend" }
+    },
+    {
+      "id": "e-bad-reroute",
+      "source": "uc-track",
+      "target": "uc-reroute",
+      "data": { "relationshipType": "extend" }
+    },
+    {
+      "id": "e-bad-runway",
+      "source": "uc-runway",
+      "target": "uc-emergency",
+      "data": { "relationshipType": "include" }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Repaired Air Traffic Control Diagram",
+      "edges": [
+        {
+          "source": "actor-controller",
+          "target": "uc-track",
+          "type": "association",
+          "bidirectional": true
+        },
+        {
+          "source": "actor-supervisor",
+          "target": "uc-emergency",
+          "type": "association",
+          "bidirectional": true
+        },
+        {
+          "source": "actor-weather",
+          "target": "uc-reroute",
+          "type": "association",
+          "bidirectional": true
+        },
+        {
+          "source": "actor-supervisor",
+          "target": "actor-controller",
+          "type": "generalization"
+        },
+        {
+          "source": "actor-radar",
+          "target": "uc-track",
+          "type": "association",
+          "bidirectional": true
+        },
+        {
+          "source": "uc-track",
+          "target": "uc-telemetry",
+          "type": "include"
+        },
+        {
+          "source": "uc-reroute",
+          "target": "uc-track",
+          "type": "extend"
+        },
+        {
+          "source": "uc-emergency",
+          "target": "uc-runway",
+          "type": "include"
+        }
+      ]
+    }
+  ]
+}
+

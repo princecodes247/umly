@@ -33,6 +33,8 @@ export const ScenarioPanel: React.FC<ScenarioPanelProps> = ({
     switch (diff) {
       case 'Beginner':
         return 'text-[var(--notion-green-text)] bg-[var(--notion-green-bg)]'
+      case 'Easy':
+        return 'text-[var(--notion-blue-text)] bg-[var(--notion-blue-bg)]'
       case 'Intermediate':
         return 'text-[var(--notion-yellow-text)] bg-[var(--notion-yellow-bg)]'
       case 'Advanced':

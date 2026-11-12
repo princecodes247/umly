@@ -3,7 +3,7 @@
   "number": 5,
   "title": "Specialization: Hospital Medical Staff",
   "type": "build",
-  "difficulty": "Intermediate",
+  "difficulty": "Easy",
   "category": "Generalization",
   "scenario": "In a hospital system, a generic Doctor can \"View Patient Records\". A Cardiologist is a specialized type of Doctor who inherits all capabilities of a Doctor, and additionally can \"Perform Heart Angioplasty\".",
   "goal": "Create an Actor Generalization from Cardiologist to Doctor, and connect the appropriate actors to their specific use cases with Associations.",
