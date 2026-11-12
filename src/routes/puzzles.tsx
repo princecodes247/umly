@@ -21,7 +21,17 @@ import {
   type PlayerStats,
 } from '../lib/storage'
 import { UmlCheatsheetModal } from '../components/game/UmlCheatsheetModal'
-import type { LevelType } from '../types/game'
+import type { LevelType, PuzzleDiagramType } from '../types/game'
+
+const DIAGRAM_TYPE_META: Record<
+  PuzzleDiagramType,
+  { label: string; short: string; tagClass: string }
+> = {
+  use_case: { label: 'Use Case', short: 'UC', tagClass: 'notion-tag-blue' },
+  er: { label: 'ER Diagram', short: 'ER', tagClass: 'notion-tag-green' },
+  class: { label: 'Class Diagram', short: 'CLS', tagClass: 'notion-tag-purple' },
+  dfd: { label: 'Data Flow', short: 'DFD', tagClass: 'notion-tag-amber' },
+}
 
 export const Route = createFileRoute('/puzzles')({
   component: PuzzlesPage,
@@ -34,6 +44,9 @@ function PuzzlesPage() {
     progressByLevel: {},
   })
   const [selectedFilter, setSelectedFilter] = useState<'all' | LevelType>('all')
+  const [selectedDiagramType, setSelectedDiagramType] = useState<
+    'all' | PuzzleDiagramType
+  >('all')
   const [viewMode, setViewMode] = useState<'gallery' | 'table'>('gallery')
   const [searchQuery, setSearchQuery] = useState('')
   const [showCheatsheet, setShowCheatsheet] = useState(false)
@@ -59,12 +72,15 @@ function PuzzlesPage() {
 
   const filteredLevels = LEVELS.filter((l) => {
     const matchesFilter = selectedFilter === 'all' || l.type === selectedFilter
+    const matchesDiagram =
+      selectedDiagramType === 'all' ||
+      (l.diagramType ?? 'use_case') === selectedDiagramType
     const matchesSearch =
       searchQuery.trim() === '' ||
       l.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       l.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
       l.scenario.toLowerCase().includes(searchQuery.toLowerCase())
-    return matchesFilter && matchesSearch
+    return matchesFilter && matchesDiagram && matchesSearch
   })
 
   const totalPossibleStars = LEVELS.length * 3
@@ -259,6 +275,34 @@ function PuzzlesPage() {
 
           {/* Right: Filters & Search */}
           <div className="flex flex-wrap items-center gap-2">
+            {/* Diagram Type Filter Pills */}
+            <div className="flex items-center gap-1 text-xs">
+              {(
+                [
+                  { id: 'all', label: 'All Diagrams' },
+                  { id: 'use_case', label: 'Use Case' },
+                  { id: 'er', label: 'ER' },
+                  { id: 'class', label: 'Class' },
+                  { id: 'dfd', label: 'Data Flow' },
+                ] as const
+              ).map((d) => (
+                <button
+                  key={d.id}
+                  type="button"
+                  onClick={() => setSelectedDiagramType(d.id)}
+                  className={`px-2 py-0.5 rounded-[3px] text-xs transition-colors ${
+                    selectedDiagramType === d.id
+                      ? 'bg-[var(--primary-btn)] text-white font-medium'
+                      : 'text-[var(--text-secondary)] hover:bg-[var(--hover-bg)]'
+                  }`}
+                >
+                  {d.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="h-4 w-px bg-[var(--border-subtle)]" />
+
             {/* Filter Pills */}
             <div className="flex items-center gap-1 text-xs">
               {(
@@ -338,7 +382,7 @@ function PuzzlesPage() {
                       </div>
 
                       <div className="px-2 py-1 rounded-full border border-[var(--text-primary)] text-[9px] font-mono text-[var(--text-secondary)] bg-[var(--bg-primary)]">
-                        (UC)
+                        ({DIAGRAM_TYPE_META[lvl.diagramType ?? 'use_case'].short})
                       </div>
                     </div>
 
@@ -358,6 +402,14 @@ function PuzzlesPage() {
                   <div className="p-3.5 flex-1 flex flex-col justify-between space-y-3">
                     <div className="space-y-1.5">
                       <div className="flex flex-wrap items-center gap-1.5">
+                        <span
+                          className={`notion-tag ${
+                            DIAGRAM_TYPE_META[lvl.diagramType ?? 'use_case']
+                              .tagClass
+                          }`}
+                        >
+                          {DIAGRAM_TYPE_META[lvl.diagramType ?? 'use_case'].label}
+                        </span>
                         <span
                           className={`notion-tag ${categoryTagClass(
                             lvl.category

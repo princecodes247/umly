@@ -103,8 +103,8 @@ function evaluateSingleSolution(
       (actual.source.toLowerCase() === expTarget || sourceLabel === expTarget) &&
       (actual.target.toLowerCase() === expSource || targetLabel === expSource)
 
-    // For association, UML treats it as bidirectional
-    if (expectedType === 'association') {
+    // For association and ER relationships, connection is undirected
+    if (expectedType === 'association' || expectedType === 'er') {
       if (normalDirection || reversedDirection) {
         return {
           matches: actualType === expectedType,
@@ -113,7 +113,7 @@ function evaluateSingleSolution(
         }
       }
     } else {
-      // For include, extend, generalization: direction matters strictly
+      // For directed relationships (include, extend, generalization, realization, dependency, aggregation, composition, data_flow): direction matters strictly
       if (normalDirection) {
         return {
           matches: actualType === expectedType,
@@ -249,7 +249,7 @@ function evaluateSingleSolution(
 
   let summary = ''
   if (isCorrect) {
-    summary = 'Outstanding! All use case relationships match the specification perfectly.'
+    summary = 'Outstanding! All relationships match the specification perfectly.'
   } else {
     const missingCount = diagnostics.filter((d) => d.type === 'missing').length
     const wrongCount = diagnostics.filter(

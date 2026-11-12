@@ -213,7 +213,7 @@ function PlayLevelPage() {
         puzzle={{
           initialNodes: defaultNodes,
           initialEdges: defaultEdges,
-          diagramType: 'use_case',
+          diagramType: level.diagramType || 'use_case',
           title: `Level ${level.number}: ${level.title}`,
           resetKey: `${level.id}-${resetCounter}`,
           onDiagramChange: handleDiagramChange,

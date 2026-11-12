@@ -115,6 +115,9 @@ export interface ExpectedEdge {
   type: UmlRelationshipType
   // For associations, direction is bidirectional/undirected
   bidirectional?: boolean
+  erSourceCardinality?: ErCardinality
+  erTargetCardinality?: ErCardinality
+  erIdentifying?: boolean
   description?: string
 }
 
@@ -123,10 +126,13 @@ export interface SolutionOption {
   edges: ExpectedEdge[]
 }
 
+export type PuzzleDiagramType = 'use_case' | 'er' | 'class' | 'dfd'
+
 export interface LevelDefinition {
   id: string
   number: number
   title: string
+  diagramType?: PuzzleDiagramType
   type: LevelType
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced'
   category: string
@@ -138,7 +144,7 @@ export interface LevelDefinition {
   // Initial elements on canvas
   initialNodes: Array<{
     id: string
-    type: 'actor' | 'useCase' | 'boundary'
+    type: UmlNodeData['nodeType']
     position: { x: number; y: number }
     data: UmlNodeData
   }>
@@ -150,7 +156,7 @@ export interface LevelDefinition {
   }>
   // Nodes available in palette to drag/drop (mainly for build levels)
   paletteNodes?: Array<{
-    type: 'actor' | 'useCase' | 'boundary'
+    type: UmlNodeData['nodeType']
     label: string
     actorType?: 'primary' | 'secondary' | 'system'
   }>
