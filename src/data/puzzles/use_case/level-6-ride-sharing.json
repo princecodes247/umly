@@ -1,0 +1,140 @@
+{
+  "id": "level-6-ride-sharing",
+  "number": 6,
+  "title": "Ride-Sharing: The Complete Lifecycle",
+  "type": "build",
+  "difficulty": "Advanced",
+  "category": "Comprehensive",
+  "scenario": "In a ride-hailing app, a Passenger triggers \"Request Ride\". As an unavoidable requirement, \"Request Ride\" MUST «include» \"Calculate Fare\". After completing the trip, the Passenger can OPTIONALLY \"Tip Driver\" as an «extend» to the trip completion (\"Complete Ride\"). The Driver receives and executes \"Complete Ride\".",
+  "goal": "Construct the diagram with Associations from Passenger to Request Ride, Driver to Complete Ride, include from Request Ride to Calculate Fare, and extend from Tip Driver to Complete Ride.",
+  "learningObjective": "Combine multiple actors, multiple use cases, «include», and «extend» in a real-world multi-sided platform scenario.",
+  "hints": [
+    "Passenger connects to \"Request Ride\" via Association.",
+    "\"Request Ride\" includes \"Calculate Fare\" (arrow points -> Calculate Fare).",
+    "Driver connects to \"Complete Ride\" via Association.",
+    "\"Tip Driver\" optionally extends \"Complete Ride\" (arrow points from Tip Driver -> Complete Ride)."
+  ],
+  "solutionExplanation": "Complex systems combine both include and extend seamlessly. Notice how secondary actors (Driver) anchor downstream fulfillment use cases.",
+  "initialNodes": [
+    {
+      "id": "boundary-rides",
+      "type": "boundary",
+      "position": {
+        "x": 200,
+        "y": 40
+      },
+      "data": {
+        "label": "System Boundary",
+        "nodeType": "boundary",
+        "boundaryTitle": "UrbanMove Dispatch System",
+        "width": 480,
+        "height": 420
+      }
+    },
+    {
+      "id": "actor-passenger",
+      "type": "actor",
+      "position": {
+        "x": 40,
+        "y": 120
+      },
+      "data": {
+        "label": "Passenger",
+        "nodeType": "actor"
+      }
+    },
+    {
+      "id": "actor-driver",
+      "type": "actor",
+      "position": {
+        "x": 710,
+        "y": 240
+      },
+      "data": {
+        "label": "Driver",
+        "nodeType": "actor",
+        "actorType": "secondary"
+      }
+    },
+    {
+      "id": "uc-request-ride",
+      "type": "useCase",
+      "position": {
+        "x": 260,
+        "y": 90
+      },
+      "data": {
+        "label": "Request Ride",
+        "nodeType": "useCase"
+      }
+    },
+    {
+      "id": "uc-calculate-fare",
+      "type": "useCase",
+      "position": {
+        "x": 480,
+        "y": 90
+      },
+      "data": {
+        "label": "Calculate Fare",
+        "nodeType": "useCase"
+      }
+    },
+    {
+      "id": "uc-complete-ride",
+      "type": "useCase",
+      "position": {
+        "x": 480,
+        "y": 240
+      },
+      "data": {
+        "label": "Complete Ride",
+        "nodeType": "useCase"
+      }
+    },
+    {
+      "id": "uc-tip-driver",
+      "type": "useCase",
+      "position": {
+        "x": 260,
+        "y": 310
+      },
+      "data": {
+        "label": "Tip Driver",
+        "nodeType": "useCase"
+      }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "UrbanMove ride sharing use case diagram",
+      "edges": [
+        {
+          "source": "actor-passenger",
+          "target": "uc-request-ride",
+          "type": "association",
+          "bidirectional": true
+        },
+        {
+          "source": "uc-request-ride",
+          "target": "uc-calculate-fare",
+          "type": "include",
+          "description": "Fare calculation is mandatory"
+        },
+        {
+          "source": "actor-driver",
+          "target": "uc-complete-ride",
+          "type": "association",
+          "bidirectional": true
+        },
+        {
+          "source": "uc-tip-driver",
+          "target": "uc-complete-ride",
+          "type": "extend",
+          "description": "Tipping optionally extends ride completion"
+        }
+      ]
+    }
+  ],
+  "diagramType": "use_case"
+}

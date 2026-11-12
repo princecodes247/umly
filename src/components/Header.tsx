@@ -10,7 +10,7 @@ import {
 import ThemeToggle from './ThemeToggle'
 import { getStoredProgress } from '../lib/storage'
 import { UmlCheatsheetModal } from './game/UmlCheatsheetModal'
-import { LEVELS } from '../data/levels'
+import { LEVEL_SUMMARIES } from '../data/levels'
 
 export default function Header() {
   const [totalStars, setTotalStars] = useState(0)
@@ -39,10 +39,10 @@ export default function Header() {
   const matchPlay = pathname.match(/\/play\/([^/]+)/)
   const currentLevelId = matchPlay ? matchPlay[1] : null
   const currentLevel = currentLevelId
-    ? LEVELS.find((l) => l.id === currentLevelId)
+    ? LEVEL_SUMMARIES.find((l) => l.id === currentLevelId)
     : null
 
-  const totalPossibleStars = LEVELS.length * 3
+  const totalPossibleStars = LEVEL_SUMMARIES.length * 3
 
   return (
     <>

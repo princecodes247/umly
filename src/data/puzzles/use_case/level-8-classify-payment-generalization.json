@@ -1,0 +1,108 @@
+{
+  "id": "level-8-classify-payment-generalization",
+  "number": 8,
+  "title": "Classify: Use Case Generalization",
+  "type": "classify",
+  "difficulty": "Intermediate",
+  "category": "Generalization",
+  "scenario": "A Customer can execute \"Pay for Order\". In modern systems, this can be fulfilled in several specific ways: \"Pay via Credit Card\" or \"Pay via PayPal\". Each specific payment type is a specialization of the generic \"Pay for Order\" use case.",
+  "goal": "Classify the relationship between the specific payment methods and the generic payment use case using Use Case Generalization.",
+  "learningObjective": "Learn Use Case Generalization. Just like actors, use cases can specialize other use cases. The arrow points from the specific child use case to the abstract parent use case.",
+  "hints": [
+    "Customer connects to the general \"Pay for Order\" via Association.",
+    "Pay via Credit Card is a specialized form of Pay for Order. Draw Generalization pointing to \"Pay for Order\".",
+    "Pay via PayPal is also a specialized form. Draw Generalization pointing to \"Pay for Order\"."
+  ],
+  "solutionExplanation": "Use Case Generalization means the child use case inherits the behavior and meaning of the parent use case, providing a concrete implementation.",
+  "initialNodes": [
+    {
+      "id": "boundary-pay",
+      "type": "boundary",
+      "position": {
+        "x": 220,
+        "y": 40
+      },
+      "data": {
+        "label": "System Boundary",
+        "nodeType": "boundary",
+        "boundaryTitle": "Payment Gateway",
+        "width": 480,
+        "height": 380
+      }
+    },
+    {
+      "id": "actor-shopper",
+      "type": "actor",
+      "position": {
+        "x": 50,
+        "y": 160
+      },
+      "data": {
+        "label": "Customer",
+        "nodeType": "actor"
+      }
+    },
+    {
+      "id": "uc-pay-general",
+      "type": "useCase",
+      "position": {
+        "x": 270,
+        "y": 150
+      },
+      "data": {
+        "label": "Pay for Order",
+        "nodeType": "useCase"
+      }
+    },
+    {
+      "id": "uc-pay-card",
+      "type": "useCase",
+      "position": {
+        "x": 500,
+        "y": 90
+      },
+      "data": {
+        "label": "Pay via Credit Card",
+        "nodeType": "useCase"
+      }
+    },
+    {
+      "id": "uc-pay-paypal",
+      "type": "useCase",
+      "position": {
+        "x": 500,
+        "y": 240
+      },
+      "data": {
+        "label": "Pay via PayPal",
+        "nodeType": "useCase"
+      }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Customer associates with Pay for Order; subcases generalize it",
+      "edges": [
+        {
+          "source": "actor-shopper",
+          "target": "uc-pay-general",
+          "type": "association",
+          "bidirectional": true
+        },
+        {
+          "source": "uc-pay-card",
+          "target": "uc-pay-general",
+          "type": "generalization",
+          "description": "Credit Card specializes Payment"
+        },
+        {
+          "source": "uc-pay-paypal",
+          "target": "uc-pay-general",
+          "type": "generalization",
+          "description": "PayPal specializes Payment"
+        }
+      ]
+    }
+  ],
+  "diagramType": "use_case"
+}

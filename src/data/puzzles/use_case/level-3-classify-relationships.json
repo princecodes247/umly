@@ -1,0 +1,91 @@
+{
+  "id": "level-3-classify-relationships",
+  "number": 3,
+  "title": "Classify: Include vs. Extend Dilemma",
+  "type": "classify",
+  "difficulty": "Intermediate",
+  "category": "Relationship Semantics",
+  "scenario": "In an online store checkout system:\n1. Every shopper who performs \"Checkout\" MUST have their inventory deducted via \"Update Inventory\" (mandatory).\n2. During \"Checkout\", shoppers CAN OPTIONALLY choose to \"Apply Discount Coupon\" if they happen to have a coupon code (optional/conditional enhancement).",
+  "goal": "Classify and connect the relationships between Checkout and its two related use cases using either «include» or «extend» in the correct directions.",
+  "learningObjective": "Distinguish between «include» (mandatory sub-flow, points base -> included) and «extend» (optional conditional flow, points extension -> base).",
+  "hints": [
+    "\"Update Inventory\" happens every single time. That is an «include»!",
+    "«include» points from Checkout -> Update Inventory.",
+    "\"Apply Discount Coupon\" is optional. That is an «extend»!",
+    "CRITICAL: «extend» points FROM the optional extension (\"Apply Discount Coupon\") BACK TO the base (\"Checkout\")!"
+  ],
+  "solutionExplanation": "Remember the golden rule of UML: Base «include» points to Mandatory. Optional «extend» points BACK to Base.",
+  "initialNodes": [
+    {
+      "id": "boundary-shop",
+      "type": "boundary",
+      "position": {
+        "x": 180,
+        "y": 40
+      },
+      "data": {
+        "label": "System Boundary",
+        "nodeType": "boundary",
+        "boundaryTitle": "E-Commerce Core",
+        "width": 500,
+        "height": 380
+      }
+    },
+    {
+      "id": "uc-checkout",
+      "type": "useCase",
+      "position": {
+        "x": 240,
+        "y": 170
+      },
+      "data": {
+        "label": "Checkout",
+        "nodeType": "useCase"
+      }
+    },
+    {
+      "id": "uc-update-inventory",
+      "type": "useCase",
+      "position": {
+        "x": 470,
+        "y": 90
+      },
+      "data": {
+        "label": "Update Inventory",
+        "nodeType": "useCase"
+      }
+    },
+    {
+      "id": "uc-apply-coupon",
+      "type": "useCase",
+      "position": {
+        "x": 470,
+        "y": 260
+      },
+      "data": {
+        "label": "Apply Discount Coupon",
+        "nodeType": "useCase"
+      }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Checkout includes Update Inventory; Apply Discount Coupon extends Checkout",
+      "edges": [
+        {
+          "source": "uc-checkout",
+          "target": "uc-update-inventory",
+          "type": "include",
+          "description": "Mandatory inventory decrement"
+        },
+        {
+          "source": "uc-apply-coupon",
+          "target": "uc-checkout",
+          "type": "extend",
+          "description": "Optional coupon application points back to Checkout"
+        }
+      ]
+    }
+  ],
+  "diagramType": "use_case"
+}

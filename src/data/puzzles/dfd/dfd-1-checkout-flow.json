@@ -1,0 +1,83 @@
+{
+  "id": "dfd-1-checkout-flow",
+  "number": 13,
+  "title": "Online Order Data Flow",
+  "diagramType": "dfd",
+  "type": "build",
+  "difficulty": "Beginner",
+  "category": "Data Flow",
+  "scenario": "A Customer submits an Order Request to the \"1.0 Process Order\" process. The process writes order records to the \"D1 Orders\" data store and sends a Confirmation back to the Customer.",
+  "goal": "Connect Customer -> 1.0 Process Order, 1.0 Process Order -> D1 Orders, and 1.0 Process Order -> Customer using Data Flow edges.",
+  "learningObjective": "Trace how data moves between External Entities, Processes, and Data Stores in a Level-1 DFD.",
+  "hints": [
+    "Data flows are directional: drag from the sender to the receiver.",
+    "External entities (Customer) communicate with processes (1.0 Process Order), not directly with data stores.",
+    "Include the return flow from 1.0 Process Order back to Customer."
+  ],
+  "solutionExplanation": "Customer sends the request to 1.0 Process Order, which persists the order in D1 Orders and returns a confirmation to Customer.",
+  "initialNodes": [
+    {
+      "id": "dfd-customer",
+      "type": "dfdExternalEntity",
+      "position": {
+        "x": 80,
+        "y": 170
+      },
+      "data": {
+        "label": "Customer",
+        "nodeType": "dfdExternalEntity"
+      }
+    },
+    {
+      "id": "dfd-process",
+      "type": "dfdProcess",
+      "position": {
+        "x": 350,
+        "y": 160
+      },
+      "data": {
+        "label": "Process Order",
+        "nodeType": "dfdProcess",
+        "processNumber": "1.0"
+      }
+    },
+    {
+      "id": "dfd-store",
+      "type": "dfdDataStore",
+      "position": {
+        "x": 630,
+        "y": 170
+      },
+      "data": {
+        "label": "Orders",
+        "nodeType": "dfdDataStore",
+        "dataStoreId": "D1"
+      }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Standard Request-Store-Response DFD",
+      "edges": [
+        {
+          "source": "dfd-customer",
+          "target": "dfd-process",
+          "type": "data_flow",
+          "description": "Customer submits order request"
+        },
+        {
+          "source": "dfd-process",
+          "target": "dfd-store",
+          "type": "data_flow",
+          "description": "Process stores order record"
+        },
+        {
+          "source": "dfd-process",
+          "target": "dfd-customer",
+          "type": "data_flow",
+          "description": "Process sends confirmation to Customer"
+        }
+      ]
+    }
+  ]
+}

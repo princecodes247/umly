@@ -128,6 +128,18 @@ export interface SolutionOption {
 
 export type PuzzleDiagramType = 'use_case' | 'er' | 'class' | 'dfd'
 
+export type LevelSummary = Pick<
+  LevelDefinition,
+  | 'id'
+  | 'number'
+  | 'title'
+  | 'diagramType'
+  | 'type'
+  | 'difficulty'
+  | 'category'
+  | 'scenario'
+>
+
 export interface LevelDefinition {
   id: string
   number: number

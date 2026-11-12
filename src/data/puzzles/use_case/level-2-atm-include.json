@@ -1,0 +1,91 @@
+{
+  "id": "level-2-atm-include",
+  "number": 2,
+  "title": "ATM Cash Withdrawal & Mandatory PIN",
+  "type": "build",
+  "difficulty": "Beginner",
+  "category": "«include» Relationships",
+  "scenario": "At an ATM, a Bank Customer wants to \"Withdraw Cash\". However, the bank security protocol strictly requires that every cash withdrawal MUST verify the user’s PIN (\"Verify PIN\") as an inseparable, mandatory sub-flow.",
+  "goal": "Create an Association from Bank Customer to \"Withdraw Cash\", and an «include» relationship from \"Withdraw Cash\" to \"Verify PIN\".",
+  "learningObjective": "Learn the «include» relationship. It represents mandatory behavior extracted into a common use case. The dashed arrow ALWAYS points from the base use case TO the included use case.",
+  "hints": [
+    "The Bank Customer initiates \"Withdraw Cash\", so draw an Association between them.",
+    "Is PIN verification mandatory for cash withdrawal? Yes! Use «include».",
+    "The arrow for «include» points from the base (\"Withdraw Cash\") toward the included case (\"Verify PIN\")."
+  ],
+  "solutionExplanation": "The «include» relationship is used when a base use case unconditionally delegates to or requires another use case. The arrow points from the base use case to the included one, labeled «include».",
+  "initialNodes": [
+    {
+      "id": "boundary-atm",
+      "type": "boundary",
+      "position": {
+        "x": 220,
+        "y": 40
+      },
+      "data": {
+        "label": "System Boundary",
+        "nodeType": "boundary",
+        "boundaryTitle": "ATM Banking Terminal",
+        "width": 440,
+        "height": 380
+      }
+    },
+    {
+      "id": "actor-customer",
+      "type": "actor",
+      "position": {
+        "x": 50,
+        "y": 150
+      },
+      "data": {
+        "label": "Bank Customer",
+        "nodeType": "actor",
+        "actorType": "primary"
+      }
+    },
+    {
+      "id": "uc-withdraw",
+      "type": "useCase",
+      "position": {
+        "x": 290,
+        "y": 100
+      },
+      "data": {
+        "label": "Withdraw Cash",
+        "nodeType": "useCase"
+      }
+    },
+    {
+      "id": "uc-verify-pin",
+      "type": "useCase",
+      "position": {
+        "x": 440,
+        "y": 240
+      },
+      "data": {
+        "label": "Verify PIN",
+        "nodeType": "useCase"
+      }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Customer associates with Withdraw Cash, which includes Verify PIN",
+      "edges": [
+        {
+          "source": "actor-customer",
+          "target": "uc-withdraw",
+          "type": "association",
+          "bidirectional": true
+        },
+        {
+          "source": "uc-withdraw",
+          "target": "uc-verify-pin",
+          "type": "include",
+          "description": "Mandatory PIN check"
+        }
+      ]
+    }
+  ],
+  "diagramType": "use_case"
+}

@@ -1,0 +1,108 @@
+{
+  "id": "level-5-hospital-generalization",
+  "number": 5,
+  "title": "Specialization: Hospital Medical Staff",
+  "type": "build",
+  "difficulty": "Intermediate",
+  "category": "Generalization",
+  "scenario": "In a hospital system, a generic Doctor can \"View Patient Records\". A Cardiologist is a specialized type of Doctor who inherits all capabilities of a Doctor, and additionally can \"Perform Heart Angioplasty\".",
+  "goal": "Create an Actor Generalization from Cardiologist to Doctor, and connect the appropriate actors to their specific use cases with Associations.",
+  "learningObjective": "Model Generalization (inheritance). Generalization has an open triangle arrow pointing from the child/specialized entity to the parent/general entity.",
+  "hints": [
+    "Cardiologist is a specialized Doctor. Draw a Generalization edge pointing FROM Cardiologist TO Doctor.",
+    "Doctor interacts with \"View Patient Records\" via Association.",
+    "Cardiologist interacts with \"Perform Heart Angioplasty\" via Association."
+  ],
+  "solutionExplanation": "Actor Generalization signifies that the child actor can perform everything the parent actor can, plus their own specialized use cases. The arrow has a hollow triangular head pointing toward the general parent.",
+  "initialNodes": [
+    {
+      "id": "boundary-hospital",
+      "type": "boundary",
+      "position": {
+        "x": 260,
+        "y": 40
+      },
+      "data": {
+        "label": "System Boundary",
+        "nodeType": "boundary",
+        "boundaryTitle": "Hospital Clinical EHR",
+        "width": 420,
+        "height": 380
+      }
+    },
+    {
+      "id": "actor-doctor",
+      "type": "actor",
+      "position": {
+        "x": 60,
+        "y": 100
+      },
+      "data": {
+        "label": "Doctor",
+        "nodeType": "actor"
+      }
+    },
+    {
+      "id": "actor-cardiologist",
+      "type": "actor",
+      "position": {
+        "x": 60,
+        "y": 260
+      },
+      "data": {
+        "label": "Cardiologist",
+        "nodeType": "actor"
+      }
+    },
+    {
+      "id": "uc-view-records",
+      "type": "useCase",
+      "position": {
+        "x": 350,
+        "y": 100
+      },
+      "data": {
+        "label": "View Patient Records",
+        "nodeType": "useCase"
+      }
+    },
+    {
+      "id": "uc-angioplasty",
+      "type": "useCase",
+      "position": {
+        "x": 350,
+        "y": 250
+      },
+      "data": {
+        "label": "Perform Heart Angioplasty",
+        "nodeType": "useCase"
+      }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Cardiologist generalizes Doctor; both connected to their use cases",
+      "edges": [
+        {
+          "source": "actor-cardiologist",
+          "target": "actor-doctor",
+          "type": "generalization",
+          "description": "Cardiologist is a specialized Doctor"
+        },
+        {
+          "source": "actor-doctor",
+          "target": "uc-view-records",
+          "type": "association",
+          "bidirectional": true
+        },
+        {
+          "source": "actor-cardiologist",
+          "target": "uc-angioplasty",
+          "type": "association",
+          "bidirectional": true
+        }
+      ]
+    }
+  ],
+  "diagramType": "use_case"
+}

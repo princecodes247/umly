@@ -1,0 +1,87 @@
+{
+  "id": "dfd-2-fix-illegal-store-flow",
+  "number": 14,
+  "title": "Fix Illegal Direct Store Flow",
+  "diagramType": "dfd",
+  "type": "fix",
+  "difficulty": "Intermediate",
+  "category": "Data Flow",
+  "scenario": "In a valid Data Flow Diagram, an External Entity can never read or write directly to a Data Store without passing through a Process. Fix this broken payroll DFD!",
+  "goal": "Remove the illegal Employee -> D1 Timesheets edge and route data properly through \"2.0 Record Hours\".",
+  "learningObjective": "Enforce the DFD rule that all data transformations and store writes must pass through a Process.",
+  "hints": [
+    "Delete the direct edge between Employee and D1 Timesheets.",
+    "Connect Employee -> 2.0 Record Hours, and 2.0 Record Hours -> D1 Timesheets."
+  ],
+  "solutionExplanation": "External Entities cannot access Data Stores directly. Routing Employee -> 2.0 Record Hours -> D1 Timesheets satisfies DFD syntax rules.",
+  "initialNodes": [
+    {
+      "id": "dfd-emp",
+      "type": "dfdExternalEntity",
+      "position": {
+        "x": 80,
+        "y": 180
+      },
+      "data": {
+        "label": "Employee",
+        "nodeType": "dfdExternalEntity"
+      }
+    },
+    {
+      "id": "dfd-proc",
+      "type": "dfdProcess",
+      "position": {
+        "x": 350,
+        "y": 90
+      },
+      "data": {
+        "label": "Record Hours",
+        "nodeType": "dfdProcess",
+        "processNumber": "2.0"
+      }
+    },
+    {
+      "id": "dfd-timesheets",
+      "type": "dfdDataStore",
+      "position": {
+        "x": 610,
+        "y": 180
+      },
+      "data": {
+        "label": "Timesheets",
+        "nodeType": "dfdDataStore",
+        "dataStoreId": "D1"
+      }
+    }
+  ],
+  "initialEdges": [
+    {
+      "id": "illegal-direct-flow",
+      "source": "dfd-emp",
+      "target": "dfd-timesheets",
+      "data": {
+        "relationshipType": "data_flow",
+        "label": "Direct Write (Invalid)"
+      }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Valid Process-mediated Data Flow",
+      "edges": [
+        {
+          "source": "dfd-emp",
+          "target": "dfd-proc",
+          "type": "data_flow",
+          "description": "Employee submits hours to process"
+        },
+        {
+          "source": "dfd-proc",
+          "target": "dfd-timesheets",
+          "type": "data_flow",
+          "description": "Process saves validated timesheet"
+        }
+      ]
+    }
+  ]
+}

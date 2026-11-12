@@ -8,6 +8,8 @@
   "scripts": {
     "dev": "vite dev --port 3000",
     "generate-routes": "tsr generate",
+    "puzzles:index": "node scripts/generate-puzzle-index.mjs",
+    "prebuild": "npm run puzzles:index",
     "build": "vite build",
     "preview": "vite preview"
   },

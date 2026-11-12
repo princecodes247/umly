@@ -1,0 +1,185 @@
+{
+  "id": "er-2-university-enrollment",
+  "number": 10,
+  "title": "University Course & Department Schema",
+  "diagramType": "er",
+  "type": "fix",
+  "difficulty": "Intermediate",
+  "category": "Entity-Relationship",
+  "scenario": "A university schema has a broken link: Department is mistakenly connected directly to Enrollment instead of Course, and Student is missing its link to Enrollment.",
+  "goal": "Remove the incorrect Department -> Enrollment edge and connect Department -> Course and Student -> Enrollment.",
+  "learningObjective": "Normalize ER relationships so associative entities connect the entities whose keys they reference.",
+  "hints": [
+    "Click the edge between Department and Enrollment and delete it.",
+    "A Department offers Courses, so connect Department to Course.",
+    "A Student enrolls via Enrollment, so connect Student to Enrollment."
+  ],
+  "solutionExplanation": "Department offers Course, and Enrollment is the associative entity linking Student and Course.",
+  "initialNodes": [
+    {
+      "id": "ent-dept",
+      "type": "erEntity",
+      "position": {
+        "x": 80,
+        "y": 110
+      },
+      "data": {
+        "label": "Department",
+        "nodeType": "erEntity",
+        "attributes": [
+          {
+            "id": "d1",
+            "name": "dept_id",
+            "dataType": "INT",
+            "isPrimaryKey": true
+          },
+          {
+            "id": "d2",
+            "name": "name",
+            "dataType": "VARCHAR"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ent-course",
+      "type": "erEntity",
+      "position": {
+        "x": 390,
+        "y": 110
+      },
+      "data": {
+        "label": "Course",
+        "nodeType": "erEntity",
+        "attributes": [
+          {
+            "id": "c1",
+            "name": "course_id",
+            "dataType": "INT",
+            "isPrimaryKey": true
+          },
+          {
+            "id": "c2",
+            "name": "dept_id",
+            "dataType": "INT",
+            "isForeignKey": true
+          },
+          {
+            "id": "c3",
+            "name": "title",
+            "dataType": "VARCHAR"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ent-enrollment",
+      "type": "erEntity",
+      "position": {
+        "x": 390,
+        "y": 320
+      },
+      "data": {
+        "label": "Enrollment",
+        "nodeType": "erEntity",
+        "isWeakEntity": true,
+        "attributes": [
+          {
+            "id": "e1",
+            "name": "student_id",
+            "dataType": "INT",
+            "isPrimaryKey": true,
+            "isForeignKey": true
+          },
+          {
+            "id": "e2",
+            "name": "course_id",
+            "dataType": "INT",
+            "isPrimaryKey": true,
+            "isForeignKey": true
+          },
+          {
+            "id": "e3",
+            "name": "grade",
+            "dataType": "CHAR"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ent-student",
+      "type": "erEntity",
+      "position": {
+        "x": 80,
+        "y": 320
+      },
+      "data": {
+        "label": "Student",
+        "nodeType": "erEntity",
+        "attributes": [
+          {
+            "id": "s1",
+            "name": "student_id",
+            "dataType": "INT",
+            "isPrimaryKey": true
+          },
+          {
+            "id": "s2",
+            "name": "full_name",
+            "dataType": "VARCHAR"
+          }
+        ]
+      }
+    }
+  ],
+  "initialEdges": [
+    {
+      "id": "bad-edge-dept-enroll",
+      "source": "ent-dept",
+      "target": "ent-enrollment",
+      "data": {
+        "relationshipType": "er",
+        "erSourceCardinality": "one",
+        "erTargetCardinality": "many"
+      }
+    },
+    {
+      "id": "good-edge-course-enroll",
+      "source": "ent-course",
+      "target": "ent-enrollment",
+      "data": {
+        "relationshipType": "er",
+        "erSourceCardinality": "one",
+        "erTargetCardinality": "many"
+      }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Normalized University Schema",
+      "edges": [
+        {
+          "source": "ent-dept",
+          "target": "ent-course",
+          "type": "er",
+          "bidirectional": true,
+          "description": "Department offers Courses"
+        },
+        {
+          "source": "ent-course",
+          "target": "ent-enrollment",
+          "type": "er",
+          "bidirectional": true,
+          "description": "Course has Enrollments"
+        },
+        {
+          "source": "ent-student",
+          "target": "ent-enrollment",
+          "type": "er",
+          "bidirectional": true,
+          "description": "Student has Enrollments"
+        }
+      ]
+    }
+  ]
+}

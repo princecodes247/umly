@@ -1,0 +1,160 @@
+{
+  "id": "level-4-fix-bookstore",
+  "number": 4,
+  "title": "Fix: The Glitched Online Bookstore",
+  "type": "fix",
+  "difficulty": "Intermediate",
+  "category": "Diagram Debugging",
+  "scenario": "An inexperienced intern drafted this Use Case diagram for a Bookstore system. A Customer searches books and checks out. \"Process Payment\" is mandatory for Checkout, and \"Gift Wrap\" is an optional add-on during Checkout. But the intern made 3 glaring UML mistakes! Find and correct them.",
+  "goal": "1. Remove the invalid «include» between Customer and \"Search Catalog\" (Actors must use Associations!).\n2. Fix the reversed «extend» arrow between Checkout and Gift Wrap.\n3. Make sure Process Payment is an «include» from Checkout.",
+  "learningObjective": "Identify and repair common UML anti-patterns: actors cannot have «include»/«extend» edges, and «extend» arrows must point to the base use case.",
+  "hints": [
+    "Actors can NEVER have «include» or «extend» relationships directly with Use Cases. That must be a plain Association!",
+    "Process Payment is required when checking out: it must be «include» from Checkout to Process Payment.",
+    "«extend» must point FROM the extension (\"Gift Wrap\") TO the base (\"Checkout\")."
+  ],
+  "solutionExplanation": "Actors communicate via Associations. «include» and «extend» only connect Use Cases to other Use Cases. Furthermore, the extension arrow points toward the base use case.",
+  "initialNodes": [
+    {
+      "id": "boundary-bookstore",
+      "type": "boundary",
+      "position": {
+        "x": 220,
+        "y": 40
+      },
+      "data": {
+        "label": "System Boundary",
+        "nodeType": "boundary",
+        "boundaryTitle": "Online Bookstore",
+        "width": 480,
+        "height": 420
+      }
+    },
+    {
+      "id": "actor-customer",
+      "type": "actor",
+      "position": {
+        "x": 40,
+        "y": 160
+      },
+      "data": {
+        "label": "Customer",
+        "nodeType": "actor"
+      }
+    },
+    {
+      "id": "uc-search",
+      "type": "useCase",
+      "position": {
+        "x": 280,
+        "y": 80
+      },
+      "data": {
+        "label": "Search Catalog",
+        "nodeType": "useCase"
+      }
+    },
+    {
+      "id": "uc-checkout",
+      "type": "useCase",
+      "position": {
+        "x": 280,
+        "y": 220
+      },
+      "data": {
+        "label": "Checkout",
+        "nodeType": "useCase"
+      }
+    },
+    {
+      "id": "uc-payment",
+      "type": "useCase",
+      "position": {
+        "x": 500,
+        "y": 150
+      },
+      "data": {
+        "label": "Process Payment",
+        "nodeType": "useCase"
+      }
+    },
+    {
+      "id": "uc-giftwrap",
+      "type": "useCase",
+      "position": {
+        "x": 500,
+        "y": 310
+      },
+      "data": {
+        "label": "Gift Wrap Items",
+        "nodeType": "useCase"
+      }
+    }
+  ],
+  "initialEdges": [
+    {
+      "id": "edge-bug-1",
+      "source": "actor-customer",
+      "target": "uc-search",
+      "data": {
+        "relationshipType": "include"
+      }
+    },
+    {
+      "id": "edge-valid-1",
+      "source": "actor-customer",
+      "target": "uc-checkout",
+      "data": {
+        "relationshipType": "association"
+      }
+    },
+    {
+      "id": "edge-bug-2",
+      "source": "uc-checkout",
+      "target": "uc-payment",
+      "data": {
+        "relationshipType": "extend"
+      }
+    },
+    {
+      "id": "edge-bug-3",
+      "source": "uc-checkout",
+      "target": "uc-giftwrap",
+      "data": {
+        "relationshipType": "extend"
+      }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Repaired bookstore diagram",
+      "edges": [
+        {
+          "source": "actor-customer",
+          "target": "uc-search",
+          "type": "association",
+          "bidirectional": true
+        },
+        {
+          "source": "actor-customer",
+          "target": "uc-checkout",
+          "type": "association",
+          "bidirectional": true
+        },
+        {
+          "source": "uc-checkout",
+          "target": "uc-payment",
+          "type": "include",
+          "description": "Payment is mandatory for checkout"
+        },
+        {
+          "source": "uc-giftwrap",
+          "target": "uc-checkout",
+          "type": "extend",
+          "description": "Gift wrap optionally extends checkout"
+        }
+      ]
+    }
+  ],
+  "diagramType": "use_case"
+}

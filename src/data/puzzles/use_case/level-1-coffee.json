@@ -1,0 +1,110 @@
+{
+  "id": "level-1-coffee",
+  "number": 1,
+  "title": "First Steps: Smart Coffee Kiosk",
+  "type": "build",
+  "difficulty": "Beginner",
+  "category": "Foundations",
+  "scenario": "A smart coffee shop has a digital self-service kiosk. A Customer interacts with the kiosk to Order Coffee. A Barista in the back interacts with the system to Prepare Drink. Both use cases reside inside the Coffee Kiosk system boundary.",
+  "goal": "Connect the Customer to \"Order Coffee\", and the Barista to \"Prepare Drink\" using standard UML Associations.",
+  "learningObjective": "Understand Actors (outside the boundary), Use Cases (inside the boundary), and Associations (solid lines representing direct interaction).",
+  "hints": [
+    "Actors represent external roles (human or system) interacting with use cases.",
+    "Connect the Customer actor to the \"Order Coffee\" use case using an Association.",
+    "Connect the Barista actor to the \"Prepare Drink\" use case using an Association."
+  ],
+  "solutionExplanation": "In UML use case diagrams, actors interact with use cases using simple solid lines called Associations. Use cases live inside the system boundary, while actors remain outside.",
+  "initialNodes": [
+    {
+      "id": "boundary-1",
+      "type": "boundary",
+      "position": {
+        "x": 220,
+        "y": 40
+      },
+      "data": {
+        "label": "System Boundary",
+        "nodeType": "boundary",
+        "boundaryTitle": "Smart Coffee Kiosk System",
+        "width": 380,
+        "height": 380
+      }
+    },
+    {
+      "id": "actor-customer",
+      "type": "actor",
+      "position": {
+        "x": 50,
+        "y": 120
+      },
+      "data": {
+        "label": "Customer",
+        "nodeType": "actor",
+        "actorType": "primary",
+        "description": "Places beverage orders"
+      }
+    },
+    {
+      "id": "actor-barista",
+      "type": "actor",
+      "position": {
+        "x": 650,
+        "y": 220
+      },
+      "data": {
+        "label": "Barista",
+        "nodeType": "actor",
+        "actorType": "secondary",
+        "description": "Fulfills orders in the kitchen"
+      }
+    },
+    {
+      "id": "uc-order-coffee",
+      "type": "useCase",
+      "position": {
+        "x": 310,
+        "y": 110
+      },
+      "data": {
+        "label": "Order Coffee",
+        "nodeType": "useCase",
+        "description": "Customer chooses drink and submits order"
+      }
+    },
+    {
+      "id": "uc-prepare-drink",
+      "type": "useCase",
+      "position": {
+        "x": 310,
+        "y": 250
+      },
+      "data": {
+        "label": "Prepare Drink",
+        "nodeType": "useCase",
+        "description": "Barista brews and packages beverage"
+      }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Direct associations from actors to their respective use cases",
+      "edges": [
+        {
+          "source": "actor-customer",
+          "target": "uc-order-coffee",
+          "type": "association",
+          "bidirectional": true,
+          "description": "Customer orders coffee"
+        },
+        {
+          "source": "actor-barista",
+          "target": "uc-prepare-drink",
+          "type": "association",
+          "bidirectional": true,
+          "description": "Barista prepares drink"
+        }
+      ]
+    }
+  ],
+  "diagramType": "use_case"
+}

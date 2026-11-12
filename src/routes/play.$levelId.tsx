@@ -7,7 +7,7 @@ import {
   BookOpen,
 } from 'lucide-react'
 
-import { getLevelById, getNextLevel } from '../data/levels'
+import { loadLevelById, getNextLevelSummary } from '../data/levels'
 import { StudioCanvas } from '../components/studio/StudioCanvas'
 import { ScenarioPanel } from '../components/game/ScenarioPanel'
 import { FeedbackModal } from '../components/game/FeedbackModal'
@@ -22,8 +22,8 @@ import type {
 } from '../types/game'
 
 export const Route = createFileRoute('/play/$levelId')({
-  loader: ({ params }) => {
-    const level = getLevelById(params.levelId)
+  loader: async ({ params }) => {
+    const level = await loadLevelById(params.levelId)
     if (!level) {
       throw notFound()
     }
@@ -136,7 +136,7 @@ function PlayLevelPage() {
     }
   }
 
-  const nextLevel = getNextLevel(level.id)
+  const nextLevel = getNextLevelSummary(level.id)
 
   const handleNextLevel = () => {
     if (nextLevel) {

@@ -1,0 +1,134 @@
+{
+  "id": "level-7-fix-streaming-service",
+  "number": 7,
+  "title": "Fix: Music Streaming App Chaos",
+  "type": "fix",
+  "difficulty": "Advanced",
+  "category": "Diagram Debugging",
+  "scenario": "A streaming platform has a Subscriber actor. \"Stream Song\" requires \"Authenticate User\" (mandatory). When streaming a song, a subscriber can optionally \"Download for Offline Play\". However, the edges are totally scrambled! Clean up the incorrect relationship types and directions.",
+  "goal": "1. Replace the invalid generalization between Subscriber and Stream Song with an Association.\n2. Change the relationship to Authenticate User to «include».\n3. Orient «extend» properly from Download for Offline Play to Stream Song.",
+  "learningObjective": "Master error detection in dense diagrams and reinforce that actors do not generalize use cases.",
+  "hints": [
+    "Actors can NEVER have a Generalization to a Use Case. Subscriber must have an Association to \"Stream Song\".",
+    "Authentication is mandatory: it should be «include» from Stream Song to Authenticate User.",
+    "Offline download is an optional extension: «extend» points from Download for Offline Play to Stream Song."
+  ],
+  "solutionExplanation": "Generalization only exists between elements of the same kind (Actor to Actor, or Use Case to Use Case). Actors communicate with Use Cases solely through Associations.",
+  "initialNodes": [
+    {
+      "id": "boundary-streaming",
+      "type": "boundary",
+      "position": {
+        "x": 220,
+        "y": 40
+      },
+      "data": {
+        "label": "System Boundary",
+        "nodeType": "boundary",
+        "boundaryTitle": "BeatPulse Streaming Service",
+        "width": 480,
+        "height": 380
+      }
+    },
+    {
+      "id": "actor-subscriber",
+      "type": "actor",
+      "position": {
+        "x": 50,
+        "y": 160
+      },
+      "data": {
+        "label": "Subscriber",
+        "nodeType": "actor"
+      }
+    },
+    {
+      "id": "uc-stream",
+      "type": "useCase",
+      "position": {
+        "x": 280,
+        "y": 150
+      },
+      "data": {
+        "label": "Stream Song",
+        "nodeType": "useCase"
+      }
+    },
+    {
+      "id": "uc-auth",
+      "type": "useCase",
+      "position": {
+        "x": 500,
+        "y": 80
+      },
+      "data": {
+        "label": "Authenticate User",
+        "nodeType": "useCase"
+      }
+    },
+    {
+      "id": "uc-download",
+      "type": "useCase",
+      "position": {
+        "x": 500,
+        "y": 260
+      },
+      "data": {
+        "label": "Download Offline",
+        "nodeType": "useCase"
+      }
+    }
+  ],
+  "initialEdges": [
+    {
+      "id": "edge-err-1",
+      "source": "actor-subscriber",
+      "target": "uc-stream",
+      "data": {
+        "relationshipType": "generalization"
+      }
+    },
+    {
+      "id": "edge-err-2",
+      "source": "uc-stream",
+      "target": "uc-auth",
+      "data": {
+        "relationshipType": "extend"
+      }
+    },
+    {
+      "id": "edge-err-3",
+      "source": "uc-stream",
+      "target": "uc-download",
+      "data": {
+        "relationshipType": "include"
+      }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Fixed streaming diagram",
+      "edges": [
+        {
+          "source": "actor-subscriber",
+          "target": "uc-stream",
+          "type": "association",
+          "bidirectional": true
+        },
+        {
+          "source": "uc-stream",
+          "target": "uc-auth",
+          "type": "include",
+          "description": "Authentication is required to stream"
+        },
+        {
+          "source": "uc-download",
+          "target": "uc-stream",
+          "type": "extend",
+          "description": "Offline download optionally extends streaming"
+        }
+      ]
+    }
+  ],
+  "diagramType": "use_case"
+}

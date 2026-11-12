@@ -14,7 +14,7 @@ import {
   PenTool,
 } from 'lucide-react'
 
-import { LEVELS } from '../data/levels'
+import { LEVEL_SUMMARIES } from '../data/levels'
 import {
   getPlayerStats,
   resetAllProgress,
@@ -52,7 +52,7 @@ function PuzzlesPage() {
   const [showCheatsheet, setShowCheatsheet] = useState(false)
 
   const reloadStats = () => {
-    setStats(getPlayerStats(LEVELS.length))
+    setStats(getPlayerStats(LEVEL_SUMMARIES.length))
   }
 
   useEffect(() => {
@@ -70,7 +70,7 @@ function PuzzlesPage() {
     }
   }
 
-  const filteredLevels = LEVELS.filter((l) => {
+  const filteredLevels = LEVEL_SUMMARIES.filter((l) => {
     const matchesFilter = selectedFilter === 'all' || l.type === selectedFilter
     const matchesDiagram =
       selectedDiagramType === 'all' ||
@@ -83,13 +83,13 @@ function PuzzlesPage() {
     return matchesFilter && matchesDiagram && matchesSearch
   })
 
-  const totalPossibleStars = LEVELS.length * 3
+  const totalPossibleStars = LEVEL_SUMMARIES.length * 3
   const progressPercent = Math.round(
-    (stats.completedLevels / LEVELS.length) * 100
+    (stats.completedLevels / LEVEL_SUMMARIES.length) * 100
   )
 
   const nextUnsolvedLevel =
-    LEVELS.find((l) => !stats.progressByLevel[l.id]?.completed) || LEVELS[0]
+    LEVEL_SUMMARIES.find((l) => !stats.progressByLevel[l.id]?.completed) || LEVEL_SUMMARIES[0]
 
   const difficultyTagClass = (diff: string) => {
     switch (diff) {
@@ -161,14 +161,14 @@ function PuzzlesPage() {
             </div>
             <div className="notion-property-value flex items-center gap-2">
               <span className="notion-tag notion-tag-blue">
-                {stats.completedLevels === LEVELS.length
+                {stats.completedLevels === LEVEL_SUMMARIES.length
                   ? 'Completed'
                   : stats.completedLevels > 0
                     ? 'In Progress'
                     : 'Not Started'}
               </span>
               <span className="text-[var(--text-secondary)]">
-                {stats.completedLevels} of {LEVELS.length} levels solved ({progressPercent}%)
+                {stats.completedLevels} of {LEVEL_SUMMARIES.length} levels solved ({progressPercent}%)
               </span>
             </div>
           </div>
