@@ -23,6 +23,7 @@ import {
 } from '../lib/diagramStorage'
 import { NewDiagramModal } from '../components/studio/NewDiagramModal'
 import { UmlCheatsheetModal } from '../components/game/UmlCheatsheetModal'
+import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { DIAGRAM_TEMPLATES } from '../data/templates'
 
 export const Route = createFileRoute('/')({
@@ -34,6 +35,10 @@ function LandingPage() {
   const [drafts, setDrafts] = useState<DiagramDraft[]>([])
   const [showNewModal, setShowNewModal] = useState(false)
   const [showCheatsheet, setShowCheatsheet] = useState(false)
+  const [pendingDeleteDraft, setPendingDeleteDraft] = useState<{
+    id: string
+    title: string
+  } | null>(null)
 
   const reloadDrafts = () => {
     setDrafts(listDiagramDrafts())
@@ -49,10 +54,14 @@ function LandingPage() {
 
   const handleDeleteDraft = (e: React.MouseEvent, id: string, title: string) => {
     e.stopPropagation()
-    if (window.confirm(`Delete diagram "${title}"?`)) {
-      deleteDiagramDraft(id)
-      reloadDrafts()
-    }
+    setPendingDeleteDraft({ id, title })
+  }
+
+  const confirmDeleteDraft = () => {
+    if (!pendingDeleteDraft) return
+    deleteDiagramDraft(pendingDeleteDraft.id)
+    setPendingDeleteDraft(null)
+    reloadDrafts()
   }
 
   const handleQuickTemplate = (templateId: string, templateName: string) => {
@@ -403,6 +412,19 @@ function LandingPage() {
       <UmlCheatsheetModal
         isOpen={showCheatsheet}
         onClose={() => setShowCheatsheet(false)}
+      />
+
+      <ConfirmDialog
+        isOpen={pendingDeleteDraft !== null}
+        title="Delete diagram?"
+        description={
+          pendingDeleteDraft
+            ? `"${pendingDeleteDraft.title}" will be permanently removed from your local workspace.`
+            : ''
+        }
+        confirmLabel="Delete"
+        onConfirm={confirmDeleteDraft}
+        onCancel={() => setPendingDeleteDraft(null)}
       />
     </main>
   )

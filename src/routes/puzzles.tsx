@@ -21,6 +21,7 @@ import {
   type PlayerStats,
 } from '../lib/storage'
 import { UmlCheatsheetModal } from '../components/game/UmlCheatsheetModal'
+import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import type { LevelType, PuzzleDiagramType } from '../types/game'
 
 const DIAGRAM_TYPE_META: Record<
@@ -50,6 +51,7 @@ function PuzzlesPage() {
   const [viewMode, setViewMode] = useState<'gallery' | 'table'>('gallery')
   const [searchQuery, setSearchQuery] = useState('')
   const [showCheatsheet, setShowCheatsheet] = useState(false)
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
 
   const reloadStats = () => {
     setStats(getPlayerStats(LEVEL_SUMMARIES.length))
@@ -60,14 +62,13 @@ function PuzzlesPage() {
   }, [])
 
   const handleReset = () => {
-    if (
-      window.confirm(
-        'Are you sure you want to reset all your progress and stars?'
-      )
-    ) {
-      resetAllProgress()
-      reloadStats()
-    }
+    setShowResetConfirm(true)
+  }
+
+  const confirmResetProgress = () => {
+    resetAllProgress()
+    setShowResetConfirm(false)
+    reloadStats()
   }
 
   const filteredLevels = LEVEL_SUMMARIES.filter((l) => {
@@ -575,6 +576,15 @@ function PuzzlesPage() {
       <UmlCheatsheetModal
         isOpen={showCheatsheet}
         onClose={() => setShowCheatsheet(false)}
+      />
+
+      <ConfirmDialog
+        isOpen={showResetConfirm}
+        title="Reset all progress?"
+        description="This will clear all completed puzzle statuses and earned stars."
+        confirmLabel="Reset Progress"
+        onConfirm={confirmResetProgress}
+        onCancel={() => setShowResetConfirm(false)}
       />
     </main>
   )

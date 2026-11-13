@@ -65,6 +65,7 @@ import { StudioBottomDock } from './StudioBottomDock'
 import { StudioInspector } from './StudioInspector'
 import { CommandPalette } from './CommandPalette'
 import { ShortcutsModal } from './ShortcutsModal'
+import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { DIAGRAM_TEMPLATES } from '../../data/templates'
 import {
   exportDiagramAsPng,
@@ -288,6 +289,13 @@ function StudioCanvasInner({ diagramId, puzzle }: StudioCanvasProps) {
   // Modals & floating menus
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false)
+  const [confirmDialog, setConfirmDialog] = useState<{
+    title: string
+    description: string
+    confirmLabel: string
+    variant: 'danger' | 'default'
+    onConfirm: () => void
+  } | null>(null)
   const [dropCreateMenu, setDropCreateMenu] =
     useState<DropCreateMenuState | null>(null)
   const [edgeContextMenu, setEdgeContextMenu] =
@@ -2277,19 +2285,10 @@ function StudioCanvasInner({ diagramId, puzzle }: StudioCanvasProps) {
   )
 
   // Template loader
-  const handleLoadTemplate = useCallback(
+  const applyTemplate = useCallback(
     (templateId: string) => {
       const template = DIAGRAM_TEMPLATES.find((t) => t.id === templateId)
       if (!template) return
-
-      if (
-        nodes.length > 0 &&
-        !window.confirm(
-          `Load template "${template.name}"? This will replace your current canvas.`
-        )
-      ) {
-        return
-      }
 
       pushSnapshot()
       setTitle(template.name)
@@ -2302,20 +2301,51 @@ function StudioCanvasInner({ diagramId, puzzle }: StudioCanvasProps) {
         reactFlowInstance.fitView({ padding: 0.2 })
       }, 50)
     },
-    [nodes.length, pushSnapshot, reactFlowInstance, setNodes, setEdges]
+    [pushSnapshot, reactFlowInstance, setNodes, setEdges]
+  )
+
+  const handleLoadTemplate = useCallback(
+    (templateId: string) => {
+      const template = DIAGRAM_TEMPLATES.find((t) => t.id === templateId)
+      if (!template) return
+
+      if (nodes.length > 0) {
+        setConfirmDialog({
+          title: 'Load template?',
+          description: `Load "${template.name}"? This will replace your current canvas.`,
+          confirmLabel: 'Load Template',
+          variant: 'default',
+          onConfirm: () => {
+            setConfirmDialog(null)
+            applyTemplate(templateId)
+          },
+        })
+        return
+      }
+
+      applyTemplate(templateId)
+    },
+    [applyTemplate, nodes.length]
   )
 
   // Clear Canvas
   const handleClearCanvas = useCallback(() => {
     if (nodes.length === 0) return
-    if (window.confirm('Clear all nodes and connections from the diagram?')) {
-      pushSnapshot()
-      setTitle('Untitled Diagram')
-      setNodes([])
-      setEdges([])
-      setSelectedNodes([])
-      setSelectedEdges([])
-    }
+    setConfirmDialog({
+      title: 'Clear canvas?',
+      description: 'Clear all nodes and connections from the diagram?',
+      confirmLabel: 'Clear Canvas',
+      variant: 'danger',
+      onConfirm: () => {
+        pushSnapshot()
+        setTitle('Untitled Diagram')
+        setNodes([])
+        setEdges([])
+        setSelectedNodes([])
+        setSelectedEdges([])
+        setConfirmDialog(null)
+      },
+    })
   }, [nodes.length, pushSnapshot, setNodes, setEdges])
 
   // Fit View
@@ -3767,6 +3797,16 @@ function StudioCanvasInner({ diagramId, puzzle }: StudioCanvasProps) {
       <ShortcutsModal
         isOpen={isShortcutsOpen}
         onClose={() => setIsShortcutsOpen(false)}
+      />
+
+      <ConfirmDialog
+        isOpen={confirmDialog !== null}
+        title={confirmDialog?.title ?? ''}
+        description={confirmDialog?.description ?? ''}
+        confirmLabel={confirmDialog?.confirmLabel}
+        variant={confirmDialog?.variant}
+        onConfirm={() => confirmDialog?.onConfirm()}
+        onCancel={() => setConfirmDialog(null)}
       />
     </div>
   )
