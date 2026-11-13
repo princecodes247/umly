@@ -50,18 +50,28 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   const isPlayPage = routerState.location.pathname.startsWith('/play')
   const isStudioPage = routerState.location.pathname.startsWith('/studio')
 
+  const isFullViewportPage = isPlayPage || isStudioPage
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <HeadContent />
       </head>
-      <body className="font-sans antialiased text-[var(--text-primary)] bg-[var(--bg-primary)] [overflow-wrap:anywhere] selection:bg-[var(--selection-bg)] min-h-screen flex flex-col">
+      <body
+        className={`font-sans antialiased text-[var(--text-primary)] bg-[var(--bg-primary)] [overflow-wrap:anywhere] selection:bg-[var(--selection-bg)] flex flex-col ${
+          isFullViewportPage ? 'h-screen overflow-hidden' : 'min-h-screen'
+        }`}
+      >
         {!isStudioPage && <Header />}
-        <div className="flex-1 flex flex-col min-h-0 w-full">
+        <div
+          className={`flex-1 flex flex-col w-full ${
+            isFullViewportPage ? 'min-h-0' : ''
+          }`}
+        >
           {children}
         </div>
-        {!isPlayPage && !isStudioPage && <Footer />}
+        {!isFullViewportPage && <Footer />}
         <TanStackDevtools
           config={{
             position: 'bottom-right',
