@@ -81,21 +81,6 @@ function LandingPage() {
           </p>
         </div>
 
-        {/* Notion Callout Box */}
-        <div className="notion-callout notion-callout-blue">
-          <span className="text-lg select-none">💡</span>
-          <div className="space-y-1">
-            <p className="font-medium text-xs text-[var(--text-primary)]">
-              Free Draw Mode is now the main mode of UMLy.
-            </p>
-            <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-              Start a new diagram draft below, choose your diagram type, and
-              build using actors, use cases, system boundaries, and precise UML
-              relationships (<code>«include»</code>, <code>«extend»</code>, and
-              generalization).
-            </p>
-          </div>
-        </div>
 
         {/* Hero Quick Actions */}
         <div className="flex flex-wrap items-center gap-2.5 pt-2">
