@@ -240,7 +240,7 @@ export const PUZZLE_SUMMARIES: LevelSummary[] = [
     "type": "fix",
     "difficulty": "Advanced",
     "category": "Entity-Relationship",
-    "scenario": "A core banking ledger schema has two errors: LedgerLine is wired directly to Customer instead of Account, and JournalEntry is disconnected from LedgerLine."
+    "scenario": "A core banking ledger schema has two modeling bugs: LedgerLine is wired directly to Customer instead of Account, and Transfer is mistakenly wired directly to Customer instead of anchoring to JournalEntry. Meanwhile, Account -> LedgerLine and JournalEntry -> LedgerLine are missing."
   },
   {
     "id": "er-12-airline-booking",

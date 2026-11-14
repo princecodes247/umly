@@ -7,11 +7,11 @@
   "difficulty": "Easy",
   "category": "Entity-Relationship",
   "scenario": "A public library tracks Authors, Books, Members, and Loans. An Author writes Books, and a Member borrows Books through Loan records.",
-  "goal": "Connect Author -> Book, Book -> Loan, and Member -> Loan using ER relationship edges.",
+  "goal": "Model the complete lending schema by linking authorship and book borrowing relationships based on each entity's foreign keys.",
   "learningObjective": "Trace foreign keys from an associative Loan entity back to its parent entities.",
   "hints": [
-    "Look at the foreign keys on Book (author_id) and Loan (book_id, member_id).",
-    "Loan links Member and Book together.",
+    "Start by checking which entity holds author_id.",
+    "Loan acts as the bridge between Member and Book.",
     "Connect Author -> Book, Book -> Loan, and Member -> Loan."
   ],
   "solutionExplanation": "Author has a 1:N relationship with Book, while Loan resolves the lending history between Member and Book.",

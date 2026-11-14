@@ -81,11 +81,32 @@ function evaluateSingleSolution(
   const expectedEdges = solution.edges
   const matchedUserEdgeIds = new Set<string>()
 
+  const isCardinalityCompatible = (
+    expectedCard: string | undefined,
+    actualCard: string | undefined
+  ): boolean => {
+    if (!expectedCard) return true
+    const actual = actualCard || 'one'
+    if (expectedCard === actual) return true
+    if (expectedCard === 'one') {
+      return actual === 'one' || actual === 'one_only' || actual === 'zero_or_one'
+    }
+    if (expectedCard === 'many') {
+      return actual === 'many' || actual === 'zero_or_many' || actual === 'one_or_many'
+    }
+    return false
+  }
+
   // Helper to check match
   const matchesEdge = (
     expected: ExpectedEdge,
     actual: EdgeInput
-  ): { matches: boolean; reversed: boolean; wrongType: boolean } => {
+  ): {
+    matches: boolean
+    reversed: boolean
+    wrongType: boolean
+    wrongCardinality?: boolean
+  } => {
     const actualType = actual.data?.relationshipType || 'association'
     const expectedType = expected.type
 
@@ -106,10 +127,39 @@ function evaluateSingleSolution(
     // For association and ER relationships, connection is undirected
     if (expectedType === 'association' || expectedType === 'er') {
       if (normalDirection || reversedDirection) {
+        if (actualType !== expectedType) {
+          return {
+            matches: false,
+            reversed: false,
+            wrongType: true,
+          }
+        }
+        if (
+          expectedType === 'er' &&
+          (expected.erSourceCardinality || expected.erTargetCardinality)
+        ) {
+          const actualSrcCard = normalDirection
+            ? actual.data?.erSourceCardinality || 'one'
+            : actual.data?.erTargetCardinality || 'many'
+          const actualTgtCard = normalDirection
+            ? actual.data?.erTargetCardinality || 'many'
+            : actual.data?.erSourceCardinality || 'one'
+          const cardOk =
+            isCardinalityCompatible(expected.erSourceCardinality, actualSrcCard) &&
+            isCardinalityCompatible(expected.erTargetCardinality, actualTgtCard)
+          if (!cardOk) {
+            return {
+              matches: false,
+              reversed: false,
+              wrongType: false,
+              wrongCardinality: true,
+            }
+          }
+        }
         return {
-          matches: actualType === expectedType,
+          matches: true,
           reversed: false,
-          wrongType: actualType !== expectedType,
+          wrongType: false,
         }
       }
     } else {
@@ -164,6 +214,22 @@ function evaluateSingleSolution(
         diagnostics.push({
           type: 'wrong_direction',
           message: `Reversed arrow: Connection between '${getNodeLabel(actual.source)}' and '${getNodeLabel(actual.target)}' has the wrong direction. ${directionTip}`,
+          edge: {
+            sourceId: actual.source,
+            sourceLabel: getNodeLabel(actual.source),
+            targetId: actual.target,
+            targetLabel: getNodeLabel(actual.target),
+            actualType: actual.data?.relationshipType,
+            expectedType: expected.type,
+          },
+        })
+        break
+      } else if (matchInfo.wrongCardinality) {
+        matchedUserEdgeIds.add(actual.id)
+        found = true
+        diagnostics.push({
+          type: 'wrong_type',
+          message: `Incorrect ER cardinality between '${getNodeLabel(expected.source)}' and '${getNodeLabel(expected.target)}'. Expected '${expected.erSourceCardinality || 'one'}' on ${getNodeLabel(expected.source)} and '${expected.erTargetCardinality || 'many'}' on ${getNodeLabel(expected.target)}${expected.description ? ` (${expected.description})` : ''}.`,
           edge: {
             sourceId: actual.source,
             sourceLabel: getNodeLabel(actual.source),

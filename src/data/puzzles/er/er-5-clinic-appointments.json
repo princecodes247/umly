@@ -7,12 +7,12 @@
   "difficulty": "Easy",
   "category": "Entity-Relationship",
   "scenario": "A medical clinic schema mistakenly connects Doctor directly to Patient, bypassing Appointment, and leaves Appointment disconnected from Patient.",
-  "goal": "Remove the direct Doctor -> Patient edge and connect Doctor -> Appointment and Patient -> Appointment.",
+  "goal": "Repair the clinic schema so Doctor and Patient relate through Appointment rather than a direct many-to-many link.",
   "learningObjective": "Replace a direct many-to-many link with an associative Appointment entity.",
   "hints": [
-    "Select the edge between Doctor and Patient and delete it.",
+    "Look for an edge that bypasses the Appointment entity.",
     "Appointment holds both doctor_id and patient_id foreign keys.",
-    "Connect Doctor -> Appointment and Patient -> Appointment."
+    "Delete Doctor -> Patient and connect Patient -> Appointment."
   ],
   "solutionExplanation": "Doctor and Patient interact through Appointment rather than a direct foreign key between them.",
   "initialNodes": [

@@ -7,12 +7,12 @@
   "difficulty": "Intermediate",
   "category": "Entity-Relationship",
   "scenario": "A music streaming app models Users, Playlists, PlaylistTracks, Tracks, and Artists. A User creates Playlists, an Artist releases Tracks, and PlaylistTrack orders Tracks inside each Playlist.",
-  "goal": "Connect User -> Playlist, Playlist -> PlaylistTrack, Track -> PlaylistTrack, and Artist -> Track.",
-  "learningObjective": "Model multi-hop 1:N and M:N relationships across catalog and user-curated entities.",
+  "goal": "Wire the streaming catalog and user-curated playlist relationships with the correct 1:N cardinalities.",
+  "learningObjective": "Model multi-hop 1:N and M:N relationships with proper crow's-foot cardinalities across catalog and user entities.",
   "hints": [
-    "Playlist has user_id referencing User; Track has artist_id referencing Artist.",
-    "PlaylistTrack is a weak junction entity linking Playlist and Track.",
-    "Connect all 4 foreign-key relationships."
+    "Look at the FK attributes on Playlist, Track, and PlaylistTrack.",
+    "PlaylistTrack is a weak junction entity between Playlist and Track (1:N on both sides).",
+    "Connect User -> Playlist (1:N), Artist -> Track (1:N), Playlist -> PlaylistTrack (1:N), and Track -> PlaylistTrack (1:N)."
   ],
   "solutionExplanation": "User owns Playlists, Artist releases Tracks, and PlaylistTrack resolves the ordered many-to-many link between Playlist and Track.",
   "initialNodes": [
@@ -90,10 +90,10 @@
     {
       "description": "Music streaming playlist ER schema",
       "edges": [
-        { "source": "ent-user", "target": "ent-playlist", "type": "er", "bidirectional": true, "description": "User owns Playlists" },
-        { "source": "ent-playlist", "target": "ent-playlist-track", "type": "er", "bidirectional": true, "description": "Playlist contains PlaylistTracks" },
-        { "source": "ent-track", "target": "ent-playlist-track", "type": "er", "bidirectional": true, "description": "Track appears in PlaylistTracks" },
-        { "source": "ent-artist", "target": "ent-track", "type": "er", "bidirectional": true, "description": "Artist releases Tracks" }
+        { "source": "ent-user", "target": "ent-playlist", "type": "er", "bidirectional": true, "erSourceCardinality": "one", "erTargetCardinality": "many", "description": "User owns Playlists" },
+        { "source": "ent-playlist", "target": "ent-playlist-track", "type": "er", "bidirectional": true, "erSourceCardinality": "one", "erTargetCardinality": "many", "description": "Playlist contains PlaylistTracks" },
+        { "source": "ent-track", "target": "ent-playlist-track", "type": "er", "bidirectional": true, "erSourceCardinality": "one", "erTargetCardinality": "many", "description": "Track appears in PlaylistTracks" },
+        { "source": "ent-artist", "target": "ent-track", "type": "er", "bidirectional": true, "erSourceCardinality": "one", "erTargetCardinality": "many", "description": "Artist releases Tracks" }
       ]
     }
   ]

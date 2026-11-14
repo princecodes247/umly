@@ -7,12 +7,12 @@
   "difficulty": "Advanced",
   "category": "Entity-Relationship",
   "scenario": "A fulfillment platform tracks Warehouses, InventoryItems, Products, Orders, Shipments, and ShipmentLines. InventoryItem tracks Product stock per Warehouse. An Order can split into multiple Shipments dispatched from a Warehouse, each with ShipmentLines for specific Products.",
-  "goal": "Connect Warehouse -> InventoryItem, Product -> InventoryItem, Order -> Shipment, Warehouse -> Shipment, Shipment -> ShipmentLine, and Product -> ShipmentLine.",
+  "goal": "Wire the complete fulfillment schema covering warehouse stock levels, order shipments, and shipment line items with 1:N cardinalities.",
   "learningObjective": "Model complex fulfillment schemas with dual junction tables (InventoryItem and ShipmentLine).",
   "hints": [
-    "InventoryItem connects Warehouse and Product.",
+    "Trace the composite PK/FKs on the two weak entities first: InventoryItem and ShipmentLine.",
     "Shipment references both Order (order_id) and Warehouse (warehouse_id).",
-    "ShipmentLine connects Shipment and Product."
+    "Connect Warehouse & Product -> InventoryItem, Order & Warehouse -> Shipment, and Shipment & Product -> ShipmentLine."
   ],
   "solutionExplanation": "InventoryItem resolves stock per Warehouse and Product, Shipment ties an Order to a fulfillment Warehouse, and ShipmentLine tracks the Products in each Shipment.",
   "initialNodes": [
@@ -104,12 +104,12 @@
     {
       "description": "Multi-warehouse inventory and fulfillment schema",
       "edges": [
-        { "source": "ent-warehouse", "target": "ent-inventory", "type": "er", "bidirectional": true, "description": "Warehouse holds InventoryItems" },
-        { "source": "ent-product", "target": "ent-inventory", "type": "er", "bidirectional": true, "description": "Product is stocked in InventoryItems" },
-        { "source": "ent-order", "target": "ent-shipment", "type": "er", "bidirectional": true, "description": "Order is fulfilled by Shipments" },
-        { "source": "ent-warehouse", "target": "ent-shipment", "type": "er", "bidirectional": true, "description": "Warehouse dispatches Shipments" },
-        { "source": "ent-shipment", "target": "ent-shipment-line", "type": "er", "bidirectional": true, "description": "Shipment contains ShipmentLines" },
-        { "source": "ent-product", "target": "ent-shipment-line", "type": "er", "bidirectional": true, "description": "Product is listed in ShipmentLines" }
+        { "source": "ent-warehouse", "target": "ent-inventory", "type": "er", "bidirectional": true, "erSourceCardinality": "one", "erTargetCardinality": "many", "description": "Warehouse holds InventoryItems" },
+        { "source": "ent-product", "target": "ent-inventory", "type": "er", "bidirectional": true, "erSourceCardinality": "one", "erTargetCardinality": "many", "description": "Product is stocked in InventoryItems" },
+        { "source": "ent-order", "target": "ent-shipment", "type": "er", "bidirectional": true, "erSourceCardinality": "one", "erTargetCardinality": "many", "description": "Order is fulfilled by Shipments" },
+        { "source": "ent-warehouse", "target": "ent-shipment", "type": "er", "bidirectional": true, "erSourceCardinality": "one", "erTargetCardinality": "many", "description": "Warehouse dispatches Shipments" },
+        { "source": "ent-shipment", "target": "ent-shipment-line", "type": "er", "bidirectional": true, "erSourceCardinality": "one", "erTargetCardinality": "many", "description": "Shipment contains ShipmentLines" },
+        { "source": "ent-product", "target": "ent-shipment-line", "type": "er", "bidirectional": true, "erSourceCardinality": "one", "erTargetCardinality": "many", "description": "Product is listed in ShipmentLines" }
       ]
     }
   ]

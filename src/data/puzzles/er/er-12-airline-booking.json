@@ -7,12 +7,12 @@
   "difficulty": "Advanced",
   "category": "Entity-Relationship",
   "scenario": "An airline reservation system models Passengers, Bookings, Flights, Aircrafts, Airports, and SeatAssignments. A Passenger creates Bookings, an Aircraft operates Flights between Airports, and SeatAssignment links a Booking to a specific Flight.",
-  "goal": "Connect Passenger -> Booking, Booking -> SeatAssignment, Flight -> SeatAssignment, Aircraft -> Flight, and Airport -> Flight.",
+  "goal": "Model the complete airline reservation and fleet scheduling schema with accurate 1:N relationships across all 6 entities.",
   "learningObjective": "Synthesize a full domain ER model combining scheduling, fleet, and passenger reservation tables.",
   "hints": [
-    "Flight references aircraft_id and origin_airport_id.",
-    "SeatAssignment is the associative entity between Booking and Flight.",
-    "Connect Passenger -> Booking, Booking -> SeatAssignment, Flight -> SeatAssignment, Aircraft -> Flight, and Airport -> Flight."
+    "Trace Flight's foreign keys first to anchor fleet and airport scheduling.",
+    "SeatAssignment is the weak associative entity linking Booking and Flight.",
+    "Connect Passenger -> Booking, Booking & Flight -> SeatAssignment, and Aircraft & Airport -> Flight (all 1:N)."
   ],
   "solutionExplanation": "Passenger makes Bookings, Aircraft and Airport anchor Flight schedules, and SeatAssignment resolves passenger seating across Bookings and Flights.",
   "initialNodes": [
@@ -103,11 +103,11 @@
     {
       "description": "Airline booking and fleet ER schema",
       "edges": [
-        { "source": "ent-passenger", "target": "ent-booking", "type": "er", "bidirectional": true, "description": "Passenger creates Bookings" },
-        { "source": "ent-booking", "target": "ent-seat", "type": "er", "bidirectional": true, "description": "Booking reserves SeatAssignments" },
-        { "source": "ent-flight", "target": "ent-seat", "type": "er", "bidirectional": true, "description": "Flight assigns SeatAssignments" },
-        { "source": "ent-aircraft", "target": "ent-flight", "type": "er", "bidirectional": true, "description": "Aircraft operates Flights" },
-        { "source": "ent-airport", "target": "ent-flight", "type": "er", "bidirectional": true, "description": "Airport hosts Flights" }
+        { "source": "ent-passenger", "target": "ent-booking", "type": "er", "bidirectional": true, "erSourceCardinality": "one", "erTargetCardinality": "many", "description": "Passenger creates Bookings" },
+        { "source": "ent-booking", "target": "ent-seat", "type": "er", "bidirectional": true, "erSourceCardinality": "one", "erTargetCardinality": "many", "description": "Booking reserves SeatAssignments" },
+        { "source": "ent-flight", "target": "ent-seat", "type": "er", "bidirectional": true, "erSourceCardinality": "one", "erTargetCardinality": "many", "description": "Flight assigns SeatAssignments" },
+        { "source": "ent-aircraft", "target": "ent-flight", "type": "er", "bidirectional": true, "erSourceCardinality": "one", "erTargetCardinality": "many", "description": "Aircraft operates Flights" },
+        { "source": "ent-airport", "target": "ent-flight", "type": "er", "bidirectional": true, "erSourceCardinality": "one", "erTargetCardinality": "many", "description": "Airport hosts Flights" }
       ]
     }
   ]

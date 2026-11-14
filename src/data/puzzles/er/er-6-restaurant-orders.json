@@ -7,10 +7,10 @@
   "difficulty": "Easy",
   "category": "Entity-Relationship",
   "scenario": "A restaurant POS system tracks DiningTables, Orders, OrderDishes, and MenuItems. A DiningTable hosts Orders, and each Order contains multiple OrderDishes referencing MenuItems.",
-  "goal": "Connect DiningTable -> Order, Order -> OrderDish, and MenuItem -> OrderDish.",
+  "goal": "Connect the restaurant POS tables so each DiningTable hosts Orders and each Order resolves its MenuItems through OrderDish.",
   "learningObjective": "Model weak associative line-item entities in a hospitality POS database.",
   "hints": [
-    "Order contains table_id referencing DiningTable.",
+    "Check which entity holds table_id to link DiningTable.",
     "OrderDish is a weak entity with composite keys (order_id, menu_item_id).",
     "Connect DiningTable -> Order, Order -> OrderDish, and MenuItem -> OrderDish."
   ],

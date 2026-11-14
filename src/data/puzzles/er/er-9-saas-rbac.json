@@ -7,12 +7,12 @@
   "difficulty": "Intermediate",
   "category": "Entity-Relationship",
   "scenario": "A multi-tenant SaaS app models Organizations, Workspaces, Memberships, Users, and Roles. An Organization owns Workspaces, and Membership assigns a User a specific Role within a Workspace.",
-  "goal": "Connect Organization -> Workspace, Workspace -> Membership, User -> Membership, and Role -> Membership.",
+  "goal": "Model the multi-tenant RBAC hierarchy so Organizations own Workspaces and Membership binds Users, Workspaces, and Roles.",
   "learningObjective": "Design a ternary associative Membership table for multi-tenant role-based access control.",
   "hints": [
-    "Workspace belongs to an Organization via org_id.",
-    "Membership brings together workspace_id, user_id, and role_id.",
-    "Connect Organization -> Workspace and all three parents into Membership."
+    "Check which entity holds org_id to anchor the tenant hierarchy.",
+    "Membership brings together workspace_id, user_id, and role_id (1:N from each parent).",
+    "Connect Organization -> Workspace, Workspace -> Membership, User -> Membership, and Role -> Membership."
   ],
   "solutionExplanation": "Organization owns Workspaces (1:N), and Membership acts as the central associative entity linking Workspace, User, and Role.",
   "initialNodes": [
@@ -89,10 +89,10 @@
     {
       "description": "Multi-tenant RBAC ER schema",
       "edges": [
-        { "source": "ent-org", "target": "ent-workspace", "type": "er", "bidirectional": true, "description": "Organization owns Workspaces" },
-        { "source": "ent-workspace", "target": "ent-membership", "type": "er", "bidirectional": true, "description": "Workspace has Memberships" },
-        { "source": "ent-user", "target": "ent-membership", "type": "er", "bidirectional": true, "description": "User holds Memberships" },
-        { "source": "ent-role", "target": "ent-membership", "type": "er", "bidirectional": true, "description": "Role is assigned in Memberships" }
+        { "source": "ent-org", "target": "ent-workspace", "type": "er", "bidirectional": true, "erSourceCardinality": "one", "erTargetCardinality": "many", "description": "Organization owns Workspaces" },
+        { "source": "ent-workspace", "target": "ent-membership", "type": "er", "bidirectional": true, "erSourceCardinality": "one", "erTargetCardinality": "many", "description": "Workspace has Memberships" },
+        { "source": "ent-user", "target": "ent-membership", "type": "er", "bidirectional": true, "erSourceCardinality": "one", "erTargetCardinality": "many", "description": "User holds Memberships" },
+        { "source": "ent-role", "target": "ent-membership", "type": "er", "bidirectional": true, "erSourceCardinality": "one", "erTargetCardinality": "many", "description": "Role is assigned in Memberships" }
       ]
     }
   ]

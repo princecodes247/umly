@@ -6,20 +6,20 @@
   "type": "fix",
   "difficulty": "Advanced",
   "category": "Entity-Relationship",
-  "scenario": "A core banking ledger schema has two errors: LedgerLine is wired directly to Customer instead of Account, and JournalEntry is disconnected from LedgerLine.",
-  "goal": "Remove the LedgerLine -> Customer edge, keep Customer -> Account, and connect Account -> LedgerLine and JournalEntry -> LedgerLine.",
-  "learningObjective": "Enforce double-entry accounting integrity where LedgerLines link Accounts to JournalEntries.",
+  "scenario": "A core banking ledger schema has two modeling bugs: LedgerLine is wired directly to Customer instead of Account, and Transfer is mistakenly wired directly to Customer instead of anchoring to JournalEntry. Meanwhile, Account -> LedgerLine and JournalEntry -> LedgerLine are missing.",
+  "goal": "Repair the ledger so Customers own Accounts, LedgerLines link Accounts to JournalEntries, and each Transfer maps 1:1 to a posted JournalEntry.",
+  "learningObjective": "Enforce double-entry accounting integrity across Customer, Account, LedgerLine, JournalEntry, and Transfer.",
   "hints": [
-    "Delete the incorrect Customer -> LedgerLine edge.",
-    "LedgerLine references account_id and entry_id, not customer_id.",
-    "Connect Account -> LedgerLine and JournalEntry -> LedgerLine."
+    "Find the two invalid edges attached to Customer that bypass Account or JournalEntry.",
+    "Notice Transfer has a UNIQUE entry_id referencing JournalEntry (1:1), while LedgerLine links Account and JournalEntry (1:N).",
+    "Delete Customer -> LedgerLine and Customer -> Transfer; keep Customer -> Account and connect Account -> LedgerLine, JournalEntry -> LedgerLine, and JournalEntry -> Transfer (1:1)."
   ],
-  "solutionExplanation": "Customers own Accounts, and every LedgerLine belongs to both an Account and a balanced JournalEntry.",
+  "solutionExplanation": "Customers own Accounts (1:N), every LedgerLine belongs to both an Account and a JournalEntry (1:N), and each Transfer posts via a single unique JournalEntry (1:1).",
   "initialNodes": [
     {
       "id": "ent-customer",
       "type": "erEntity",
-      "position": { "x": 60, "y": 110 },
+      "position": { "x": 60, "y": 100 },
       "data": {
         "label": "Customer",
         "nodeType": "erEntity",
@@ -32,7 +32,7 @@
     {
       "id": "ent-account",
       "type": "erEntity",
-      "position": { "x": 340, "y": 110 },
+      "position": { "x": 340, "y": 100 },
       "data": {
         "label": "Account",
         "nodeType": "erEntity",
@@ -70,6 +70,20 @@
           { "id": "je2", "name": "posted_at", "dataType": "TIMESTAMP" }
         ]
       }
+    },
+    {
+      "id": "ent-transfer",
+      "type": "erEntity",
+      "position": { "x": 600, "y": 210 },
+      "data": {
+        "label": "Transfer",
+        "nodeType": "erEntity",
+        "attributes": [
+          { "id": "tr1", "name": "transfer_id", "dataType": "UUID", "isPrimaryKey": true },
+          { "id": "tr2", "name": "entry_id", "dataType": "UUID", "isForeignKey": true, "isUnique": true },
+          { "id": "tr3", "name": "reference", "dataType": "VARCHAR" }
+        ]
+      }
     }
   ],
   "initialEdges": [
@@ -84,17 +98,23 @@
       "source": "ent-customer",
       "target": "ent-ledger-line",
       "data": { "relationshipType": "er", "erSourceCardinality": "one", "erTargetCardinality": "many" }
+    },
+    {
+      "id": "bad-cust-transfer",
+      "source": "ent-customer",
+      "target": "ent-transfer",
+      "data": { "relationshipType": "er", "erSourceCardinality": "one", "erTargetCardinality": "many" }
     }
   ],
   "solutions": [
     {
       "description": "Double-entry banking ledger schema",
       "edges": [
-        { "source": "ent-customer", "target": "ent-account", "type": "er", "bidirectional": true, "description": "Customer owns Accounts" },
-        { "source": "ent-account", "target": "ent-ledger-line", "type": "er", "bidirectional": true, "description": "Account receives LedgerLines" },
-        { "source": "ent-journal-entry", "target": "ent-ledger-line", "type": "er", "bidirectional": true, "description": "JournalEntry groups LedgerLines" }
+        { "source": "ent-customer", "target": "ent-account", "type": "er", "bidirectional": true, "erSourceCardinality": "one", "erTargetCardinality": "many", "description": "Customer owns Accounts" },
+        { "source": "ent-account", "target": "ent-ledger-line", "type": "er", "bidirectional": true, "erSourceCardinality": "one", "erTargetCardinality": "many", "description": "Account receives LedgerLines" },
+        { "source": "ent-journal-entry", "target": "ent-ledger-line", "type": "er", "bidirectional": true, "erSourceCardinality": "one", "erTargetCardinality": "many", "description": "JournalEntry groups LedgerLines" },
+        { "source": "ent-journal-entry", "target": "ent-transfer", "type": "er", "bidirectional": true, "erSourceCardinality": "one", "erTargetCardinality": "one", "description": "Transfer posts via one JournalEntry" }
       ]
     }
   ]
 }
-

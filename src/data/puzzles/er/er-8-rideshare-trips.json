@@ -7,12 +7,12 @@
   "difficulty": "Intermediate",
   "category": "Entity-Relationship",
   "scenario": "A ride-sharing database mistakenly links Payment directly to Driver instead of Trip, and Driver is missing its link to Trip.",
-  "goal": "Remove the Driver -> Payment edge and connect Driver -> Trip and Trip -> Payment (keeping Rider -> Trip).",
-  "learningObjective": "Ensure transaction entities attach to the Trip event rather than directly to a participant.",
+  "goal": "Repair the trip ledger so Payment settles a single Trip (1:1) rather than linking directly to Driver, and connect all Trip participants.",
+  "learningObjective": "Attach transaction entities to the Trip event and distinguish 1:1 unique foreign keys from 1:N relationships.",
   "hints": [
-    "Delete the incorrect Driver -> Payment edge.",
-    "Payment has a trip_id foreign key referencing Trip.",
-    "Connect Driver -> Trip and Trip -> Payment."
+    "Look for an edge that links Payment directly to a participant instead of Trip.",
+    "Notice trip_id on Payment is UNIQUE — that means one Trip maps to one Payment (1:1).",
+    "Delete Driver -> Payment, then connect Driver -> Trip (1:N) and Trip -> Payment (1:1)."
   ],
   "solutionExplanation": "Rider and Driver both participate in Trip (1:N), and Payment settles a specific Trip.",
   "initialNodes": [
@@ -89,9 +89,9 @@
     {
       "description": "Normalized ride-sharing trip ledger",
       "edges": [
-        { "source": "ent-rider", "target": "ent-trip", "type": "er", "bidirectional": true, "description": "Rider requests Trips" },
-        { "source": "ent-driver", "target": "ent-trip", "type": "er", "bidirectional": true, "description": "Driver fulfills Trips" },
-        { "source": "ent-trip", "target": "ent-payment", "type": "er", "bidirectional": true, "description": "Trip has a Payment" }
+        { "source": "ent-rider", "target": "ent-trip", "type": "er", "bidirectional": true, "erSourceCardinality": "one", "erTargetCardinality": "many", "description": "Rider requests Trips" },
+        { "source": "ent-driver", "target": "ent-trip", "type": "er", "bidirectional": true, "erSourceCardinality": "one", "erTargetCardinality": "many", "description": "Driver fulfills Trips" },
+        { "source": "ent-trip", "target": "ent-payment", "type": "er", "bidirectional": true, "erSourceCardinality": "one", "erTargetCardinality": "one", "description": "Trip has one unique Payment" }
       ]
     }
   ]

@@ -7,12 +7,12 @@
   "difficulty": "Beginner",
   "category": "Entity-Relationship",
   "scenario": "A simple blogging platform stores Users, Posts, and Comments. A User writes many Posts and can leave many Comments, while each Comment belongs to one Post.",
-  "goal": "Connect User -> Post, Post -> Comment, and User -> Comment using ER relationship edges.",
+  "goal": "Wire the foreign-key relationships so Users own Posts and Comments, and each Comment attaches to its parent Post.",
   "learningObjective": "Model basic one-to-many foreign key relationships between three core entities.",
   "hints": [
-    "Each Post has an author_id referencing User.",
-    "Each Comment has a post_id referencing Post and a user_id referencing User.",
-    "Connect User -> Post, Post -> Comment, and User -> Comment."
+    "Inspect the FK badges on Post and Comment to see which parent entities they reference.",
+    "Post references author_id (User), and Comment references both post_id and user_id.",
+    "Connect User to Post, Post to Comment, and User to Comment."
   ],
   "solutionExplanation": "User has a 1:N relationship with both Post and Comment, and Post has a 1:N relationship with Comment.",
   "initialNodes": [
