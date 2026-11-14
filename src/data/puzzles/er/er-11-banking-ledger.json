@@ -1,0 +1,100 @@
+{
+  "id": "er-11-banking-ledger",
+  "number": 19,
+  "title": "Double-Entry Banking Ledger Fix",
+  "diagramType": "er",
+  "type": "fix",
+  "difficulty": "Advanced",
+  "category": "Entity-Relationship",
+  "scenario": "A core banking ledger schema has two errors: LedgerLine is wired directly to Customer instead of Account, and JournalEntry is disconnected from LedgerLine.",
+  "goal": "Remove the LedgerLine -> Customer edge, keep Customer -> Account, and connect Account -> LedgerLine and JournalEntry -> LedgerLine.",
+  "learningObjective": "Enforce double-entry accounting integrity where LedgerLines link Accounts to JournalEntries.",
+  "hints": [
+    "Delete the incorrect Customer -> LedgerLine edge.",
+    "LedgerLine references account_id and entry_id, not customer_id.",
+    "Connect Account -> LedgerLine and JournalEntry -> LedgerLine."
+  ],
+  "solutionExplanation": "Customers own Accounts, and every LedgerLine belongs to both an Account and a balanced JournalEntry.",
+  "initialNodes": [
+    {
+      "id": "ent-customer",
+      "type": "erEntity",
+      "position": { "x": 60, "y": 110 },
+      "data": {
+        "label": "Customer",
+        "nodeType": "erEntity",
+        "attributes": [
+          { "id": "c1", "name": "customer_id", "dataType": "UUID", "isPrimaryKey": true },
+          { "id": "c2", "name": "kyc_status", "dataType": "VARCHAR" }
+        ]
+      }
+    },
+    {
+      "id": "ent-account",
+      "type": "erEntity",
+      "position": { "x": 340, "y": 110 },
+      "data": {
+        "label": "Account",
+        "nodeType": "erEntity",
+        "attributes": [
+          { "id": "a1", "name": "account_id", "dataType": "UUID", "isPrimaryKey": true },
+          { "id": "a2", "name": "customer_id", "dataType": "UUID", "isForeignKey": true },
+          { "id": "a3", "name": "currency", "dataType": "CHAR" }
+        ]
+      }
+    },
+    {
+      "id": "ent-ledger-line",
+      "type": "erEntity",
+      "position": { "x": 340, "y": 320 },
+      "data": {
+        "label": "LedgerLine",
+        "nodeType": "erEntity",
+        "isWeakEntity": true,
+        "attributes": [
+          { "id": "ll1", "name": "entry_id", "dataType": "UUID", "isPrimaryKey": true, "isForeignKey": true },
+          { "id": "ll2", "name": "account_id", "dataType": "UUID", "isPrimaryKey": true, "isForeignKey": true },
+          { "id": "ll3", "name": "delta_cents", "dataType": "BIGINT" }
+        ]
+      }
+    },
+    {
+      "id": "ent-journal-entry",
+      "type": "erEntity",
+      "position": { "x": 60, "y": 320 },
+      "data": {
+        "label": "JournalEntry",
+        "nodeType": "erEntity",
+        "attributes": [
+          { "id": "je1", "name": "entry_id", "dataType": "UUID", "isPrimaryKey": true },
+          { "id": "je2", "name": "posted_at", "dataType": "TIMESTAMP" }
+        ]
+      }
+    }
+  ],
+  "initialEdges": [
+    {
+      "id": "good-cust-acct",
+      "source": "ent-customer",
+      "target": "ent-account",
+      "data": { "relationshipType": "er", "erSourceCardinality": "one", "erTargetCardinality": "many" }
+    },
+    {
+      "id": "bad-cust-ledger",
+      "source": "ent-customer",
+      "target": "ent-ledger-line",
+      "data": { "relationshipType": "er", "erSourceCardinality": "one", "erTargetCardinality": "many" }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Double-entry banking ledger schema",
+      "edges": [
+        { "source": "ent-customer", "target": "ent-account", "type": "er", "bidirectional": true, "description": "Customer owns Accounts" },
+        { "source": "ent-account", "target": "ent-ledger-line", "type": "er", "bidirectional": true, "description": "Account receives LedgerLines" },
+        { "source": "ent-journal-entry", "target": "ent-ledger-line", "type": "er", "bidirectional": true, "description": "JournalEntry groups LedgerLines" }
+      ]
+    }
+  ]
+}
+

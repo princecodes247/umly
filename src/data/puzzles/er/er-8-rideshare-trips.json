@@ -1,0 +1,99 @@
+{
+  "id": "er-8-rideshare-trips",
+  "number": 16,
+  "title": "Ride-Sharing Trip & Payment Fix",
+  "diagramType": "er",
+  "type": "fix",
+  "difficulty": "Intermediate",
+  "category": "Entity-Relationship",
+  "scenario": "A ride-sharing database mistakenly links Payment directly to Driver instead of Trip, and Driver is missing its link to Trip.",
+  "goal": "Remove the Driver -> Payment edge and connect Driver -> Trip and Trip -> Payment (keeping Rider -> Trip).",
+  "learningObjective": "Ensure transaction entities attach to the Trip event rather than directly to a participant.",
+  "hints": [
+    "Delete the incorrect Driver -> Payment edge.",
+    "Payment has a trip_id foreign key referencing Trip.",
+    "Connect Driver -> Trip and Trip -> Payment."
+  ],
+  "solutionExplanation": "Rider and Driver both participate in Trip (1:N), and Payment settles a specific Trip.",
+  "initialNodes": [
+    {
+      "id": "ent-rider",
+      "type": "erEntity",
+      "position": { "x": 70, "y": 100 },
+      "data": {
+        "label": "Rider",
+        "nodeType": "erEntity",
+        "attributes": [
+          { "id": "r1", "name": "rider_id", "dataType": "UUID", "isPrimaryKey": true },
+          { "id": "r2", "name": "rating", "dataType": "DECIMAL" }
+        ]
+      }
+    },
+    {
+      "id": "ent-driver",
+      "type": "erEntity",
+      "position": { "x": 70, "y": 320 },
+      "data": {
+        "label": "Driver",
+        "nodeType": "erEntity",
+        "attributes": [
+          { "id": "d1", "name": "driver_id", "dataType": "UUID", "isPrimaryKey": true },
+          { "id": "d2", "name": "license_no", "dataType": "VARCHAR", "isUnique": true }
+        ]
+      }
+    },
+    {
+      "id": "ent-trip",
+      "type": "erEntity",
+      "position": { "x": 360, "y": 210 },
+      "data": {
+        "label": "Trip",
+        "nodeType": "erEntity",
+        "attributes": [
+          { "id": "t1", "name": "trip_id", "dataType": "UUID", "isPrimaryKey": true },
+          { "id": "t2", "name": "rider_id", "dataType": "UUID", "isForeignKey": true },
+          { "id": "t3", "name": "driver_id", "dataType": "UUID", "isForeignKey": true }
+        ]
+      }
+    },
+    {
+      "id": "ent-payment",
+      "type": "erEntity",
+      "position": { "x": 630, "y": 210 },
+      "data": {
+        "label": "Payment",
+        "nodeType": "erEntity",
+        "attributes": [
+          { "id": "p1", "name": "payment_id", "dataType": "UUID", "isPrimaryKey": true },
+          { "id": "p2", "name": "trip_id", "dataType": "UUID", "isForeignKey": true, "isUnique": true },
+          { "id": "p3", "name": "amount_cents", "dataType": "INT" }
+        ]
+      }
+    }
+  ],
+  "initialEdges": [
+    {
+      "id": "good-rider-trip",
+      "source": "ent-rider",
+      "target": "ent-trip",
+      "data": { "relationshipType": "er", "erSourceCardinality": "one", "erTargetCardinality": "many" }
+    },
+    {
+      "id": "bad-driver-payment",
+      "source": "ent-driver",
+      "target": "ent-payment",
+      "data": { "relationshipType": "er", "erSourceCardinality": "one", "erTargetCardinality": "many" }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Normalized ride-sharing trip ledger",
+      "edges": [
+        { "source": "ent-rider", "target": "ent-trip", "type": "er", "bidirectional": true, "description": "Rider requests Trips" },
+        { "source": "ent-driver", "target": "ent-trip", "type": "er", "bidirectional": true, "description": "Driver fulfills Trips" },
+        { "source": "ent-trip", "target": "ent-payment", "type": "er", "bidirectional": true, "description": "Trip has a Payment" }
+      ]
+    }
+  ]
+}
+

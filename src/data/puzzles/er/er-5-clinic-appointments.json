@@ -1,0 +1,93 @@
+{
+  "id": "er-5-clinic-appointments",
+  "number": 13,
+  "title": "Clinic Appointment Repair",
+  "diagramType": "er",
+  "type": "fix",
+  "difficulty": "Easy",
+  "category": "Entity-Relationship",
+  "scenario": "A medical clinic schema mistakenly connects Doctor directly to Patient, bypassing Appointment, and leaves Appointment disconnected from Patient.",
+  "goal": "Remove the direct Doctor -> Patient edge and connect Doctor -> Appointment and Patient -> Appointment.",
+  "learningObjective": "Replace a direct many-to-many link with an associative Appointment entity.",
+  "hints": [
+    "Select the edge between Doctor and Patient and delete it.",
+    "Appointment holds both doctor_id and patient_id foreign keys.",
+    "Connect Doctor -> Appointment and Patient -> Appointment."
+  ],
+  "solutionExplanation": "Doctor and Patient interact through Appointment rather than a direct foreign key between them.",
+  "initialNodes": [
+    {
+      "id": "ent-doctor",
+      "type": "erEntity",
+      "position": { "x": 80, "y": 140 },
+      "data": {
+        "label": "Doctor",
+        "nodeType": "erEntity",
+        "attributes": [
+          { "id": "d1", "name": "doctor_id", "dataType": "INT", "isPrimaryKey": true },
+          { "id": "d2", "name": "specialty", "dataType": "VARCHAR" }
+        ]
+      }
+    },
+    {
+      "id": "ent-appointment",
+      "type": "erEntity",
+      "position": { "x": 380, "y": 140 },
+      "data": {
+        "label": "Appointment",
+        "nodeType": "erEntity",
+        "attributes": [
+          { "id": "a1", "name": "appointment_id", "dataType": "INT", "isPrimaryKey": true },
+          { "id": "a2", "name": "doctor_id", "dataType": "INT", "isForeignKey": true },
+          { "id": "a3", "name": "patient_id", "dataType": "INT", "isForeignKey": true },
+          { "id": "a4", "name": "scheduled_at", "dataType": "TIMESTAMP" }
+        ]
+      }
+    },
+    {
+      "id": "ent-patient",
+      "type": "erEntity",
+      "position": { "x": 230, "y": 350 },
+      "data": {
+        "label": "Patient",
+        "nodeType": "erEntity",
+        "attributes": [
+          { "id": "p1", "name": "patient_id", "dataType": "INT", "isPrimaryKey": true },
+          { "id": "p2", "name": "full_name", "dataType": "VARCHAR" }
+        ]
+      }
+    }
+  ],
+  "initialEdges": [
+    {
+      "id": "bad-doctor-patient",
+      "source": "ent-doctor",
+      "target": "ent-patient",
+      "data": {
+        "relationshipType": "er",
+        "erSourceCardinality": "many",
+        "erTargetCardinality": "many"
+      }
+    },
+    {
+      "id": "good-doctor-appt",
+      "source": "ent-doctor",
+      "target": "ent-appointment",
+      "data": {
+        "relationshipType": "er",
+        "erSourceCardinality": "one",
+        "erTargetCardinality": "many"
+      }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Normalized clinic appointment schema",
+      "edges": [
+        { "source": "ent-doctor", "target": "ent-appointment", "type": "er", "bidirectional": true, "description": "Doctor has Appointments" },
+        { "source": "ent-patient", "target": "ent-appointment", "type": "er", "bidirectional": true, "description": "Patient books Appointments" }
+      ]
+    }
+  ]
+}
+

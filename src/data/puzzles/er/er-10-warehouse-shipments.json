@@ -1,0 +1,117 @@
+{
+  "id": "er-10-warehouse-shipments",
+  "number": 18,
+  "title": "Multi-Warehouse Inventory & Shipments",
+  "diagramType": "er",
+  "type": "build",
+  "difficulty": "Advanced",
+  "category": "Entity-Relationship",
+  "scenario": "A fulfillment platform tracks Warehouses, InventoryItems, Products, Orders, Shipments, and ShipmentLines. InventoryItem tracks Product stock per Warehouse. An Order can split into multiple Shipments dispatched from a Warehouse, each with ShipmentLines for specific Products.",
+  "goal": "Connect Warehouse -> InventoryItem, Product -> InventoryItem, Order -> Shipment, Warehouse -> Shipment, Shipment -> ShipmentLine, and Product -> ShipmentLine.",
+  "learningObjective": "Model complex fulfillment schemas with dual junction tables (InventoryItem and ShipmentLine).",
+  "hints": [
+    "InventoryItem connects Warehouse and Product.",
+    "Shipment references both Order (order_id) and Warehouse (warehouse_id).",
+    "ShipmentLine connects Shipment and Product."
+  ],
+  "solutionExplanation": "InventoryItem resolves stock per Warehouse and Product, Shipment ties an Order to a fulfillment Warehouse, and ShipmentLine tracks the Products in each Shipment.",
+  "initialNodes": [
+    {
+      "id": "ent-warehouse",
+      "type": "erEntity",
+      "position": { "x": 60, "y": 90 },
+      "data": {
+        "label": "Warehouse",
+        "nodeType": "erEntity",
+        "attributes": [
+          { "id": "w1", "name": "warehouse_id", "dataType": "INT", "isPrimaryKey": true },
+          { "id": "w2", "name": "region", "dataType": "VARCHAR" }
+        ]
+      }
+    },
+    {
+      "id": "ent-inventory",
+      "type": "erEntity",
+      "position": { "x": 320, "y": 60 },
+      "data": {
+        "label": "InventoryItem",
+        "nodeType": "erEntity",
+        "isWeakEntity": true,
+        "attributes": [
+          { "id": "i1", "name": "warehouse_id", "dataType": "INT", "isPrimaryKey": true, "isForeignKey": true },
+          { "id": "i2", "name": "product_id", "dataType": "UUID", "isPrimaryKey": true, "isForeignKey": true },
+          { "id": "i3", "name": "on_hand", "dataType": "INT" }
+        ]
+      }
+    },
+    {
+      "id": "ent-product",
+      "type": "erEntity",
+      "position": { "x": 600, "y": 90 },
+      "data": {
+        "label": "Product",
+        "nodeType": "erEntity",
+        "attributes": [
+          { "id": "p1", "name": "product_id", "dataType": "UUID", "isPrimaryKey": true },
+          { "id": "p2", "name": "sku", "dataType": "VARCHAR", "isUnique": true }
+        ]
+      }
+    },
+    {
+      "id": "ent-order",
+      "type": "erEntity",
+      "position": { "x": 60, "y": 330 },
+      "data": {
+        "label": "Order",
+        "nodeType": "erEntity",
+        "attributes": [
+          { "id": "o1", "name": "order_id", "dataType": "UUID", "isPrimaryKey": true },
+          { "id": "o2", "name": "status", "dataType": "VARCHAR" }
+        ]
+      }
+    },
+    {
+      "id": "ent-shipment",
+      "type": "erEntity",
+      "position": { "x": 320, "y": 270 },
+      "data": {
+        "label": "Shipment",
+        "nodeType": "erEntity",
+        "attributes": [
+          { "id": "s1", "name": "shipment_id", "dataType": "UUID", "isPrimaryKey": true },
+          { "id": "s2", "name": "order_id", "dataType": "UUID", "isForeignKey": true },
+          { "id": "s3", "name": "warehouse_id", "dataType": "INT", "isForeignKey": true }
+        ]
+      }
+    },
+    {
+      "id": "ent-shipment-line",
+      "type": "erEntity",
+      "position": { "x": 600, "y": 310 },
+      "data": {
+        "label": "ShipmentLine",
+        "nodeType": "erEntity",
+        "isWeakEntity": true,
+        "attributes": [
+          { "id": "sl1", "name": "shipment_id", "dataType": "UUID", "isPrimaryKey": true, "isForeignKey": true },
+          { "id": "sl2", "name": "product_id", "dataType": "UUID", "isPrimaryKey": true, "isForeignKey": true },
+          { "id": "sl3", "name": "qty", "dataType": "INT" }
+        ]
+      }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Multi-warehouse inventory and fulfillment schema",
+      "edges": [
+        { "source": "ent-warehouse", "target": "ent-inventory", "type": "er", "bidirectional": true, "description": "Warehouse holds InventoryItems" },
+        { "source": "ent-product", "target": "ent-inventory", "type": "er", "bidirectional": true, "description": "Product is stocked in InventoryItems" },
+        { "source": "ent-order", "target": "ent-shipment", "type": "er", "bidirectional": true, "description": "Order is fulfilled by Shipments" },
+        { "source": "ent-warehouse", "target": "ent-shipment", "type": "er", "bidirectional": true, "description": "Warehouse dispatches Shipments" },
+        { "source": "ent-shipment", "target": "ent-shipment-line", "type": "er", "bidirectional": true, "description": "Shipment contains ShipmentLines" },
+        { "source": "ent-product", "target": "ent-shipment-line", "type": "er", "bidirectional": true, "description": "Product is listed in ShipmentLines" }
+      ]
+    }
+  ]
+}
+

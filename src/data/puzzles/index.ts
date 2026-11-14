@@ -153,8 +153,108 @@ export const PUZZLE_SUMMARIES: LevelSummary[] = [
     "scenario": "A university schema has a broken link: Department is mistakenly connected directly to Enrollment instead of Course, and Student is missing its link to Enrollment."
   },
   {
-    "id": "class-1-payment-strategy",
+    "id": "er-3-blog-comments",
     "number": 16,
+    "title": "Blog Posts & Comments",
+    "diagramType": "er",
+    "type": "build",
+    "difficulty": "Beginner",
+    "category": "Entity-Relationship",
+    "scenario": "A simple blogging platform stores Users, Posts, and Comments. A User writes many Posts and can leave many Comments, while each Comment belongs to one Post."
+  },
+  {
+    "id": "er-4-library-lending",
+    "number": 17,
+    "title": "Library Book Lending",
+    "diagramType": "er",
+    "type": "build",
+    "difficulty": "Easy",
+    "category": "Entity-Relationship",
+    "scenario": "A public library tracks Authors, Books, Members, and Loans. An Author writes Books, and a Member borrows Books through Loan records."
+  },
+  {
+    "id": "er-5-clinic-appointments",
+    "number": 18,
+    "title": "Clinic Appointment Repair",
+    "diagramType": "er",
+    "type": "fix",
+    "difficulty": "Easy",
+    "category": "Entity-Relationship",
+    "scenario": "A medical clinic schema mistakenly connects Doctor directly to Patient, bypassing Appointment, and leaves Appointment disconnected from Patient."
+  },
+  {
+    "id": "er-6-restaurant-orders",
+    "number": 19,
+    "title": "Restaurant Table & Menu Orders",
+    "diagramType": "er",
+    "type": "build",
+    "difficulty": "Easy",
+    "category": "Entity-Relationship",
+    "scenario": "A restaurant POS system tracks DiningTables, Orders, OrderDishes, and MenuItems. A DiningTable hosts Orders, and each Order contains multiple OrderDishes referencing MenuItems."
+  },
+  {
+    "id": "er-7-music-playlists",
+    "number": 20,
+    "title": "Music Streaming Playlists",
+    "diagramType": "er",
+    "type": "build",
+    "difficulty": "Intermediate",
+    "category": "Entity-Relationship",
+    "scenario": "A music streaming app models Users, Playlists, PlaylistTracks, Tracks, and Artists. A User creates Playlists, an Artist releases Tracks, and PlaylistTrack orders Tracks inside each Playlist."
+  },
+  {
+    "id": "er-8-rideshare-trips",
+    "number": 21,
+    "title": "Ride-Sharing Trip & Payment Fix",
+    "diagramType": "er",
+    "type": "fix",
+    "difficulty": "Intermediate",
+    "category": "Entity-Relationship",
+    "scenario": "A ride-sharing database mistakenly links Payment directly to Driver instead of Trip, and Driver is missing its link to Trip."
+  },
+  {
+    "id": "er-9-saas-rbac",
+    "number": 22,
+    "title": "SaaS Multi-Tenant RBAC",
+    "diagramType": "er",
+    "type": "build",
+    "difficulty": "Intermediate",
+    "category": "Entity-Relationship",
+    "scenario": "A multi-tenant SaaS app models Organizations, Workspaces, Memberships, Users, and Roles. An Organization owns Workspaces, and Membership assigns a User a specific Role within a Workspace."
+  },
+  {
+    "id": "er-10-warehouse-shipments",
+    "number": 23,
+    "title": "Multi-Warehouse Inventory & Shipments",
+    "diagramType": "er",
+    "type": "build",
+    "difficulty": "Advanced",
+    "category": "Entity-Relationship",
+    "scenario": "A fulfillment platform tracks Warehouses, InventoryItems, Products, Orders, Shipments, and ShipmentLines. InventoryItem tracks Product stock per Warehouse. An Order can split into multiple Shipments dispatched from a Warehouse, each with ShipmentLines for specific Products."
+  },
+  {
+    "id": "er-11-banking-ledger",
+    "number": 24,
+    "title": "Double-Entry Banking Ledger Fix",
+    "diagramType": "er",
+    "type": "fix",
+    "difficulty": "Advanced",
+    "category": "Entity-Relationship",
+    "scenario": "A core banking ledger schema has two errors: LedgerLine is wired directly to Customer instead of Account, and JournalEntry is disconnected from LedgerLine."
+  },
+  {
+    "id": "er-12-airline-booking",
+    "number": 25,
+    "title": "Airline Flight & Seat Allocation",
+    "diagramType": "er",
+    "type": "build",
+    "difficulty": "Advanced",
+    "category": "Entity-Relationship",
+    "scenario": "An airline reservation system models Passengers, Bookings, Flights, Aircrafts, Airports, and SeatAssignments. A Passenger creates Bookings, an Aircraft operates Flights between Airports, and SeatAssignment links a Booking to a specific Flight."
+  },
+  {
+    "id": "class-1-payment-strategy",
+    "number": 26,
     "title": "Payment Gateway Interface",
     "diagramType": "class",
     "type": "build",
@@ -164,7 +264,7 @@ export const PUZZLE_SUMMARIES: LevelSummary[] = [
   },
   {
     "id": "class-2-composition-vs-inheritance",
-    "number": 17,
+    "number": 27,
     "title": "Document Composition & Inheritance",
     "diagramType": "class",
     "type": "classify",
@@ -174,7 +274,7 @@ export const PUZZLE_SUMMARIES: LevelSummary[] = [
   },
   {
     "id": "dfd-1-checkout-flow",
-    "number": 18,
+    "number": 28,
     "title": "Online Order Data Flow",
     "diagramType": "dfd",
     "type": "build",
@@ -184,7 +284,7 @@ export const PUZZLE_SUMMARIES: LevelSummary[] = [
   },
   {
     "id": "dfd-2-fix-illegal-store-flow",
-    "number": 19,
+    "number": 29,
     "title": "Fix Illegal Direct Store Flow",
     "diagramType": "dfd",
     "type": "fix",
@@ -210,6 +310,16 @@ export const PUZZLE_FILE_BY_ID: Record<string, string> = {
   "level-13-enterprise-ci-cd-pipeline": "./puzzles/use_case/level-13-enterprise-ci-cd-pipeline.json",
   "er-1-ecommerce-orders": "./puzzles/er/er-1-ecommerce-orders.json",
   "er-2-university-enrollment": "./puzzles/er/er-2-university-enrollment.json",
+  "er-3-blog-comments": "./puzzles/er/er-3-blog-comments.json",
+  "er-4-library-lending": "./puzzles/er/er-4-library-lending.json",
+  "er-5-clinic-appointments": "./puzzles/er/er-5-clinic-appointments.json",
+  "er-6-restaurant-orders": "./puzzles/er/er-6-restaurant-orders.json",
+  "er-7-music-playlists": "./puzzles/er/er-7-music-playlists.json",
+  "er-8-rideshare-trips": "./puzzles/er/er-8-rideshare-trips.json",
+  "er-9-saas-rbac": "./puzzles/er/er-9-saas-rbac.json",
+  "er-10-warehouse-shipments": "./puzzles/er/er-10-warehouse-shipments.json",
+  "er-11-banking-ledger": "./puzzles/er/er-11-banking-ledger.json",
+  "er-12-airline-booking": "./puzzles/er/er-12-airline-booking.json",
   "class-1-payment-strategy": "./puzzles/class/class-1-payment-strategy.json",
   "class-2-composition-vs-inheritance": "./puzzles/class/class-2-composition-vs-inheritance.json",
   "dfd-1-checkout-flow": "./puzzles/dfd/dfd-1-checkout-flow.json",

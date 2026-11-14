@@ -1,0 +1,115 @@
+{
+  "id": "er-12-airline-booking",
+  "number": 20,
+  "title": "Airline Flight & Seat Allocation",
+  "diagramType": "er",
+  "type": "build",
+  "difficulty": "Advanced",
+  "category": "Entity-Relationship",
+  "scenario": "An airline reservation system models Passengers, Bookings, Flights, Aircrafts, Airports, and SeatAssignments. A Passenger creates Bookings, an Aircraft operates Flights between Airports, and SeatAssignment links a Booking to a specific Flight.",
+  "goal": "Connect Passenger -> Booking, Booking -> SeatAssignment, Flight -> SeatAssignment, Aircraft -> Flight, and Airport -> Flight.",
+  "learningObjective": "Synthesize a full domain ER model combining scheduling, fleet, and passenger reservation tables.",
+  "hints": [
+    "Flight references aircraft_id and origin_airport_id.",
+    "SeatAssignment is the associative entity between Booking and Flight.",
+    "Connect Passenger -> Booking, Booking -> SeatAssignment, Flight -> SeatAssignment, Aircraft -> Flight, and Airport -> Flight."
+  ],
+  "solutionExplanation": "Passenger makes Bookings, Aircraft and Airport anchor Flight schedules, and SeatAssignment resolves passenger seating across Bookings and Flights.",
+  "initialNodes": [
+    {
+      "id": "ent-passenger",
+      "type": "erEntity",
+      "position": { "x": 60, "y": 90 },
+      "data": {
+        "label": "Passenger",
+        "nodeType": "erEntity",
+        "attributes": [
+          { "id": "pa1", "name": "passenger_id", "dataType": "UUID", "isPrimaryKey": true },
+          { "id": "pa2", "name": "passport_no", "dataType": "VARCHAR", "isUnique": true }
+        ]
+      }
+    },
+    {
+      "id": "ent-booking",
+      "type": "erEntity",
+      "position": { "x": 320, "y": 90 },
+      "data": {
+        "label": "Booking",
+        "nodeType": "erEntity",
+        "attributes": [
+          { "id": "b1", "name": "booking_id", "dataType": "UUID", "isPrimaryKey": true },
+          { "id": "b2", "name": "passenger_id", "dataType": "UUID", "isForeignKey": true },
+          { "id": "b3", "name": "pnr_code", "dataType": "CHAR", "isUnique": true }
+        ]
+      }
+    },
+    {
+      "id": "ent-seat",
+      "type": "erEntity",
+      "position": { "x": 580, "y": 90 },
+      "data": {
+        "label": "SeatAssignment",
+        "nodeType": "erEntity",
+        "isWeakEntity": true,
+        "attributes": [
+          { "id": "sa1", "name": "booking_id", "dataType": "UUID", "isPrimaryKey": true, "isForeignKey": true },
+          { "id": "sa2", "name": "flight_id", "dataType": "UUID", "isPrimaryKey": true, "isForeignKey": true },
+          { "id": "sa3", "name": "seat_no", "dataType": "VARCHAR" }
+        ]
+      }
+    },
+    {
+      "id": "ent-flight",
+      "type": "erEntity",
+      "position": { "x": 340, "y": 310 },
+      "data": {
+        "label": "Flight",
+        "nodeType": "erEntity",
+        "attributes": [
+          { "id": "f1", "name": "flight_id", "dataType": "UUID", "isPrimaryKey": true },
+          { "id": "f2", "name": "aircraft_id", "dataType": "INT", "isForeignKey": true },
+          { "id": "f3", "name": "origin_airport_id", "dataType": "CHAR", "isForeignKey": true }
+        ]
+      }
+    },
+    {
+      "id": "ent-aircraft",
+      "type": "erEntity",
+      "position": { "x": 60, "y": 310 },
+      "data": {
+        "label": "Aircraft",
+        "nodeType": "erEntity",
+        "attributes": [
+          { "id": "ac1", "name": "aircraft_id", "dataType": "INT", "isPrimaryKey": true },
+          { "id": "ac2", "name": "model", "dataType": "VARCHAR" }
+        ]
+      }
+    },
+    {
+      "id": "ent-airport",
+      "type": "erEntity",
+      "position": { "x": 600, "y": 310 },
+      "data": {
+        "label": "Airport",
+        "nodeType": "erEntity",
+        "attributes": [
+          { "id": "ap1", "name": "airport_code", "dataType": "CHAR", "isPrimaryKey": true },
+          { "id": "ap2", "name": "city", "dataType": "VARCHAR" }
+        ]
+      }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Airline booking and fleet ER schema",
+      "edges": [
+        { "source": "ent-passenger", "target": "ent-booking", "type": "er", "bidirectional": true, "description": "Passenger creates Bookings" },
+        { "source": "ent-booking", "target": "ent-seat", "type": "er", "bidirectional": true, "description": "Booking reserves SeatAssignments" },
+        { "source": "ent-flight", "target": "ent-seat", "type": "er", "bidirectional": true, "description": "Flight assigns SeatAssignments" },
+        { "source": "ent-aircraft", "target": "ent-flight", "type": "er", "bidirectional": true, "description": "Aircraft operates Flights" },
+        { "source": "ent-airport", "target": "ent-flight", "type": "er", "bidirectional": true, "description": "Airport hosts Flights" }
+      ]
+    }
+  ]
+}
+

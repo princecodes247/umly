@@ -1,0 +1,100 @@
+{
+  "id": "er-9-saas-rbac",
+  "number": 17,
+  "title": "SaaS Multi-Tenant RBAC",
+  "diagramType": "er",
+  "type": "build",
+  "difficulty": "Intermediate",
+  "category": "Entity-Relationship",
+  "scenario": "A multi-tenant SaaS app models Organizations, Workspaces, Memberships, Users, and Roles. An Organization owns Workspaces, and Membership assigns a User a specific Role within a Workspace.",
+  "goal": "Connect Organization -> Workspace, Workspace -> Membership, User -> Membership, and Role -> Membership.",
+  "learningObjective": "Design a ternary associative Membership table for multi-tenant role-based access control.",
+  "hints": [
+    "Workspace belongs to an Organization via org_id.",
+    "Membership brings together workspace_id, user_id, and role_id.",
+    "Connect Organization -> Workspace and all three parents into Membership."
+  ],
+  "solutionExplanation": "Organization owns Workspaces (1:N), and Membership acts as the central associative entity linking Workspace, User, and Role.",
+  "initialNodes": [
+    {
+      "id": "ent-org",
+      "type": "erEntity",
+      "position": { "x": 60, "y": 110 },
+      "data": {
+        "label": "Organization",
+        "nodeType": "erEntity",
+        "attributes": [
+          { "id": "o1", "name": "org_id", "dataType": "UUID", "isPrimaryKey": true },
+          { "id": "o2", "name": "slug", "dataType": "VARCHAR", "isUnique": true }
+        ]
+      }
+    },
+    {
+      "id": "ent-workspace",
+      "type": "erEntity",
+      "position": { "x": 320, "y": 110 },
+      "data": {
+        "label": "Workspace",
+        "nodeType": "erEntity",
+        "attributes": [
+          { "id": "w1", "name": "workspace_id", "dataType": "UUID", "isPrimaryKey": true },
+          { "id": "w2", "name": "org_id", "dataType": "UUID", "isForeignKey": true },
+          { "id": "w3", "name": "name", "dataType": "VARCHAR" }
+        ]
+      }
+    },
+    {
+      "id": "ent-membership",
+      "type": "erEntity",
+      "position": { "x": 320, "y": 310 },
+      "data": {
+        "label": "Membership",
+        "nodeType": "erEntity",
+        "isWeakEntity": true,
+        "attributes": [
+          { "id": "m1", "name": "workspace_id", "dataType": "UUID", "isPrimaryKey": true, "isForeignKey": true },
+          { "id": "m2", "name": "user_id", "dataType": "UUID", "isPrimaryKey": true, "isForeignKey": true },
+          { "id": "m3", "name": "role_id", "dataType": "INT", "isForeignKey": true }
+        ]
+      }
+    },
+    {
+      "id": "ent-user",
+      "type": "erEntity",
+      "position": { "x": 60, "y": 310 },
+      "data": {
+        "label": "User",
+        "nodeType": "erEntity",
+        "attributes": [
+          { "id": "u1", "name": "user_id", "dataType": "UUID", "isPrimaryKey": true },
+          { "id": "u2", "name": "email", "dataType": "VARCHAR", "isUnique": true }
+        ]
+      }
+    },
+    {
+      "id": "ent-role",
+      "type": "erEntity",
+      "position": { "x": 600, "y": 310 },
+      "data": {
+        "label": "Role",
+        "nodeType": "erEntity",
+        "attributes": [
+          { "id": "r1", "name": "role_id", "dataType": "INT", "isPrimaryKey": true },
+          { "id": "r2", "name": "name", "dataType": "VARCHAR", "isUnique": true }
+        ]
+      }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Multi-tenant RBAC ER schema",
+      "edges": [
+        { "source": "ent-org", "target": "ent-workspace", "type": "er", "bidirectional": true, "description": "Organization owns Workspaces" },
+        { "source": "ent-workspace", "target": "ent-membership", "type": "er", "bidirectional": true, "description": "Workspace has Memberships" },
+        { "source": "ent-user", "target": "ent-membership", "type": "er", "bidirectional": true, "description": "User holds Memberships" },
+        { "source": "ent-role", "target": "ent-membership", "type": "er", "bidirectional": true, "description": "Role is assigned in Memberships" }
+      ]
+    }
+  ]
+}
+

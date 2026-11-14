@@ -1,0 +1,86 @@
+{
+  "id": "er-4-library-lending",
+  "number": 12,
+  "title": "Library Book Lending",
+  "diagramType": "er",
+  "type": "build",
+  "difficulty": "Easy",
+  "category": "Entity-Relationship",
+  "scenario": "A public library tracks Authors, Books, Members, and Loans. An Author writes Books, and a Member borrows Books through Loan records.",
+  "goal": "Connect Author -> Book, Book -> Loan, and Member -> Loan using ER relationship edges.",
+  "learningObjective": "Trace foreign keys from an associative Loan entity back to its parent entities.",
+  "hints": [
+    "Look at the foreign keys on Book (author_id) and Loan (book_id, member_id).",
+    "Loan links Member and Book together.",
+    "Connect Author -> Book, Book -> Loan, and Member -> Loan."
+  ],
+  "solutionExplanation": "Author has a 1:N relationship with Book, while Loan resolves the lending history between Member and Book.",
+  "initialNodes": [
+    {
+      "id": "ent-author",
+      "type": "erEntity",
+      "position": { "x": 80, "y": 110 },
+      "data": {
+        "label": "Author",
+        "nodeType": "erEntity",
+        "attributes": [
+          { "id": "a1", "name": "author_id", "dataType": "INT", "isPrimaryKey": true },
+          { "id": "a2", "name": "full_name", "dataType": "VARCHAR" }
+        ]
+      }
+    },
+    {
+      "id": "ent-book",
+      "type": "erEntity",
+      "position": { "x": 380, "y": 110 },
+      "data": {
+        "label": "Book",
+        "nodeType": "erEntity",
+        "attributes": [
+          { "id": "b1", "name": "book_id", "dataType": "INT", "isPrimaryKey": true },
+          { "id": "b2", "name": "author_id", "dataType": "INT", "isForeignKey": true },
+          { "id": "b3", "name": "isbn", "dataType": "VARCHAR", "isUnique": true }
+        ]
+      }
+    },
+    {
+      "id": "ent-loan",
+      "type": "erEntity",
+      "position": { "x": 380, "y": 330 },
+      "data": {
+        "label": "Loan",
+        "nodeType": "erEntity",
+        "attributes": [
+          { "id": "l1", "name": "loan_id", "dataType": "INT", "isPrimaryKey": true },
+          { "id": "l2", "name": "book_id", "dataType": "INT", "isForeignKey": true },
+          { "id": "l3", "name": "member_id", "dataType": "INT", "isForeignKey": true },
+          { "id": "l4", "name": "due_date", "dataType": "DATE" }
+        ]
+      }
+    },
+    {
+      "id": "ent-member",
+      "type": "erEntity",
+      "position": { "x": 80, "y": 330 },
+      "data": {
+        "label": "Member",
+        "nodeType": "erEntity",
+        "attributes": [
+          { "id": "m1", "name": "member_id", "dataType": "INT", "isPrimaryKey": true },
+          { "id": "m2", "name": "card_number", "dataType": "VARCHAR", "isUnique": true }
+        ]
+      }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Library lending ER schema",
+      "edges": [
+        { "source": "ent-author", "target": "ent-book", "type": "er", "bidirectional": true, "description": "Author writes Books" },
+        { "source": "ent-book", "target": "ent-loan", "type": "er", "bidirectional": true, "description": "Book is borrowed via Loans" },
+        { "source": "ent-member", "target": "ent-loan", "type": "er", "bidirectional": true, "description": "Member takes out Loans" }
+      ]
+    }
+  ]
+}
+

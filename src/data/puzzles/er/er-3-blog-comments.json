@@ -1,0 +1,73 @@
+{
+  "id": "er-3-blog-comments",
+  "number": 11,
+  "title": "Blog Posts & Comments",
+  "diagramType": "er",
+  "type": "build",
+  "difficulty": "Beginner",
+  "category": "Entity-Relationship",
+  "scenario": "A simple blogging platform stores Users, Posts, and Comments. A User writes many Posts and can leave many Comments, while each Comment belongs to one Post.",
+  "goal": "Connect User -> Post, Post -> Comment, and User -> Comment using ER relationship edges.",
+  "learningObjective": "Model basic one-to-many foreign key relationships between three core entities.",
+  "hints": [
+    "Each Post has an author_id referencing User.",
+    "Each Comment has a post_id referencing Post and a user_id referencing User.",
+    "Connect User -> Post, Post -> Comment, and User -> Comment."
+  ],
+  "solutionExplanation": "User has a 1:N relationship with both Post and Comment, and Post has a 1:N relationship with Comment.",
+  "initialNodes": [
+    {
+      "id": "ent-user",
+      "type": "erEntity",
+      "position": { "x": 80, "y": 140 },
+      "data": {
+        "label": "User",
+        "nodeType": "erEntity",
+        "attributes": [
+          { "id": "u1", "name": "user_id", "dataType": "UUID", "isPrimaryKey": true },
+          { "id": "u2", "name": "username", "dataType": "VARCHAR", "isUnique": true }
+        ]
+      }
+    },
+    {
+      "id": "ent-post",
+      "type": "erEntity",
+      "position": { "x": 380, "y": 100 },
+      "data": {
+        "label": "Post",
+        "nodeType": "erEntity",
+        "attributes": [
+          { "id": "p1", "name": "post_id", "dataType": "UUID", "isPrimaryKey": true },
+          { "id": "p2", "name": "author_id", "dataType": "UUID", "isForeignKey": true },
+          { "id": "p3", "name": "title", "dataType": "VARCHAR" }
+        ]
+      }
+    },
+    {
+      "id": "ent-comment",
+      "type": "erEntity",
+      "position": { "x": 380, "y": 320 },
+      "data": {
+        "label": "Comment",
+        "nodeType": "erEntity",
+        "attributes": [
+          { "id": "c1", "name": "comment_id", "dataType": "UUID", "isPrimaryKey": true },
+          { "id": "c2", "name": "post_id", "dataType": "UUID", "isForeignKey": true },
+          { "id": "c3", "name": "user_id", "dataType": "UUID", "isForeignKey": true },
+          { "id": "c4", "name": "body", "dataType": "TEXT" }
+        ]
+      }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Standard blog post and comment relationships",
+      "edges": [
+        { "source": "ent-user", "target": "ent-post", "type": "er", "bidirectional": true, "description": "User writes Posts" },
+        { "source": "ent-post", "target": "ent-comment", "type": "er", "bidirectional": true, "description": "Post has Comments" },
+        { "source": "ent-user", "target": "ent-comment", "type": "er", "bidirectional": true, "description": "User writes Comments" }
+      ]
+    }
+  ]
+}
+

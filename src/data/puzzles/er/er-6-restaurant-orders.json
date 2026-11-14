@@ -1,0 +1,87 @@
+{
+  "id": "er-6-restaurant-orders",
+  "number": 14,
+  "title": "Restaurant Table & Menu Orders",
+  "diagramType": "er",
+  "type": "build",
+  "difficulty": "Easy",
+  "category": "Entity-Relationship",
+  "scenario": "A restaurant POS system tracks DiningTables, Orders, OrderDishes, and MenuItems. A DiningTable hosts Orders, and each Order contains multiple OrderDishes referencing MenuItems.",
+  "goal": "Connect DiningTable -> Order, Order -> OrderDish, and MenuItem -> OrderDish.",
+  "learningObjective": "Model weak associative line-item entities in a hospitality POS database.",
+  "hints": [
+    "Order contains table_id referencing DiningTable.",
+    "OrderDish is a weak entity with composite keys (order_id, menu_item_id).",
+    "Connect DiningTable -> Order, Order -> OrderDish, and MenuItem -> OrderDish."
+  ],
+  "solutionExplanation": "DiningTable connects to Order (1:N), while OrderDish resolves the many-to-many relationship between Order and MenuItem.",
+  "initialNodes": [
+    {
+      "id": "ent-table",
+      "type": "erEntity",
+      "position": { "x": 80, "y": 110 },
+      "data": {
+        "label": "DiningTable",
+        "nodeType": "erEntity",
+        "attributes": [
+          { "id": "t1", "name": "table_id", "dataType": "INT", "isPrimaryKey": true },
+          { "id": "t2", "name": "seats", "dataType": "INT" }
+        ]
+      }
+    },
+    {
+      "id": "ent-order",
+      "type": "erEntity",
+      "position": { "x": 390, "y": 110 },
+      "data": {
+        "label": "Order",
+        "nodeType": "erEntity",
+        "attributes": [
+          { "id": "o1", "name": "order_id", "dataType": "UUID", "isPrimaryKey": true },
+          { "id": "o2", "name": "table_id", "dataType": "INT", "isForeignKey": true },
+          { "id": "o3", "name": "status", "dataType": "VARCHAR" }
+        ]
+      }
+    },
+    {
+      "id": "ent-order-dish",
+      "type": "erEntity",
+      "position": { "x": 390, "y": 330 },
+      "data": {
+        "label": "OrderDish",
+        "nodeType": "erEntity",
+        "isWeakEntity": true,
+        "attributes": [
+          { "id": "od1", "name": "order_id", "dataType": "UUID", "isPrimaryKey": true, "isForeignKey": true },
+          { "id": "od2", "name": "menu_item_id", "dataType": "INT", "isPrimaryKey": true, "isForeignKey": true },
+          { "id": "od3", "name": "qty", "dataType": "INT" }
+        ]
+      }
+    },
+    {
+      "id": "ent-menu-item",
+      "type": "erEntity",
+      "position": { "x": 80, "y": 330 },
+      "data": {
+        "label": "MenuItem",
+        "nodeType": "erEntity",
+        "attributes": [
+          { "id": "m1", "name": "menu_item_id", "dataType": "INT", "isPrimaryKey": true },
+          { "id": "m2", "name": "name", "dataType": "VARCHAR" },
+          { "id": "m3", "name": "price_cents", "dataType": "INT" }
+        ]
+      }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Restaurant POS ER schema",
+      "edges": [
+        { "source": "ent-table", "target": "ent-order", "type": "er", "bidirectional": true, "description": "DiningTable has Orders" },
+        { "source": "ent-order", "target": "ent-order-dish", "type": "er", "bidirectional": true, "description": "Order contains OrderDishes" },
+        { "source": "ent-menu-item", "target": "ent-order-dish", "type": "er", "bidirectional": true, "description": "MenuItem appears in OrderDishes" }
+      ]
+    }
+  ]
+}
+
