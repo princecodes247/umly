@@ -1,0 +1,76 @@
+{
+  "id": "dfd-10-telehealth-prescription-flow",
+  "number": 22,
+  "title": "Telehealth Prescription Pipeline",
+  "diagramType": "dfd",
+  "type": "build",
+  "difficulty": "Advanced",
+  "category": "Data Flow",
+  "scenario": "During a telehealth consultation, Doctor submits a prescription to \"1.0 Validate Prescription\". The process checks patient allergies in \"D1 Patient Chart\" and writes the approved script to \"D2 Prescriptions\". \"2.0 Route to Pharmacy\" reads from \"D2 Prescriptions\", transmits the order to Pharmacy, and sends pickup instructions to Patient.",
+  "goal": "Connect all seven nodes to model clinical validation, chart lookup, prescription persistence, pharmacy routing, and patient notification.",
+  "learningObjective": "Design a multi-entity healthcare DFD where two processes decouple via a shared Data Store.",
+  "hints": [
+    "1.0 Validate Prescription reads D1 Patient Chart and writes to D2 Prescriptions.",
+    "2.0 Route to Pharmacy reads from D2 Prescriptions and outputs to both Pharmacy and Patient.",
+    "Connect Doctor -> 1.0, D1 Patient Chart -> 1.0, 1.0 -> D2 Prescriptions, D2 Prescriptions -> 2.0, 2.0 -> Pharmacy, and 2.0 -> Patient."
+  ],
+  "solutionExplanation": "Doctor submits the script to 1.0 Validate Prescription, which checks D1 Patient Chart and writes to D2 Prescriptions. 2.0 Route to Pharmacy reads D2 Prescriptions and dispatches to Pharmacy and Patient.",
+  "initialNodes": [
+    {
+      "id": "dfd-doctor",
+      "type": "dfdExternalEntity",
+      "position": { "x": 60, "y": 140 },
+      "data": { "label": "Doctor", "nodeType": "dfdExternalEntity" }
+    },
+    {
+      "id": "dfd-validate",
+      "type": "dfdProcess",
+      "position": { "x": 320, "y": 130 },
+      "data": { "label": "Validate Prescription", "nodeType": "dfdProcess", "processNumber": "1.0" }
+    },
+    {
+      "id": "dfd-chart",
+      "type": "dfdDataStore",
+      "position": { "x": 320, "y": 350 },
+      "data": { "label": "Patient Chart", "nodeType": "dfdDataStore", "dataStoreId": "D1" }
+    },
+    {
+      "id": "dfd-prescriptions",
+      "type": "dfdDataStore",
+      "position": { "x": 580, "y": 140 },
+      "data": { "label": "Prescriptions", "nodeType": "dfdDataStore", "dataStoreId": "D2" }
+    },
+    {
+      "id": "dfd-route",
+      "type": "dfdProcess",
+      "position": { "x": 580, "y": 340 },
+      "data": { "label": "Route to Pharmacy", "nodeType": "dfdProcess", "processNumber": "2.0" }
+    },
+    {
+      "id": "dfd-pharmacy",
+      "type": "dfdExternalEntity",
+      "position": { "x": 860, "y": 240 },
+      "data": { "label": "Pharmacy", "nodeType": "dfdExternalEntity" }
+    },
+    {
+      "id": "dfd-patient",
+      "type": "dfdExternalEntity",
+      "position": { "x": 860, "y": 430 },
+      "data": { "label": "Patient", "nodeType": "dfdExternalEntity" }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Decoupled telehealth prescription validation and pharmacy routing DFD",
+      "edges": [
+        { "source": "dfd-doctor", "target": "dfd-validate", "type": "data_flow", "description": "Doctor submits prescription" },
+        { "source": "dfd-chart", "target": "dfd-validate", "type": "data_flow", "description": "Process reads D1 Patient Chart for allergies" },
+        { "source": "dfd-validate", "target": "dfd-prescriptions", "type": "data_flow", "description": "Process stores approved script in D2 Prescriptions" },
+        { "source": "dfd-prescriptions", "target": "dfd-route", "type": "data_flow", "description": "Routing process reads D2 Prescriptions" },
+        { "source": "dfd-route", "target": "dfd-pharmacy", "type": "data_flow", "description": "Process transmits order to Pharmacy" },
+        { "source": "dfd-route", "target": "dfd-patient", "type": "data_flow", "description": "Process sends pickup details to Patient" }
+      ]
+    }
+  ]
+}
+

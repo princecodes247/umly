@@ -391,6 +391,106 @@ export const PUZZLE_SUMMARIES: LevelSummary[] = [
     "difficulty": "Intermediate",
     "category": "Data Flow",
     "scenario": "In a valid Data Flow Diagram, an External Entity can never read or write directly to a Data Store without passing through a Process. Fix this broken payroll DFD!"
+  },
+  {
+    "id": "dfd-3-login-authentication",
+    "number": 40,
+    "title": "User Login Data Flow",
+    "diagramType": "dfd",
+    "type": "build",
+    "difficulty": "Beginner",
+    "category": "Data Flow",
+    "scenario": "A User submits login credentials to \"1.0 Authenticate User\". The process reads account records from \"D1 Users\" to verify the password and returns an authentication result back to the User."
+  },
+  {
+    "id": "dfd-4-library-book-return",
+    "number": 41,
+    "title": "Library Book Return Flow",
+    "diagramType": "dfd",
+    "type": "build",
+    "difficulty": "Easy",
+    "category": "Data Flow",
+    "scenario": "A Member returns a borrowed book to \"1.0 Process Return\". The process reads overdue fee rules from \"D2 Policies\", updates the loan record in \"D1 Loans\", and issues a return receipt to the Member."
+  },
+  {
+    "id": "dfd-5-fix-entity-to-entity-flow",
+    "number": 42,
+    "title": "Fix Direct Entity-to-Entity Flow",
+    "diagramType": "dfd",
+    "type": "fix",
+    "difficulty": "Easy",
+    "category": "Data Flow",
+    "scenario": "In a valid Data Flow Diagram, two External Entities cannot exchange data directly without passing through a Process. In this broken clinic diagram, Patient sends a lab request straight to Lab, bypassing \"1.0 Schedule Lab Test\" and leaving \"D1 Lab Orders\" unconnected."
+  },
+  {
+    "id": "dfd-6-restaurant-kitchen-dispatch",
+    "number": 43,
+    "title": "Restaurant Kitchen Dispatch",
+    "diagramType": "dfd",
+    "type": "build",
+    "difficulty": "Easy",
+    "category": "Data Flow",
+    "scenario": "A Diner places a meal order with \"1.0 Take Order\", which records the order in \"D1 Orders\" and forwards the ticket to \"2.0 Dispatch Kitchen\". \"2.0 Dispatch Kitchen\" then sends the prep ticket to the Kitchen."
+  },
+  {
+    "id": "dfd-7-fix-black-hole-process",
+    "number": 44,
+    "title": "Fix Black-Hole & Store-to-Store Flows",
+    "diagramType": "dfd",
+    "type": "fix",
+    "difficulty": "Intermediate",
+    "category": "Data Flow",
+    "scenario": "A valid DFD forbids \"black holes\" (processes with no output), \"miracles\" (processes with no input), and direct Store-to-Store transfers. In this broken utility billing diagram, \"1.0 Import Usage\" has no output, \"D1 Raw Usage\" writes straight to \"D2 Invoices\", and \"2.0 Generate Invoice\" has no input."
+  },
+  {
+    "id": "dfd-8-ride-fare-settlement",
+    "number": 45,
+    "title": "Ride-Sharing Fare Settlement",
+    "diagramType": "dfd",
+    "type": "build",
+    "difficulty": "Intermediate",
+    "category": "Data Flow",
+    "scenario": "When a Driver completes a trip, trip telemetry is sent to \"1.0 Calculate Fare\". The process reads pricing rules from \"D1 Rate Card\", saves the trip record in \"D2 Trips\", and passes the calculated fare to \"2.0 Settle Payment\". \"2.0 Settle Payment\" charges the Payment Gateway and sends a payout summary back to the Driver."
+  },
+  {
+    "id": "dfd-9-fix-warehouse-fulfillment",
+    "number": 46,
+    "title": "Fix Warehouse Fulfillment DFD",
+    "diagramType": "dfd",
+    "type": "fix",
+    "difficulty": "Intermediate",
+    "category": "Data Flow",
+    "scenario": "This order fulfillment DFD contains three syntax violations: Customer writes directly to \"D1 Inventory\", \"D1 Inventory\" copies directly into \"D2 Shipments\", and Customer communicates directly with Shipping Carrier. Meanwhile, \"1.0 Reserve Stock\" and \"2.0 Dispatch Parcel\" are bypassed."
+  },
+  {
+    "id": "dfd-10-telehealth-prescription-flow",
+    "number": 47,
+    "title": "Telehealth Prescription Pipeline",
+    "diagramType": "dfd",
+    "type": "build",
+    "difficulty": "Advanced",
+    "category": "Data Flow",
+    "scenario": "During a telehealth consultation, Doctor submits a prescription to \"1.0 Validate Prescription\". The process checks patient allergies in \"D1 Patient Chart\" and writes the approved script to \"D2 Prescriptions\". \"2.0 Route to Pharmacy\" reads from \"D2 Prescriptions\", transmits the order to Pharmacy, and sends pickup instructions to Patient."
+  },
+  {
+    "id": "dfd-11-fix-fraud-detection-dfd",
+    "number": 48,
+    "title": "Fix Banking Fraud Detection DFD",
+    "diagramType": "dfd",
+    "type": "fix",
+    "difficulty": "Advanced",
+    "category": "Data Flow",
+    "scenario": "A real-time fraud pipeline has three illegal shortcuts: Cardholder writes straight to \"D1 Transactions\", \"D1 Transactions\" feeds directly into \"D2 Risk Alerts\", and Cardholder messages Fraud Analyst directly. Meanwhile, \"1.0 Capture Transaction\" is completely disconnected."
+  },
+  {
+    "id": "dfd-12-enterprise-etl-analytics",
+    "number": 49,
+    "title": "Enterprise ETL & Analytics Pipeline",
+    "diagramType": "dfd",
+    "type": "build",
+    "difficulty": "Advanced",
+    "category": "Data Flow",
+    "scenario": "An analytics platform ingests clickstream events from Web App into \"1.0 Ingest Events\", which writes raw logs to \"D1 Raw Events\". \"2.0 Transform & Aggregate\" reads \"D1 Raw Events\" and enriches them with \"D2 Customer Profiles\", writes aggregated metrics to \"D3 Analytics Mart\", and passes summary data to \"3.0 Publish Dashboard\" for Executive review."
   }
 ]
 
@@ -433,5 +533,15 @@ export const PUZZLE_FILE_BY_ID: Record<string, string> = {
   "class-11-fix-plugin-architecture": "./puzzles/class/class-11-fix-plugin-architecture.json",
   "class-12-enterprise-cqrs-pipeline": "./puzzles/class/class-12-enterprise-cqrs-pipeline.json",
   "dfd-1-checkout-flow": "./puzzles/dfd/dfd-1-checkout-flow.json",
-  "dfd-2-fix-illegal-store-flow": "./puzzles/dfd/dfd-2-fix-illegal-store-flow.json"
+  "dfd-2-fix-illegal-store-flow": "./puzzles/dfd/dfd-2-fix-illegal-store-flow.json",
+  "dfd-3-login-authentication": "./puzzles/dfd/dfd-3-login-authentication.json",
+  "dfd-4-library-book-return": "./puzzles/dfd/dfd-4-library-book-return.json",
+  "dfd-5-fix-entity-to-entity-flow": "./puzzles/dfd/dfd-5-fix-entity-to-entity-flow.json",
+  "dfd-6-restaurant-kitchen-dispatch": "./puzzles/dfd/dfd-6-restaurant-kitchen-dispatch.json",
+  "dfd-7-fix-black-hole-process": "./puzzles/dfd/dfd-7-fix-black-hole-process.json",
+  "dfd-8-ride-fare-settlement": "./puzzles/dfd/dfd-8-ride-fare-settlement.json",
+  "dfd-9-fix-warehouse-fulfillment": "./puzzles/dfd/dfd-9-fix-warehouse-fulfillment.json",
+  "dfd-10-telehealth-prescription-flow": "./puzzles/dfd/dfd-10-telehealth-prescription-flow.json",
+  "dfd-11-fix-fraud-detection-dfd": "./puzzles/dfd/dfd-11-fix-fraud-detection-dfd.json",
+  "dfd-12-enterprise-etl-analytics": "./puzzles/dfd/dfd-12-enterprise-etl-analytics.json"
 }

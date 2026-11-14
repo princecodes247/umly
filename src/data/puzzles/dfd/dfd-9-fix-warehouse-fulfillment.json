@@ -1,0 +1,95 @@
+{
+  "id": "dfd-9-fix-warehouse-fulfillment",
+  "number": 21,
+  "title": "Fix Warehouse Fulfillment DFD",
+  "diagramType": "dfd",
+  "type": "fix",
+  "difficulty": "Intermediate",
+  "category": "Data Flow",
+  "scenario": "This order fulfillment DFD contains three syntax violations: Customer writes directly to \"D1 Inventory\", \"D1 Inventory\" copies directly into \"D2 Shipments\", and Customer communicates directly with Shipping Carrier. Meanwhile, \"1.0 Reserve Stock\" and \"2.0 Dispatch Parcel\" are bypassed.",
+  "goal": "Remove all three illegal shortcuts and route data properly through 1.0 Reserve Stock and 2.0 Dispatch Parcel.",
+  "learningObjective": "Identify and fix all three forbidden DFD edge types (Entity-to-Store, Store-to-Store, and Entity-to-Entity) in one diagram.",
+  "hints": [
+    "Delete Customer -> D1 Inventory, D1 Inventory -> D2 Shipments, and Customer -> Shipping Carrier.",
+    "Route Customer -> 1.0 Reserve Stock, and have 1.0 Reserve Stock update D1 Inventory.",
+    "Keep 1.0 Reserve Stock -> 2.0 Dispatch Parcel, and connect 2.0 Dispatch Parcel -> D2 Shipments and 2.0 Dispatch Parcel -> Shipping Carrier."
+  ],
+  "solutionExplanation": "Deleting all three illegal shortcuts and routing Customer -> 1.0 Reserve Stock -> D1 Inventory and 1.0 Reserve Stock -> 2.0 Dispatch Parcel -> D2 Shipments / Shipping Carrier restores a valid DFD.",
+  "initialNodes": [
+    {
+      "id": "dfd-customer",
+      "type": "dfdExternalEntity",
+      "position": { "x": 60, "y": 170 },
+      "data": { "label": "Customer", "nodeType": "dfdExternalEntity" }
+    },
+    {
+      "id": "dfd-reserve",
+      "type": "dfdProcess",
+      "position": { "x": 320, "y": 80 },
+      "data": { "label": "Reserve Stock", "nodeType": "dfdProcess", "processNumber": "1.0" }
+    },
+    {
+      "id": "dfd-inventory",
+      "type": "dfdDataStore",
+      "position": { "x": 320, "y": 290 },
+      "data": { "label": "Inventory", "nodeType": "dfdDataStore", "dataStoreId": "D1" }
+    },
+    {
+      "id": "dfd-dispatch",
+      "type": "dfdProcess",
+      "position": { "x": 600, "y": 80 },
+      "data": { "label": "Dispatch Parcel", "nodeType": "dfdProcess", "processNumber": "2.0" }
+    },
+    {
+      "id": "dfd-shipments",
+      "type": "dfdDataStore",
+      "position": { "x": 600, "y": 290 },
+      "data": { "label": "Shipments", "nodeType": "dfdDataStore", "dataStoreId": "D2" }
+    },
+    {
+      "id": "dfd-carrier",
+      "type": "dfdExternalEntity",
+      "position": { "x": 860, "y": 170 },
+      "data": { "label": "Shipping Carrier", "nodeType": "dfdExternalEntity" }
+    }
+  ],
+  "initialEdges": [
+    {
+      "id": "e-bug-e2s",
+      "source": "dfd-customer",
+      "target": "dfd-inventory",
+      "data": { "relationshipType": "data_flow", "label": "Direct Write (Invalid)" }
+    },
+    {
+      "id": "e-bug-s2s",
+      "source": "dfd-inventory",
+      "target": "dfd-shipments",
+      "data": { "relationshipType": "data_flow", "label": "Store Copy (Invalid)" }
+    },
+    {
+      "id": "e-bug-e2e",
+      "source": "dfd-customer",
+      "target": "dfd-carrier",
+      "data": { "relationshipType": "data_flow", "label": "Direct Notify (Invalid)" }
+    },
+    {
+      "id": "e-ok-proc",
+      "source": "dfd-reserve",
+      "target": "dfd-dispatch",
+      "data": { "relationshipType": "data_flow" }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Valid fulfillment pipeline with all three illegal shortcuts removed",
+      "edges": [
+        { "source": "dfd-customer", "target": "dfd-reserve", "type": "data_flow", "description": "Customer places order" },
+        { "source": "dfd-reserve", "target": "dfd-inventory", "type": "data_flow", "description": "Process deducts reserved stock" },
+        { "source": "dfd-reserve", "target": "dfd-dispatch", "type": "data_flow", "description": "Process triggers parcel dispatch" },
+        { "source": "dfd-dispatch", "target": "dfd-shipments", "type": "data_flow", "description": "Dispatch logs shipment record" },
+        { "source": "dfd-dispatch", "target": "dfd-carrier", "type": "data_flow", "description": "Dispatch hands parcel to Shipping Carrier" }
+      ]
+    }
+  ]
+}
+

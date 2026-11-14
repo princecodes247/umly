@@ -1,0 +1,83 @@
+{
+  "id": "dfd-12-enterprise-etl-analytics",
+  "number": 24,
+  "title": "Enterprise ETL & Analytics Pipeline",
+  "diagramType": "dfd",
+  "type": "build",
+  "difficulty": "Advanced",
+  "category": "Data Flow",
+  "scenario": "An analytics platform ingests clickstream events from Web App into \"1.0 Ingest Events\", which writes raw logs to \"D1 Raw Events\". \"2.0 Transform & Aggregate\" reads \"D1 Raw Events\" and enriches them with \"D2 Customer Profiles\", writes aggregated metrics to \"D3 Analytics Mart\", and passes summary data to \"3.0 Publish Dashboard\" for Executive review.",
+  "goal": "Architect the full three-stage ETL pipeline connecting Web App, three processes, three data stores, and Executive.",
+  "learningObjective": "Synthesize a multi-stage Level-1 ETL Data Flow Diagram with enrichment joins, warehouse writes, and reporting delivery.",
+  "hints": [
+    "1.0 Ingest Events connects Web App to D1 Raw Events.",
+    "2.0 Transform & Aggregate has two inputs (D1 Raw Events, D2 Customer Profiles) and two outputs (D3 Analytics Mart, 3.0 Publish Dashboard).",
+    "3.0 Publish Dashboard delivers the final report to Executive."
+  ],
+  "solutionExplanation": "Web App streams into 1.0 Ingest Events -> D1 Raw Events. 2.0 Transform & Aggregate reads D1 Raw Events and D2 Customer Profiles, writes to D3 Analytics Mart, and feeds 3.0 Publish Dashboard -> Executive.",
+  "initialNodes": [
+    {
+      "id": "dfd-webapp",
+      "type": "dfdExternalEntity",
+      "position": { "x": 60, "y": 100 },
+      "data": { "label": "Web App", "nodeType": "dfdExternalEntity" }
+    },
+    {
+      "id": "dfd-ingest",
+      "type": "dfdProcess",
+      "position": { "x": 310, "y": 90 },
+      "data": { "label": "Ingest Events", "nodeType": "dfdProcess", "processNumber": "1.0" }
+    },
+    {
+      "id": "dfd-raw-events",
+      "type": "dfdDataStore",
+      "position": { "x": 310, "y": 290 },
+      "data": { "label": "Raw Events", "nodeType": "dfdDataStore", "dataStoreId": "D1" }
+    },
+    {
+      "id": "dfd-profiles",
+      "type": "dfdDataStore",
+      "position": { "x": 310, "y": 470 },
+      "data": { "label": "Customer Profiles", "nodeType": "dfdDataStore", "dataStoreId": "D2" }
+    },
+    {
+      "id": "dfd-transform",
+      "type": "dfdProcess",
+      "position": { "x": 580, "y": 280 },
+      "data": { "label": "Transform & Aggregate", "nodeType": "dfdProcess", "processNumber": "2.0" }
+    },
+    {
+      "id": "dfd-mart",
+      "type": "dfdDataStore",
+      "position": { "x": 580, "y": 470 },
+      "data": { "label": "Analytics Mart", "nodeType": "dfdDataStore", "dataStoreId": "D3" }
+    },
+    {
+      "id": "dfd-publish",
+      "type": "dfdProcess",
+      "position": { "x": 850, "y": 280 },
+      "data": { "label": "Publish Dashboard", "nodeType": "dfdProcess", "processNumber": "3.0" }
+    },
+    {
+      "id": "dfd-exec",
+      "type": "dfdExternalEntity",
+      "position": { "x": 1110, "y": 290 },
+      "data": { "label": "Executive", "nodeType": "dfdExternalEntity" }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Three-stage ETL ingestion, enrichment, and executive reporting DFD",
+      "edges": [
+        { "source": "dfd-webapp", "target": "dfd-ingest", "type": "data_flow", "description": "Web App streams clickstream events" },
+        { "source": "dfd-ingest", "target": "dfd-raw-events", "type": "data_flow", "description": "Ingest writes raw logs to D1 Raw Events" },
+        { "source": "dfd-raw-events", "target": "dfd-transform", "type": "data_flow", "description": "Transform reads D1 Raw Events" },
+        { "source": "dfd-profiles", "target": "dfd-transform", "type": "data_flow", "description": "Transform enriches with D2 Customer Profiles" },
+        { "source": "dfd-transform", "target": "dfd-mart", "type": "data_flow", "description": "Transform writes metrics to D3 Analytics Mart" },
+        { "source": "dfd-transform", "target": "dfd-publish", "type": "data_flow", "description": "Transform passes summary data to Publish Dashboard" },
+        { "source": "dfd-publish", "target": "dfd-exec", "type": "data_flow", "description": "Publish Dashboard delivers report to Executive" }
+      ]
+    }
+  ]
+}
+

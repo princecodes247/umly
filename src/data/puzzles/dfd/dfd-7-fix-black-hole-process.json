@@ -1,0 +1,89 @@
+{
+  "id": "dfd-7-fix-black-hole-process",
+  "number": 19,
+  "title": "Fix Black-Hole & Store-to-Store Flows",
+  "diagramType": "dfd",
+  "type": "fix",
+  "difficulty": "Intermediate",
+  "category": "Data Flow",
+  "scenario": "A valid DFD forbids \"black holes\" (processes with no output), \"miracles\" (processes with no input), and direct Store-to-Store transfers. In this broken utility billing diagram, \"1.0 Import Usage\" has no output, \"D1 Raw Usage\" writes straight to \"D2 Invoices\", and \"2.0 Generate Invoice\" has no input.",
+  "goal": "Remove the illegal store-to-store edge and wire the pipeline so every process has both inputs and outputs while persisting usage and invoices properly.",
+  "learningObjective": "Eliminate DFD black holes, miracles, and direct Store-to-Store transfers by routing through processes.",
+  "hints": [
+    "Data cannot flow directly from D1 Raw Usage to D2 Invoices without a process.",
+    "1.0 Import Usage should write to D1 Raw Usage, and 2.0 Generate Invoice should read from D1 Raw Usage and write to D2 Invoices.",
+    "Keep Meter -> 1.0 Import Usage and 2.0 Generate Invoice -> Customer, delete D1 Raw Usage -> D2 Invoices, and add 1.0 Import Usage -> D1 Raw Usage, D1 Raw Usage -> 2.0 Generate Invoice, and 2.0 Generate Invoice -> D2 Invoices."
+  ],
+  "solutionExplanation": "Removing the illegal Store-to-Store flow and connecting 1.0 Import Usage -> D1 Raw Usage -> 2.0 Generate Invoice -> D2 Invoices resolves the black hole, miracle, and store-to-store errors.",
+  "initialNodes": [
+    {
+      "id": "dfd-meter",
+      "type": "dfdExternalEntity",
+      "position": { "x": 60, "y": 80 },
+      "data": { "label": "Meter", "nodeType": "dfdExternalEntity" }
+    },
+    {
+      "id": "dfd-import",
+      "type": "dfdProcess",
+      "position": { "x": 320, "y": 70 },
+      "data": { "label": "Import Usage", "nodeType": "dfdProcess", "processNumber": "1.0" }
+    },
+    {
+      "id": "dfd-raw",
+      "type": "dfdDataStore",
+      "position": { "x": 320, "y": 270 },
+      "data": { "label": "Raw Usage", "nodeType": "dfdDataStore", "dataStoreId": "D1" }
+    },
+    {
+      "id": "dfd-invoices",
+      "type": "dfdDataStore",
+      "position": { "x": 600, "y": 270 },
+      "data": { "label": "Invoices", "nodeType": "dfdDataStore", "dataStoreId": "D2" }
+    },
+    {
+      "id": "dfd-gen-inv",
+      "type": "dfdProcess",
+      "position": { "x": 600, "y": 70 },
+      "data": { "label": "Generate Invoice", "nodeType": "dfdProcess", "processNumber": "2.0" }
+    },
+    {
+      "id": "dfd-customer",
+      "type": "dfdExternalEntity",
+      "position": { "x": 860, "y": 80 },
+      "data": { "label": "Customer", "nodeType": "dfdExternalEntity" }
+    }
+  ],
+  "initialEdges": [
+    {
+      "id": "e-ok-meter",
+      "source": "dfd-meter",
+      "target": "dfd-import",
+      "data": { "relationshipType": "data_flow" }
+    },
+    {
+      "id": "e-bug-store",
+      "source": "dfd-raw",
+      "target": "dfd-invoices",
+      "data": { "relationshipType": "data_flow", "label": "Direct Copy (Invalid)" }
+    },
+    {
+      "id": "e-ok-cust",
+      "source": "dfd-gen-inv",
+      "target": "dfd-customer",
+      "data": { "relationshipType": "data_flow" }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Balanced billing pipeline with no black holes, miracles, or store-to-store edges",
+      "edges": [
+        { "source": "dfd-meter", "target": "dfd-import", "type": "data_flow", "description": "Meter sends raw readings" },
+        { "source": "dfd-import", "target": "dfd-raw", "type": "data_flow", "description": "Import saves readings to D1 Raw Usage" },
+        { "source": "dfd-raw", "target": "dfd-gen-inv", "type": "data_flow", "description": "Generate Invoice reads D1 Raw Usage" },
+        { "source": "dfd-gen-inv", "target": "dfd-invoices", "type": "data_flow", "description": "Generate Invoice stores invoice in D2 Invoices" },
+        { "source": "dfd-gen-inv", "target": "dfd-customer", "type": "data_flow", "description": "Generate Invoice sends bill to Customer" }
+      ]
+    }
+  ]
+}
+

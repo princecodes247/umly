@@ -1,0 +1,63 @@
+{
+  "id": "dfd-5-fix-entity-to-entity-flow",
+  "number": 17,
+  "title": "Fix Direct Entity-to-Entity Flow",
+  "diagramType": "dfd",
+  "type": "fix",
+  "difficulty": "Easy",
+  "category": "Data Flow",
+  "scenario": "In a valid Data Flow Diagram, two External Entities cannot exchange data directly without passing through a Process. In this broken clinic diagram, Patient sends a lab request straight to Lab, bypassing \"1.0 Schedule Lab Test\" and leaving \"D1 Lab Orders\" unconnected.",
+  "goal": "Remove the illegal direct flow between Patient and Lab, route the request through 1.0 Schedule Lab Test, and record the order in D1 Lab Orders.",
+  "learningObjective": "Enforce the DFD rule that External Entities may only communicate through a system Process.",
+  "hints": [
+    "External Entities (Patient and Lab) cannot connect directly to each other.",
+    "Delete Patient -> Lab, then route Patient -> 1.0 Schedule Lab Test -> Lab.",
+    "Also connect 1.0 Schedule Lab Test -> D1 Lab Orders so the scheduled order is persisted."
+  ],
+  "solutionExplanation": "Data between External Entities must flow through a Process. Routing Patient -> 1.0 Schedule Lab Test -> Lab and saving to D1 Lab Orders fixes the violation.",
+  "initialNodes": [
+    {
+      "id": "dfd-patient",
+      "type": "dfdExternalEntity",
+      "position": { "x": 80, "y": 170 },
+      "data": { "label": "Patient", "nodeType": "dfdExternalEntity" }
+    },
+    {
+      "id": "dfd-sched-proc",
+      "type": "dfdProcess",
+      "position": { "x": 360, "y": 90 },
+      "data": { "label": "Schedule Lab Test", "nodeType": "dfdProcess", "processNumber": "1.0" }
+    },
+    {
+      "id": "dfd-lab",
+      "type": "dfdExternalEntity",
+      "position": { "x": 650, "y": 170 },
+      "data": { "label": "Lab", "nodeType": "dfdExternalEntity" }
+    },
+    {
+      "id": "dfd-lab-orders",
+      "type": "dfdDataStore",
+      "position": { "x": 360, "y": 300 },
+      "data": { "label": "Lab Orders", "nodeType": "dfdDataStore", "dataStoreId": "D1" }
+    }
+  ],
+  "initialEdges": [
+    {
+      "id": "illegal-entity-flow",
+      "source": "dfd-patient",
+      "target": "dfd-lab",
+      "data": { "relationshipType": "data_flow", "label": "Direct Request (Invalid)" }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Process-mediated external entity communication and order storage",
+      "edges": [
+        { "source": "dfd-patient", "target": "dfd-sched-proc", "type": "data_flow", "description": "Patient submits test request" },
+        { "source": "dfd-sched-proc", "target": "dfd-lab", "type": "data_flow", "description": "Process forwards lab order to Lab" },
+        { "source": "dfd-sched-proc", "target": "dfd-lab-orders", "type": "data_flow", "description": "Process stores lab order record" }
+      ]
+    }
+  ]
+}
+

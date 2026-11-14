@@ -1,0 +1,49 @@
+{
+  "id": "dfd-3-login-authentication",
+  "number": 15,
+  "title": "User Login Data Flow",
+  "diagramType": "dfd",
+  "type": "build",
+  "difficulty": "Beginner",
+  "category": "Data Flow",
+  "scenario": "A User submits login credentials to \"1.0 Authenticate User\". The process reads account records from \"D1 Users\" to verify the password and returns an authentication result back to the User.",
+  "goal": "Connect the User, authentication process, and user data store to model credential submission, store lookup, and login response.",
+  "learningObjective": "Distinguish reading from a Data Store (Store -> Process) from writing to one, and trace bidirectional user-process flows.",
+  "hints": [
+    "Data flows are directional: the sender is the source and the receiver is the target.",
+    "1.0 Authenticate User reads stored credentials from D1 Users, so the flow goes from D1 Users to 1.0 Authenticate User.",
+    "Connect User -> 1.0 Authenticate User, D1 Users -> 1.0 Authenticate User, and 1.0 Authenticate User -> User."
+  ],
+  "solutionExplanation": "User sends credentials to 1.0 Authenticate User, which reads account records from D1 Users and returns the login result to User.",
+  "initialNodes": [
+    {
+      "id": "dfd-user",
+      "type": "dfdExternalEntity",
+      "position": { "x": 80, "y": 170 },
+      "data": { "label": "User", "nodeType": "dfdExternalEntity" }
+    },
+    {
+      "id": "dfd-auth-proc",
+      "type": "dfdProcess",
+      "position": { "x": 360, "y": 160 },
+      "data": { "label": "Authenticate User", "nodeType": "dfdProcess", "processNumber": "1.0" }
+    },
+    {
+      "id": "dfd-users-store",
+      "type": "dfdDataStore",
+      "position": { "x": 650, "y": 170 },
+      "data": { "label": "Users", "nodeType": "dfdDataStore", "dataStoreId": "D1" }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Authentication request, data store read, and response flow",
+      "edges": [
+        { "source": "dfd-user", "target": "dfd-auth-proc", "type": "data_flow", "description": "User submits credentials" },
+        { "source": "dfd-users-store", "target": "dfd-auth-proc", "type": "data_flow", "description": "Process reads stored user record" },
+        { "source": "dfd-auth-proc", "target": "dfd-user", "type": "data_flow", "description": "Process returns auth result to User" }
+      ]
+    }
+  ]
+}
+

@@ -1,0 +1,56 @@
+{
+  "id": "dfd-4-library-book-return",
+  "number": 16,
+  "title": "Library Book Return Flow",
+  "diagramType": "dfd",
+  "type": "build",
+  "difficulty": "Easy",
+  "category": "Data Flow",
+  "scenario": "A Member returns a borrowed book to \"1.0 Process Return\". The process reads overdue fee rules from \"D2 Policies\", updates the loan record in \"D1 Loans\", and issues a return receipt to the Member.",
+  "goal": "Wire the return flow between Member, 1.0 Process Return, and both data stores so policy lookup, loan update, and receipt delivery are modeled accurately.",
+  "learningObjective": "Model a process that simultaneously reads from one Data Store and writes to another.",
+  "hints": [
+    "D2 Policies is read by the process, whereas D1 Loans is updated by the process.",
+    "Remember that Member both initiates the return and receives a receipt back from 1.0 Process Return.",
+    "Connect Member -> 1.0 Process Return, D2 Policies -> 1.0 Process Return, 1.0 Process Return -> D1 Loans, and 1.0 Process Return -> Member."
+  ],
+  "solutionExplanation": "Member submits the book to 1.0 Process Return, which reads D2 Policies, writes the updated status to D1 Loans, and returns a receipt to Member.",
+  "initialNodes": [
+    {
+      "id": "dfd-member",
+      "type": "dfdExternalEntity",
+      "position": { "x": 80, "y": 170 },
+      "data": { "label": "Member", "nodeType": "dfdExternalEntity" }
+    },
+    {
+      "id": "dfd-return-proc",
+      "type": "dfdProcess",
+      "position": { "x": 360, "y": 160 },
+      "data": { "label": "Process Return", "nodeType": "dfdProcess", "processNumber": "1.0" }
+    },
+    {
+      "id": "dfd-loans",
+      "type": "dfdDataStore",
+      "position": { "x": 650, "y": 70 },
+      "data": { "label": "Loans", "nodeType": "dfdDataStore", "dataStoreId": "D1" }
+    },
+    {
+      "id": "dfd-policies",
+      "type": "dfdDataStore",
+      "position": { "x": 650, "y": 270 },
+      "data": { "label": "Policies", "nodeType": "dfdDataStore", "dataStoreId": "D2" }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Policy read, loan update, and member receipt data flows",
+      "edges": [
+        { "source": "dfd-member", "target": "dfd-return-proc", "type": "data_flow", "description": "Member returns book" },
+        { "source": "dfd-policies", "target": "dfd-return-proc", "type": "data_flow", "description": "Process reads overdue fee policies" },
+        { "source": "dfd-return-proc", "target": "dfd-loans", "type": "data_flow", "description": "Process updates loan status" },
+        { "source": "dfd-return-proc", "target": "dfd-member", "type": "data_flow", "description": "Process issues receipt to Member" }
+      ]
+    }
+  ]
+}
+

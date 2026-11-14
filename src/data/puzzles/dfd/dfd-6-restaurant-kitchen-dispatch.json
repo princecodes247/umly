@@ -1,0 +1,62 @@
+{
+  "id": "dfd-6-restaurant-kitchen-dispatch",
+  "number": 18,
+  "title": "Restaurant Kitchen Dispatch",
+  "diagramType": "dfd",
+  "type": "build",
+  "difficulty": "Easy",
+  "category": "Data Flow",
+  "scenario": "A Diner places a meal order with \"1.0 Take Order\", which records the order in \"D1 Orders\" and forwards the ticket to \"2.0 Dispatch Kitchen\". \"2.0 Dispatch Kitchen\" then sends the prep ticket to the Kitchen.",
+  "goal": "Connect the multi-step restaurant order pipeline from Diner through both processes, the order data store, and the Kitchen.",
+  "learningObjective": "Chain two sequential DFD processes together while persisting state to a Data Store.",
+  "hints": [
+    "1.0 Take Order has one input (from Diner) and two outputs (to D1 Orders and 2.0 Dispatch Kitchen).",
+    "2.0 Dispatch Kitchen receives the ticket from 1.0 Take Order and forwards it to Kitchen.",
+    "Create 4 Data Flow edges: Diner -> 1.0 Take Order, 1.0 Take Order -> D1 Orders, 1.0 Take Order -> 2.0 Dispatch Kitchen, and 2.0 Dispatch Kitchen -> Kitchen."
+  ],
+  "solutionExplanation": "Diner sends the order to 1.0 Take Order, which saves it in D1 Orders and forwards it to 2.0 Dispatch Kitchen for delivery to Kitchen.",
+  "initialNodes": [
+    {
+      "id": "dfd-diner",
+      "type": "dfdExternalEntity",
+      "position": { "x": 60, "y": 170 },
+      "data": { "label": "Diner", "nodeType": "dfdExternalEntity" }
+    },
+    {
+      "id": "dfd-take-order",
+      "type": "dfdProcess",
+      "position": { "x": 310, "y": 160 },
+      "data": { "label": "Take Order", "nodeType": "dfdProcess", "processNumber": "1.0" }
+    },
+    {
+      "id": "dfd-orders",
+      "type": "dfdDataStore",
+      "position": { "x": 310, "y": 360 },
+      "data": { "label": "Orders", "nodeType": "dfdDataStore", "dataStoreId": "D1" }
+    },
+    {
+      "id": "dfd-dispatch",
+      "type": "dfdProcess",
+      "position": { "x": 580, "y": 160 },
+      "data": { "label": "Dispatch Kitchen", "nodeType": "dfdProcess", "processNumber": "2.0" }
+    },
+    {
+      "id": "dfd-kitchen",
+      "type": "dfdExternalEntity",
+      "position": { "x": 850, "y": 170 },
+      "data": { "label": "Kitchen", "nodeType": "dfdExternalEntity" }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Two-stage restaurant order and kitchen dispatch flow",
+      "edges": [
+        { "source": "dfd-diner", "target": "dfd-take-order", "type": "data_flow", "description": "Diner places meal order" },
+        { "source": "dfd-take-order", "target": "dfd-orders", "type": "data_flow", "description": "Process saves order in D1 Orders" },
+        { "source": "dfd-take-order", "target": "dfd-dispatch", "type": "data_flow", "description": "Process forwards ticket to Kitchen Dispatch" },
+        { "source": "dfd-dispatch", "target": "dfd-kitchen", "type": "data_flow", "description": "Dispatch sends prep ticket to Kitchen" }
+      ]
+    }
+  ]
+}
+

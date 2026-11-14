@@ -1,0 +1,70 @@
+{
+  "id": "dfd-8-ride-fare-settlement",
+  "number": 20,
+  "title": "Ride-Sharing Fare Settlement",
+  "diagramType": "dfd",
+  "type": "build",
+  "difficulty": "Intermediate",
+  "category": "Data Flow",
+  "scenario": "When a Driver completes a trip, trip telemetry is sent to \"1.0 Calculate Fare\". The process reads pricing rules from \"D1 Rate Card\", saves the trip record in \"D2 Trips\", and passes the calculated fare to \"2.0 Settle Payment\". \"2.0 Settle Payment\" charges the Payment Gateway and sends a payout summary back to the Driver.",
+  "goal": "Model the complete fare calculation and payment settlement pipeline across both processes, both data stores, and both external entities.",
+  "learningObjective": "Coordinate multiple Data Stores (read vs. write) across two chained processes and external systems.",
+  "hints": [
+    "1.0 Calculate Fare reads from D1 Rate Card, writes to D2 Trips, and forwards the fare to 2.0 Settle Payment.",
+    "2.0 Settle Payment sends a charge request to Payment Gateway and returns a payout summary to Driver.",
+    "There are 6 Data Flow edges total: Driver -> 1.0, D1 Rate Card -> 1.0, 1.0 -> D2 Trips, 1.0 -> 2.0, 2.0 -> Payment Gateway, and 2.0 -> Driver."
+  ],
+  "solutionExplanation": "Driver submits trip telemetry to 1.0 Calculate Fare, which reads D1 Rate Card, writes D2 Trips, and passes the fare to 2.0 Settle Payment. Payment settlement notifies Payment Gateway and returns a payout summary to Driver.",
+  "initialNodes": [
+    {
+      "id": "dfd-driver",
+      "type": "dfdExternalEntity",
+      "position": { "x": 60, "y": 170 },
+      "data": { "label": "Driver", "nodeType": "dfdExternalEntity" }
+    },
+    {
+      "id": "dfd-calc-fare",
+      "type": "dfdProcess",
+      "position": { "x": 330, "y": 160 },
+      "data": { "label": "Calculate Fare", "nodeType": "dfdProcess", "processNumber": "1.0" }
+    },
+    {
+      "id": "dfd-rate-card",
+      "type": "dfdDataStore",
+      "position": { "x": 330, "y": 370 },
+      "data": { "label": "Rate Card", "nodeType": "dfdDataStore", "dataStoreId": "D1" }
+    },
+    {
+      "id": "dfd-trips",
+      "type": "dfdDataStore",
+      "position": { "x": 330, "y": -20 },
+      "data": { "label": "Trips", "nodeType": "dfdDataStore", "dataStoreId": "D2" }
+    },
+    {
+      "id": "dfd-settle",
+      "type": "dfdProcess",
+      "position": { "x": 620, "y": 160 },
+      "data": { "label": "Settle Payment", "nodeType": "dfdProcess", "processNumber": "2.0" }
+    },
+    {
+      "id": "dfd-gateway",
+      "type": "dfdExternalEntity",
+      "position": { "x": 890, "y": 170 },
+      "data": { "label": "Payment Gateway", "nodeType": "dfdExternalEntity" }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "End-to-end ride fare calculation and payment settlement DFD",
+      "edges": [
+        { "source": "dfd-driver", "target": "dfd-calc-fare", "type": "data_flow", "description": "Driver submits completed trip" },
+        { "source": "dfd-rate-card", "target": "dfd-calc-fare", "type": "data_flow", "description": "Process reads D1 Rate Card" },
+        { "source": "dfd-calc-fare", "target": "dfd-trips", "type": "data_flow", "description": "Process saves trip record in D2 Trips" },
+        { "source": "dfd-calc-fare", "target": "dfd-settle", "type": "data_flow", "description": "Process passes fare to Settle Payment" },
+        { "source": "dfd-settle", "target": "dfd-gateway", "type": "data_flow", "description": "Process charges Payment Gateway" },
+        { "source": "dfd-settle", "target": "dfd-driver", "type": "data_flow", "description": "Process sends payout summary to Driver" }
+      ]
+    }
+  ]
+}
+

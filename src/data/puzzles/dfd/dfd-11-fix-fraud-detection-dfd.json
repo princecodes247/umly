@@ -1,0 +1,96 @@
+{
+  "id": "dfd-11-fix-fraud-detection-dfd",
+  "number": 23,
+  "title": "Fix Banking Fraud Detection DFD",
+  "diagramType": "dfd",
+  "type": "fix",
+  "difficulty": "Advanced",
+  "category": "Data Flow",
+  "scenario": "A real-time fraud pipeline has three illegal shortcuts: Cardholder writes straight to \"D1 Transactions\", \"D1 Transactions\" feeds directly into \"D2 Risk Alerts\", and Cardholder messages Fraud Analyst directly. Meanwhile, \"1.0 Capture Transaction\" is completely disconnected.",
+  "goal": "Eliminate all three rule violations and wire the full pipeline from Cardholder through 1.0 Capture Transaction and 2.0 Score Risk into both stores and Fraud Analyst.",
+  "learningObjective": "Repair a complex broken DFD by replacing illegal shortcuts with proper process-mediated read, write, and alert flows.",
+  "hints": [
+    "Delete Cardholder -> D1 Transactions, D1 Transactions -> D2 Risk Alerts, and Cardholder -> Fraud Analyst.",
+    "1.0 Capture Transaction should receive from Cardholder, write to D1 Transactions, and forward event data to 2.0 Score Risk.",
+    "2.0 Score Risk reads historical context from D1 Transactions, writes alerts to D2 Risk Alerts, and keeps its existing flow to Fraud Analyst."
+  ],
+  "solutionExplanation": "Cardholder -> 1.0 Capture Transaction logs to D1 Transactions and forwards to 2.0 Score Risk. 2.0 Score Risk reads D1 Transactions, writes to D2 Risk Alerts, and notifies Fraud Analyst.",
+  "initialNodes": [
+    {
+      "id": "dfd-cardholder",
+      "type": "dfdExternalEntity",
+      "position": { "x": 60, "y": 170 },
+      "data": { "label": "Cardholder", "nodeType": "dfdExternalEntity" }
+    },
+    {
+      "id": "dfd-capture",
+      "type": "dfdProcess",
+      "position": { "x": 320, "y": 80 },
+      "data": { "label": "Capture Transaction", "nodeType": "dfdProcess", "processNumber": "1.0" }
+    },
+    {
+      "id": "dfd-txns",
+      "type": "dfdDataStore",
+      "position": { "x": 320, "y": 290 },
+      "data": { "label": "Transactions", "nodeType": "dfdDataStore", "dataStoreId": "D1" }
+    },
+    {
+      "id": "dfd-score",
+      "type": "dfdProcess",
+      "position": { "x": 600, "y": 80 },
+      "data": { "label": "Score Risk", "nodeType": "dfdProcess", "processNumber": "2.0" }
+    },
+    {
+      "id": "dfd-alerts",
+      "type": "dfdDataStore",
+      "position": { "x": 600, "y": 290 },
+      "data": { "label": "Risk Alerts", "nodeType": "dfdDataStore", "dataStoreId": "D2" }
+    },
+    {
+      "id": "dfd-analyst",
+      "type": "dfdExternalEntity",
+      "position": { "x": 860, "y": 170 },
+      "data": { "label": "Fraud Analyst", "nodeType": "dfdExternalEntity" }
+    }
+  ],
+  "initialEdges": [
+    {
+      "id": "e-bug-c2t",
+      "source": "dfd-cardholder",
+      "target": "dfd-txns",
+      "data": { "relationshipType": "data_flow", "label": "Direct Write (Invalid)" }
+    },
+    {
+      "id": "e-bug-t2a",
+      "source": "dfd-txns",
+      "target": "dfd-alerts",
+      "data": { "relationshipType": "data_flow", "label": "Store Copy (Invalid)" }
+    },
+    {
+      "id": "e-bug-c2f",
+      "source": "dfd-cardholder",
+      "target": "dfd-analyst",
+      "data": { "relationshipType": "data_flow", "label": "Direct Alert (Invalid)" }
+    },
+    {
+      "id": "e-ok-analyst",
+      "source": "dfd-score",
+      "target": "dfd-analyst",
+      "data": { "relationshipType": "data_flow" }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Valid two-stage fraud detection pipeline",
+      "edges": [
+        { "source": "dfd-cardholder", "target": "dfd-capture", "type": "data_flow", "description": "Cardholder initiates transaction" },
+        { "source": "dfd-capture", "target": "dfd-txns", "type": "data_flow", "description": "Capture logs raw transaction" },
+        { "source": "dfd-capture", "target": "dfd-score", "type": "data_flow", "description": "Capture streams transaction to Risk Scoring" },
+        { "source": "dfd-txns", "target": "dfd-score", "type": "data_flow", "description": "Score Risk reads historical transactions" },
+        { "source": "dfd-score", "target": "dfd-alerts", "type": "data_flow", "description": "Score Risk stores flagged alerts" },
+        { "source": "dfd-score", "target": "dfd-analyst", "type": "data_flow", "description": "Score Risk notifies Fraud Analyst" }
+      ]
+    }
+  ]
+}
+
