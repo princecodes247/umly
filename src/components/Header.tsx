@@ -18,7 +18,7 @@ export default function Header() {
   const routerState = useRouterState()
 
   const pathname = routerState.location.pathname
-  const isHome = pathname === '/'
+  const isWorkspace = pathname.startsWith('/workspace')
   const isPuzzles = pathname.startsWith('/puzzles')
   const matchPlay = pathname.match(/\/play\/([^/]+)/)
   const currentLevelId = matchPlay ? matchPlay[1] : null
@@ -63,9 +63,9 @@ export default function Header() {
 
             <nav className="flex items-center gap-1" aria-label="Main navigation">
               <Link
-                to="/"
+                to="/workspace"
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] text-xs font-medium transition-colors ${
-                  isHome
+                  isWorkspace
                     ? 'bg-[var(--hover-bg-strong)] text-[var(--text-primary)] font-semibold'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)]'
                 }`}
