@@ -40,7 +40,7 @@ export const Route = createRootRoute({
       <div className="text-4xl">🔍</div>
       <h1 className="text-lg font-bold text-[var(--text-primary)]">Page Not Found</h1>
       <p className="text-xs text-[var(--text-secondary)]">The requested puzzle level could not be found.</p>
-      <a href="/" className="notion-btn notion-btn-primary">Back to Puzzles</a>
+      <a href="/puzzles" className="notion-btn notion-btn-primary">Back to Puzzles</a>
     </div>
   ),
 })

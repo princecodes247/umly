@@ -133,9 +133,9 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
           {/* Global Nav behind Back Arrow */}
           <div ref={navMenuRef} className="relative flex items-center">
             <Link
-              to="/"
+              to="/workspace"
               className="p-1.5 rounded-[5px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] transition-colors flex items-center justify-center shrink-0"
-              title="Return to Home Dashboard"
+              title="Back to Workspace"
             >
               <ArrowLeft className="w-4 h-4" />
             </Link>
@@ -144,7 +144,7 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
               type="button"
               onClick={() => setShowNavMenu((prev) => !prev)}
               className="p-1 rounded-[4px] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] transition-colors shrink-0"
-              title="Open global navigation (Home, Puzzles, Theme)"
+              title="Open global navigation (Workspace, Puzzles, Theme)"
             >
               <ChevronDown
                 className={`w-3 h-3 transition-transform ${showNavMenu ? 'rotate-180' : ''}`}
@@ -157,15 +157,15 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
                   UMLy Navigation
                 </div>
                 <Link
-                  to="/"
+                  to="/workspace"
                   onClick={() => setShowNavMenu(false)}
                   className="flex items-center gap-2.5 px-3 py-2 text-[var(--text-primary)] hover:bg-[var(--hover-bg)] transition-colors cursor-pointer"
                 >
-                  <span className="text-sm">🏠</span>
+                  <span className="text-sm">📐</span>
                   <div className="flex flex-col">
-                    <span className="font-medium">Home Dashboard</span>
+                    <span className="font-medium">Workspace</span>
                     <span className="text-[10px] text-[var(--text-tertiary)]">
-                      Drafts & overview
+                      Drafts &amp; overview
                     </span>
                   </div>
                 </Link>
