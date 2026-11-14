@@ -96,6 +96,7 @@ function DashboardPage() {
     progressByLevel: {},
   })
   const [draftSearch, setDraftSearch] = useState('')
+  const [showAllDrafts, setShowAllDrafts] = useState(false)
   const [templateFilter, setTemplateFilter] = useState<
     'all' | 'use_case' | 'er' | 'class' | 'dfd'
   >('all')
@@ -330,15 +331,26 @@ function DashboardPage() {
           </div>
 
           {drafts.length > 0 && (
-            <div className="relative flex items-center">
-              <Search className="w-3.5 h-3.5 text-[var(--text-tertiary)] absolute left-2.5 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Search diagrams..."
-                value={draftSearch}
-                onChange={(e) => setDraftSearch(e.target.value)}
-                className="pl-8 pr-3 py-1 w-full sm:w-56 text-xs rounded-[4px] border border-[var(--border-subtle)] bg-[var(--bg-primary)] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:border-[var(--border-strong)]"
-              />
+            <div className="flex items-center gap-2">
+              {showAllDrafts && filteredDrafts.length > 5 && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllDrafts(false)}
+                  className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-2 py-1 rounded-[4px] hover:bg-[var(--hover-bg)] transition-colors"
+                >
+                  Show recent 5
+                </button>
+              )}
+              <div className="relative flex items-center">
+                <Search className="w-3.5 h-3.5 text-[var(--text-tertiary)] absolute left-2.5 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Search diagrams..."
+                  value={draftSearch}
+                  onChange={(e) => setDraftSearch(e.target.value)}
+                  className="pl-8 pr-3 py-1 w-full sm:w-56 text-xs rounded-[4px] border border-[var(--border-subtle)] bg-[var(--bg-primary)] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:border-[var(--border-strong)]"
+                />
+              </div>
             </div>
           )}
         </div>
@@ -358,7 +370,8 @@ function DashboardPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {filteredDrafts.map((draft) => {
+            {(showAllDrafts ? filteredDrafts : filteredDrafts.slice(0, 5)).map(
+              (draft) => {
               const meta = getDiagramTypeMeta(draft.type)
               const formattedDate = new Date(draft.updatedAt).toLocaleDateString(
                 undefined,
@@ -427,6 +440,22 @@ function DashboardPage() {
                 </div>
               )
             })}
+
+            {!showAllDrafts && filteredDrafts.length > 5 && (
+              <button
+                type="button"
+                onClick={() => setShowAllDrafts(true)}
+                className="p-3.5 rounded-[6px] border border-dashed border-[var(--border-default)] bg-[var(--bg-secondary)]/40 hover:border-[var(--primary-btn)] hover:bg-[var(--hover-bg)] transition-all flex flex-col items-center justify-center text-center space-y-1.5 min-h-[116px] group cursor-pointer"
+              >
+                <span className="text-xs font-semibold text-[var(--text-primary)] group-hover:text-[var(--primary-btn)] transition-colors flex items-center gap-1">
+                  <span>View all {filteredDrafts.length} diagrams</span>
+                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                </span>
+                <span className="text-[11px] text-[var(--text-tertiary)]">
+                  +{filteredDrafts.length - 5} more saved
+                </span>
+              </button>
+            )}
           </div>
         )}
       </section>
