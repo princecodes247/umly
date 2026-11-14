@@ -13,7 +13,7 @@ import {
   Star,
   Play,
   Search,
-  Sparkles,
+  LayoutTemplate,
 } from 'lucide-react'
 import {
   listDiagramDrafts,
@@ -507,7 +507,7 @@ function DashboardPage() {
                     >
                       {meta.shortLabel}
                     </span>
-                    <Sparkles className="w-3.5 h-3.5 text-[var(--text-tertiary)] group-hover:text-amber-500 transition-colors" />
+                    <LayoutTemplate className="w-3.5 h-3.5 text-[var(--text-tertiary)] group-hover:text-[var(--text-primary)] transition-colors" />
                   </div>
                   <h3 className="font-bold text-sm text-[var(--text-primary)] group-hover:text-[var(--primary-btn)] transition-colors">
                     {tmpl.name}
