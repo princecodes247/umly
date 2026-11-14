@@ -127,23 +127,23 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
 
   return (
     <>
-      <header className="h-11 px-3 bg-[var(--bg-primary)] border-b border-[var(--border-subtle)] flex items-center justify-between gap-2 shrink-0 select-none z-30">
+      <header className="h-14 px-4 bg-[var(--bg-primary)] border-b border-[var(--border-subtle)] flex items-center justify-between gap-2 shrink-0 select-none z-30">
         {/* Left: Back Arrow + Global Nav, Editable Title, Saved Indicator */}
-        <div className="flex items-center gap-1.5 min-w-0">
+        <div className="flex items-center gap-2 min-w-0">
           {/* Global Nav behind Back Arrow */}
-          <div ref={navMenuRef} className="relative flex items-center">
+          <div ref={navMenuRef} className="relative flex items-center rounded-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] p-0.5">
             <Link
               to="/workspace"
-              className="p-1.5 rounded-[5px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] transition-colors flex items-center justify-center shrink-0"
+              className="p-1.5 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-primary)] transition-colors flex items-center justify-center shrink-0"
               title="Back to Workspace"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-3.5 h-3.5" />
             </Link>
 
             <button
               type="button"
               onClick={() => setShowNavMenu((prev) => !prev)}
-              className="p-1 rounded-[4px] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] transition-colors shrink-0"
+              className="p-1 rounded-full text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-primary)] transition-colors shrink-0 cursor-pointer"
               title="Open global navigation (Workspace, Puzzles, Theme)"
             >
               <ChevronDown
@@ -152,7 +152,7 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
             </button>
 
             {showNavMenu && (
-              <div className="absolute left-0 top-full mt-1.5 w-52 rounded-[6px] bg-[var(--bg-primary)] border border-[var(--border-default)] shadow-lg py-1 z-50 text-xs">
+              <div className="absolute left-0 top-full mt-2 w-56 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-default)] shadow-xl py-1.5 z-50 text-xs">
                 <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] font-mono border-b border-[var(--border-subtle)]">
                   UMLy Navigation
                 </div>
@@ -212,7 +212,7 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
             type="button"
             onClick={() => setShowNewModal(true)}
             title="Create a new diagram, choose a template, or open a project file"
-            className="notion-btn flex items-center gap-1.5 py-1 px-2.5 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] shrink-0"
+            className="flex items-center gap-1.5 py-1 px-3 rounded-full text-xs font-medium bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] transition-colors shrink-0 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5 text-[var(--primary-btn)]" />
             <span>New</span>
@@ -235,7 +235,7 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
                 }
               }}
               autoFocus
-              className="px-2 py-0.5 text-xs sm:text-sm font-semibold rounded-[4px] border border-[var(--primary-btn)] bg-[var(--bg-secondary)] text-[var(--text-primary)] focus:outline-none w-44 sm:w-64"
+              className="px-2.5 py-1 text-xs sm:text-sm font-semibold rounded-lg border border-[var(--primary-btn)] bg-[var(--bg-secondary)] text-[var(--text-primary)] focus:outline-none w-44 sm:w-64"
             />
           ) : (
             <button
@@ -245,7 +245,7 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
                 setIsEditingTitle(true)
               }}
               title="Click to rename diagram"
-              className="text-xs sm:text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--hover-bg)] px-2 py-1 rounded-[4px] transition-colors truncate max-w-[140px] sm:max-w-xs md:max-w-sm text-left cursor-pointer"
+              className="text-xs sm:text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--hover-bg)] px-2.5 py-1 rounded-lg transition-colors truncate max-w-[140px] sm:max-w-xs md:max-w-sm text-left cursor-pointer"
             >
               {title}
             </button>
@@ -253,7 +253,7 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
 
           {/* Saved Indicator */}
           <span
-            className="hidden md:inline-flex items-center gap-1 text-[11px] text-[var(--text-tertiary)] shrink-0 ml-0.5"
+            className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-[11px] font-medium text-[var(--text-tertiary)] shrink-0 ml-0.5"
             title="Auto-saved to browser storage"
           >
             <Check className="w-3 h-3 text-[var(--notion-green-text)]" />
@@ -303,7 +303,7 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
 
               {/* Version History Popover */}
               {showHistoryMenu && (
-                <div className="absolute right-0 top-full mt-1.5 z-50 w-76 bg-[var(--bg-primary)] border border-[var(--border-subtle)] rounded-[8px] shadow-xl p-3 space-y-2.5">
+                <div className="absolute right-0 top-full mt-2 z-50 w-76 bg-[var(--bg-primary)] border border-[var(--border-default)] rounded-2xl shadow-xl p-3.5 space-y-2.5">
                   <div className="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)]">
                     <div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--text-primary)]">
                       <History className="w-3.5 h-3.5 text-[var(--primary-btn)]" />
@@ -315,7 +315,7 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
                         onClick={() => {
                           onSaveSnapshot('Manual Checkpoint')
                         }}
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded-[4px] text-[10px] font-medium bg-[var(--primary-btn)] text-white hover:opacity-90 transition-opacity cursor-pointer shadow-xs"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-[var(--primary-btn)] text-white hover:opacity-90 transition-opacity cursor-pointer shadow-xs"
                         title="Create a restore point snapshot"
                       >
                         <Plus className="w-3 h-3" />
@@ -393,15 +393,15 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
                 setShowExportMenu(!showExportMenu)
                 setShowMoreMenu(false)
               }}
-              className="notion-btn py-1 px-2 sm:px-2.5 text-xs flex items-center gap-1.5"
+              className="py-1.5 px-3 sm:px-3.5 rounded-full text-xs font-semibold flex items-center gap-1.5 bg-gray-900 text-white dark:bg-white dark:text-neutral-900 hover:opacity-90 transition-opacity shadow-xs cursor-pointer"
             >
               <Download className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Export</span>
-              <ChevronDown className="w-3 h-3 opacity-60" />
+              <ChevronDown className="w-3 h-3 opacity-70" />
             </button>
 
             {showExportMenu && (
-              <div className="absolute right-0 mt-1.5 w-60 rounded-[6px] bg-[var(--bg-primary)] border border-[var(--border-default)] shadow-lg py-1 z-50 text-xs">
+              <div className="absolute right-0 mt-2 w-64 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-default)] shadow-xl py-1.5 z-50 text-xs">
                 <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] font-mono">
                   Image & Clipboard
                 </div>
@@ -536,14 +536,14 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
                 setShowMoreMenu(!showMoreMenu)
                 setShowExportMenu(false)
               }}
-              className="notion-btn notion-btn-ghost p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              className="p-1.5 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] transition-colors cursor-pointer"
               title="More options (Notation Guide, Clear Canvas)"
             >
               <MoreHorizontal className="w-4 h-4" />
             </button>
 
             {showMoreMenu && (
-              <div className="absolute right-0 mt-1.5 w-60 rounded-[6px] bg-[var(--bg-primary)] border border-[var(--border-default)] shadow-lg py-1 z-50 text-xs">
+              <div className="absolute right-0 mt-2 w-64 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-default)] shadow-xl py-1.5 z-50 text-xs">
                 {/* Import Diagram (.umly.json, .drawio) */}
                 {onImportJson && (
                   <>

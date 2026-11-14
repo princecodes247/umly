@@ -143,7 +143,7 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
 
   return (
     <div
-      className={`group relative flex flex-col items-center justify-center p-2.5 rounded-[6px] transition-colors select-none ${selected
+      className={`group relative flex flex-col items-center justify-center p-2.5 rounded-xl transition-colors select-none ${selected
           ? 'ring-2 ring-[var(--primary-btn)] bg-[var(--selection-bg)] shadow-xs'
           : 'hover:bg-[var(--hover-bg)]'
         }`}
@@ -188,7 +188,7 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
           isVisible={selected && !isLocked && !isEditing}
           position={Position.Top}
           offset={16}
-          className="nodrag nopan flex items-center gap-0.5 bg-[var(--bg-primary)] border border-[var(--border-default)] p-0.5 rounded-[5px] shadow-lg z-[99999] text-xs"
+          className="nodrag nopan flex items-center gap-0.5 bg-[var(--bg-primary)] border border-[var(--border-default)] p-1 rounded-full shadow-lg z-[99999] text-xs"
         >
           <button
             type="button"
@@ -197,7 +197,7 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
               e.stopPropagation()
               setIsEditing(true)
             }}
-            className="p-1 rounded-[3px] hover:bg-[var(--hover-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
+            className="p-1.5 rounded-full hover:bg-[var(--hover-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
           >
             <Pencil className="w-3 h-3" />
           </button>
@@ -205,7 +205,7 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
             type="button"
             title={`Actor Type: ${actorType}. Click to cycle.`}
             onClick={handleCycleType}
-            className="p-1 rounded-[3px] hover:bg-[var(--hover-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
+            className="p-1.5 rounded-full hover:bg-[var(--hover-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
           >
             <ShieldAlert className="w-3 h-3" />
           </button>
@@ -213,7 +213,7 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
             type="button"
             title="Duplicate (Cmd+D)"
             onClick={handleDuplicate}
-            className="p-1 rounded-[3px] hover:bg-[var(--hover-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
+            className="p-1.5 rounded-full hover:bg-[var(--hover-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
           >
             <Copy className="w-3 h-3" />
           </button>
@@ -221,7 +221,7 @@ export const ActorNode = memo(({ id, data, selected }: NodeProps) => {
             type="button"
             title="Delete (Backspace)"
             onClick={handleDelete}
-            className="p-1 rounded-[3px] hover:bg-[var(--notion-red-bg)] text-[var(--text-secondary)] hover:text-[var(--notion-red-text)] cursor-pointer"
+            className="p-1.5 rounded-full hover:bg-[var(--notion-red-bg)] text-[var(--text-secondary)] hover:text-[var(--notion-red-text)] cursor-pointer"
           >
             <Trash2 className="w-3 h-3" />
           </button>

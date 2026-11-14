@@ -149,12 +149,12 @@ function PlayLevelPage() {
   }
 
   const puzzleHeader = (
-    <header className="flex items-center justify-between px-3 py-1.5 mx-1.5 sm:mx-2 mt-1.5 sm:mt-2 bg-[var(--bg-primary)] border border-[var(--border-subtle)] rounded-[6px] shadow-xs shrink-0 select-none">
+    <header className="h-14 flex items-center justify-between px-4 mx-1.5 sm:mx-2 mt-1.5 sm:mt-2 bg-[var(--bg-primary)] border border-[var(--border-subtle)] rounded-2xl shadow-xs shrink-0 select-none">
       {/* Left: Back Link & Level Indicator */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2.5">
         <Link
           to="/puzzles"
-          className="flex items-center gap-1 px-2 py-1 rounded-[4px] text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] transition-colors"
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] transition-colors"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Puzzles</span>
@@ -177,7 +177,7 @@ function PlayLevelPage() {
         <button
           type="button"
           onClick={() => setShowCheatsheet(true)}
-          className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-[4px] text-xs font-medium border border-[var(--border-default)] hover:bg-[var(--hover-bg)] text-[var(--text-secondary)] transition-colors cursor-pointer"
+          className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-[var(--bg-secondary)] border border-[var(--border-subtle)] hover:bg-[var(--hover-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
           title="Open UML Notation Rules"
         >
           <BookOpen className="w-3.5 h-3.5" />
@@ -187,7 +187,7 @@ function PlayLevelPage() {
         <button
           type="button"
           onClick={handleValidate}
-          className="notion-btn notion-btn-primary cursor-pointer"
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-gray-900 text-white dark:bg-white dark:text-neutral-900 hover:opacity-90 transition-opacity shadow-xs cursor-pointer"
         >
           <CheckCircle2 className="w-3.5 h-3.5" />
           <span>Check Diagram</span>

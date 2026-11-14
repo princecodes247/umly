@@ -2855,7 +2855,7 @@ function StudioCanvasInner({ diagramId, puzzle }: StudioCanvasProps) {
           onDoubleClick={onCanvasDoubleClick}
           onDragOver={onDragOver}
           onDrop={onDrop}
-          className="flex-1 h-full min-h-0 relative overflow-hidden bg-[var(--bg-secondary)] rounded-[6px] border border-[var(--border-subtle)]"
+          className="flex-1 h-full min-h-0 relative overflow-hidden bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-subtle)] shadow-xs"
         >
 
           {/* Subtle Action Toast */}

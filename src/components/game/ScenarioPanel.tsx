@@ -45,7 +45,7 @@ export const ScenarioPanel: React.FC<ScenarioPanelProps> = ({
   }
 
   return (
-    <aside className="flex flex-col h-full bg-[var(--bg-primary)] border border-[var(--border-subtle)] rounded-[6px] overflow-hidden text-xs font-sans">
+    <aside className="flex flex-col h-full bg-[var(--bg-primary)] border border-[var(--border-subtle)] rounded-2xl shadow-xs overflow-hidden text-xs font-sans">
       {/* Compact Header */}
       <div className="px-4 py-3 border-b border-[var(--border-subtle)] space-y-2 select-none">
         <div className="flex items-center justify-between gap-2">
@@ -55,11 +55,11 @@ export const ScenarioPanel: React.FC<ScenarioPanelProps> = ({
             </span>
             <span className="text-[var(--text-tertiary)]">·</span>
             <span
-              className={`px-1.5 py-0.5 rounded-[4px] text-[10px] font-medium ${difficultyColor(level.difficulty)}`}
+              className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${difficultyColor(level.difficulty)}`}
             >
               {level.difficulty}
             </span>
-            <span className="px-1.5 py-0.5 rounded-[4px] text-[10px] font-medium bg-[var(--bg-secondary)] text-[var(--text-secondary)] capitalize">
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[var(--bg-secondary)] text-[var(--text-secondary)] capitalize">
               {level.type}
             </span>
           </div>
@@ -68,7 +68,7 @@ export const ScenarioPanel: React.FC<ScenarioPanelProps> = ({
             type="button"
             onClick={onReset}
             title="Reset diagram to initial state"
-            className="flex items-center gap-1 px-1.5 py-0.5 rounded-[4px] text-[11px] text-[var(--text-tertiary)] hover:text-[var(--notion-red-text)] hover:bg-[var(--hover-bg)] transition-colors cursor-pointer shrink-0"
+            className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium text-[var(--text-tertiary)] hover:text-[var(--notion-red-text)] hover:bg-[var(--hover-bg)] transition-colors cursor-pointer shrink-0"
           >
             <RotateCcw className="w-3 h-3" />
             <span>Reset</span>

@@ -126,7 +126,7 @@ export const BoundaryNode = memo(({ id, data, selected }: NodeProps) => {
 
   return (
     <div
-      className={`relative rounded-[8px] border-2 border-dashed transition-colors select-none pointer-events-none ${selected
+      className={`relative rounded-2xl border-2 border-dashed transition-colors select-none pointer-events-none ${selected
         ? 'bg-[var(--hover-bg)]'
         : isHoveredByDrag
           ? 'bg-[var(--selection-bg)]/40 ring-2 ring-[var(--primary-btn)]/35'
@@ -149,7 +149,7 @@ export const BoundaryNode = memo(({ id, data, selected }: NodeProps) => {
           isVisible={selected && !isLocked && !isEditing}
           position={Position.Top}
           offset={16}
-          className="nodrag nopan flex items-center bg-[var(--bg-primary)] border border-[var(--border-default)] p-0.5 rounded-[5px] shadow-lg z-[99999] text-xs pointer-events-auto"
+          className="nodrag nopan flex items-center gap-0.5 bg-[var(--bg-primary)] border border-[var(--border-default)] p-1 rounded-full shadow-lg z-[99999] text-xs pointer-events-auto"
         >
           <button
             type="button"
@@ -158,7 +158,7 @@ export const BoundaryNode = memo(({ id, data, selected }: NodeProps) => {
               e.stopPropagation()
               setIsEditing(true)
             }}
-            className="p-1 rounded-[3px] hover:bg-[var(--hover-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
+            className="p-1.5 rounded-full hover:bg-[var(--hover-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
           >
             <Pencil className="w-3 h-3" />
           </button>
@@ -166,7 +166,7 @@ export const BoundaryNode = memo(({ id, data, selected }: NodeProps) => {
             type="button"
             title="Delete boundary (Backspace)"
             onClick={handleDelete}
-            className="p-1 rounded-[3px] hover:bg-[var(--notion-red-bg)] text-[var(--text-secondary)] hover:text-[var(--notion-red-text)] cursor-pointer"
+            className="p-1.5 rounded-full hover:bg-[var(--notion-red-bg)] text-[var(--text-secondary)] hover:text-[var(--notion-red-text)] cursor-pointer"
           >
             <Trash2 className="w-3 h-3" />
           </button>

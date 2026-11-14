@@ -119,7 +119,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
         type="button"
         onClick={onToggleOpen}
         title="Open Properties Inspector"
-        className="absolute top-3 right-3 z-30 p-2 bg-[var(--bg-primary)] border border-[var(--border-default)] rounded-[6px] shadow-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+        className="absolute top-3 right-3 z-30 p-2 bg-[var(--bg-primary)] border border-[var(--border-default)] rounded-full shadow-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
       >
         <ChevronLeft className="w-4 h-4" />
       </button>
@@ -208,9 +208,9 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
   const edgeData = activeEdge?.data as unknown as UmlEdgeData | undefined
 
   return (
-    <aside className="w-76 shrink-0 h-full flex flex-col bg-[var(--bg-primary)] border-l border-[var(--border-subtle)] overflow-y-auto text-xs font-sans select-none z-20">
+    <aside className="w-76 shrink-0 h-full flex flex-col bg-[var(--bg-primary)] border border-[var(--border-subtle)] rounded-2xl shadow-xs overflow-hidden text-xs font-sans select-none z-20">
       {/* Header */}
-      <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-[var(--border-subtle)] shrink-0">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-subtle)] shrink-0">
         <span className="font-semibold text-xs text-[var(--text-primary)]">
           {isMultiSelection
             ? `${selectedNodes.length} Selected`
@@ -223,7 +223,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
         <button
           type="button"
           onClick={onToggleOpen}
-          className="p-1 rounded-[3px] hover:bg-[var(--hover-bg)] text-[var(--text-secondary)] cursor-pointer"
+          className="p-1.5 rounded-full hover:bg-[var(--hover-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
           title="Collapse Inspector"
         >
           <ChevronRight className="w-3.5 h-3.5" />
@@ -234,7 +234,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
         {/* CASE 0: MULTIPLE ELEMENTS SELECTED */}
         {isMultiSelection ? (
           <div className="space-y-4">
-            <div className="p-3 rounded-[6px] bg-[var(--selection-bg)] border border-[var(--primary-btn)]/30 space-y-1.5">
+            <div className="p-3 rounded-xl bg-[var(--selection-bg)] border border-[var(--primary-btn)]/30 space-y-1.5">
               <div className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-[var(--primary-btn)]" />
                 <span className="font-semibold text-xs text-[var(--primary-btn)]">
