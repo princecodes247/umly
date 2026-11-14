@@ -12,16 +12,23 @@ function PaintSlooshesAndNodes() {
       aria-hidden="true"
       className="pointer-events-none select-none absolute inset-0 overflow-hidden z-0"
     >
-      {/* Top-Left Yellow Paint Sloosh */}
+      {/* Top-Left Yellow Paint Sloosh (wide, variable-width feel) */}
       <svg
-        viewBox="0 0 340 260"
+        viewBox="0 0 380 300"
         fill="none"
-        className="absolute -top-10 -left-12 w-52 sm:w-72 md:w-80 opacity-90"
+        className="absolute -top-12 -left-14 w-64 sm:w-84 md:w-96 opacity-95"
       >
         <path
-          d="M28 18 C 70 -8, 92 78, 52 108 C 12 138, 128 38, 165 62 C 202 86, 84 162, 122 192 C 160 222, 238 92, 276 122 C 304 144, 232 204, 212 224"
+          d="M18 22 C 66 -10, 96 86, 54 118 C 12 150, 138 42, 182 70 C 226 98, 92 184, 134 218 C 176 252, 266 106, 308 138 C 338 162, 258 232, 232 256"
           stroke="#F7C948"
-          strokeWidth="44"
+          strokeWidth="68"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M54 118 C 12 150, 138 42, 182 70 C 226 98, 92 184, 134 218"
+          stroke="#F7C948"
+          strokeWidth="84"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
@@ -29,14 +36,21 @@ function PaintSlooshesAndNodes() {
 
       {/* Top-Right Coral Paint Sloosh */}
       <svg
-        viewBox="0 0 320 280"
+        viewBox="0 0 360 320"
         fill="none"
-        className="absolute top-12 -right-12 w-48 sm:w-64 md:w-76 opacity-90"
+        className="absolute top-8 -right-14 w-60 sm:w-80 md:w-92 opacity-95"
       >
         <path
-          d="M285 28 C 235 42, 265 135, 222 146 C 179 157, 218 52, 170 64 C 122 76, 166 198, 118 214 C 70 230, 108 118, 60 138 C 32 150, 44 218, 46 244"
+          d="M320 26 C 262 44, 296 152, 246 164 C 196 176, 242 54, 186 70 C 130 86, 182 224, 126 244 C 70 264, 114 134, 58 158 C 28 172, 42 248, 46 280"
           stroke="#FF7849"
-          strokeWidth="42"
+          strokeWidth="58"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M246 164 C 196 176, 242 54, 186 70 C 130 86, 182 224, 126 244"
+          stroke="#FF7849"
+          strokeWidth="76"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
@@ -44,14 +58,21 @@ function PaintSlooshesAndNodes() {
 
       {/* Bottom-Left Emerald Paint Sloosh */}
       <svg
-        viewBox="0 0 360 280"
+        viewBox="0 0 400 320"
         fill="none"
-        className="absolute top-[410px] sm:top-[440px] -left-10 w-56 sm:w-72 md:w-88 opacity-90"
+        className="absolute top-[390px] sm:top-[420px] -left-14 w-64 sm:w-84 md:w-96 opacity-95"
       >
         <path
-          d="M22 252 C 56 200, 122 238, 140 190 C 158 142, 82 148, 108 100 C 134 52, 206 138, 236 96 C 266 54, 218 24, 260 28"
+          d="M18 286 C 58 226, 134 268, 156 212 C 178 156, 90 162, 120 108 C 150 54, 232 152, 268 102 C 304 52, 248 20, 296 26"
           stroke="#06B67D"
-          strokeWidth="44"
+          strokeWidth="74"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M156 212 C 178 156, 90 162, 120 108"
+          stroke="#06B67D"
+          strokeWidth="52"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
@@ -59,14 +80,21 @@ function PaintSlooshesAndNodes() {
 
       {/* Bottom-Right Purple Paint Sloosh */}
       <svg
-        viewBox="0 0 320 260"
+        viewBox="0 0 360 300"
         fill="none"
-        className="absolute top-[430px] sm:top-[460px] -right-12 w-52 sm:w-64 md:w-80 opacity-85"
+        className="absolute top-[415px] sm:top-[445px] -right-14 w-60 sm:w-80 md:w-92 opacity-90"
       >
         <path
-          d="M292 228 C 242 216, 264 134, 216 142 C 168 150, 202 222, 152 206 C 102 190, 146 92, 96 86 C 58 82, 68 148, 42 166"
+          d="M326 260 C 268 246, 294 150, 238 160 C 182 170, 222 252, 164 234 C 106 216, 158 102, 100 94 C 56 88, 68 166, 38 188"
           stroke="#7C6CF0"
-          strokeWidth="42"
+          strokeWidth="62"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M238 160 C 182 170, 222 252, 164 234"
+          stroke="#7C6CF0"
+          strokeWidth="82"
           strokeLinecap="round"
           strokeLinejoin="round"
         />

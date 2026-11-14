@@ -46,7 +46,7 @@ export function ConfirmDialog({
       aria-labelledby="confirm-dialog-title"
     >
       <div
-        className="w-full max-w-sm bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-lg shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+        className="w-full max-w-sm bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-5 flex items-start gap-3.5">
@@ -83,21 +83,21 @@ export function ConfirmDialog({
           </div>
         </div>
 
-        <div className="px-5 py-3 bg-[var(--bg-secondary)]/60 border-t border-[var(--border-subtle)] flex items-center justify-end gap-2">
+        <div className="px-5 py-3.5 bg-[var(--bg-secondary)]/60 border-t border-[var(--border-subtle)] flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={onCancel}
-            className="px-3 py-1.5 rounded-[4px] text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] border border-[var(--border-subtle)] bg-[var(--bg-primary)] transition-colors"
+            className="px-4 py-1.5 rounded-full text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] border border-[var(--border-subtle)] bg-[var(--bg-primary)] transition-colors"
           >
             {cancelLabel}
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className={`px-3 py-1.5 rounded-[4px] text-xs font-medium text-white transition-colors ${
+            className={`px-4 py-1.5 rounded-full text-xs font-semibold text-white transition-colors ${
               isDanger
                 ? 'bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-500'
-                : 'bg-[var(--primary-btn)] hover:bg-[var(--primary-btn-hover)]'
+                : 'bg-gray-900 hover:opacity-90 dark:bg-white dark:text-neutral-900'
             }`}
           >
             {confirmLabel}

@@ -23,12 +23,28 @@ import type { LevelDefinition, LevelType, PuzzleDiagramType } from '../types/gam
 
 const DIAGRAM_TYPE_META: Record<
   PuzzleDiagramType,
-  { label: string; tagClass: string }
+  { label: string; pillClass: string }
 > = {
-  use_case: { label: 'Use Case', tagClass: 'notion-tag-blue' },
-  er: { label: 'ER Diagram', tagClass: 'notion-tag-green' },
-  class: { label: 'Class Diagram', tagClass: 'notion-tag-purple' },
-  dfd: { label: 'Data Flow', tagClass: 'notion-tag-orange' },
+  use_case: {
+    label: 'Use Case',
+    pillClass:
+      'bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300',
+  },
+  er: {
+    label: 'ER Diagram',
+    pillClass:
+      'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300',
+  },
+  class: {
+    label: 'Class Diagram',
+    pillClass:
+      'bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300',
+  },
+  dfd: {
+    label: 'Data Flow',
+    pillClass:
+      'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300',
+  },
 }
 
 export const Route = createFileRoute('/puzzles')({
@@ -115,18 +131,18 @@ function PuzzlesPage() {
     LEVEL_SUMMARIES.find((l) => !stats.progressByLevel[l.id]?.completed) ||
     LEVEL_SUMMARIES[0]
 
-  const difficultyTagClass = (diff: string) => {
+  const difficultyPillClass = (diff: string) => {
     switch (diff) {
       case 'Beginner':
-        return 'notion-tag-green'
+        return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300'
       case 'Easy':
-        return 'notion-tag-blue'
+        return 'bg-sky-50 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300'
       case 'Intermediate':
-        return 'notion-tag-orange'
+        return 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300'
       case 'Advanced':
-        return 'notion-tag-purple'
+        return 'bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300'
       default:
-        return 'notion-tag-gray'
+        return 'bg-[var(--bg-secondary)] text-[var(--text-secondary)]'
     }
   }
 
@@ -144,14 +160,14 @@ function PuzzlesPage() {
   }
 
   return (
-    <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-8 py-6 sm:py-8 space-y-6">
-      {/* Compact Page Header */}
-      <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-[var(--border-subtle)]">
+    <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-8 py-8 sm:py-10 space-y-8">
+      {/* Page Header */}
+      <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
             Interactive Puzzles
           </h1>
-          <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+          <p className="text-sm text-[var(--text-secondary)] mt-1">
             Practice Use Case, ER, Class, and Data Flow modeling with instant validation.
           </p>
         </div>
@@ -161,7 +177,7 @@ function PuzzlesPage() {
             <button
               type="button"
               onClick={handleReset}
-              className="notion-btn notion-btn-ghost py-1.5 px-2.5 text-xs text-red-600 dark:text-red-400"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-[var(--border-subtle)] text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Reset</span>
@@ -172,7 +188,7 @@ function PuzzlesPage() {
             <Link
               to="/play/$levelId"
               params={{ levelId: nextUnsolvedLevel.id }}
-              className="notion-btn notion-btn-primary py-1.5 px-3 text-xs font-semibold"
+              className="inline-flex items-center gap-2 rounded-full bg-gray-900 text-white dark:bg-white dark:text-neutral-900 hover:opacity-90 font-semibold text-xs sm:text-sm px-5 py-2.5 transition shadow-xs"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
               <span>
@@ -185,14 +201,14 @@ function PuzzlesPage() {
         </div>
       </header>
 
-      {/* Compact Stats Strip */}
-      <section className="grid grid-cols-3 gap-3">
-        <div className="p-3 rounded-[6px] border border-[var(--border-subtle)] bg-[var(--bg-primary)]">
-          <span className="text-[11px] text-[var(--text-tertiary)] font-medium">
+      {/* Stats Strip */}
+      <section className="grid grid-cols-3 gap-3.5">
+        <div className="p-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-primary)]">
+          <span className="text-xs text-[var(--text-tertiary)] font-medium">
             Solved
           </span>
           <div className="mt-1 flex items-baseline gap-1.5">
-            <span className="text-lg font-bold font-mono text-[var(--text-primary)]">
+            <span className="text-2xl font-extrabold font-mono text-[var(--text-primary)]">
               {stats.completedLevels}
             </span>
             <span className="text-xs font-mono text-[var(--text-tertiary)]">
@@ -201,13 +217,13 @@ function PuzzlesPage() {
           </div>
         </div>
 
-        <div className="p-3 rounded-[6px] border border-[var(--border-subtle)] bg-[var(--bg-primary)]">
-          <span className="text-[11px] text-[var(--text-tertiary)] font-medium">
+        <div className="p-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-primary)]">
+          <span className="text-xs text-[var(--text-tertiary)] font-medium">
             Stars Earned
           </span>
           <div className="mt-1 flex items-center gap-1.5">
-            <Star className="w-4 h-4 fill-[#cb912f] dark:fill-[#dcb14b] text-[#cb912f] dark:text-[#dcb14b]" />
-            <span className="text-lg font-bold font-mono text-[var(--text-primary)]">
+            <Star className="w-4 h-4 fill-amber-400 text-amber-500" />
+            <span className="text-2xl font-extrabold font-mono text-[var(--text-primary)]">
               {stats.totalStars}
             </span>
             <span className="text-xs font-mono text-[var(--text-tertiary)]">
@@ -216,18 +232,18 @@ function PuzzlesPage() {
           </div>
         </div>
 
-        <div className="p-3 rounded-[6px] border border-[var(--border-subtle)] bg-[var(--bg-primary)] flex flex-col justify-between">
-          <div className="flex items-center justify-between text-[11px]">
+        <div className="p-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] flex flex-col justify-between">
+          <div className="flex items-center justify-between text-xs">
             <span className="text-[var(--text-tertiary)] font-medium">
               Completion
             </span>
-            <span className="font-mono font-semibold text-[var(--text-primary)]">
+            <span className="font-mono font-bold text-[var(--text-primary)]">
               {progressPercent}%
             </span>
           </div>
-          <div className="w-full h-1.5 rounded-full bg-[var(--bg-tertiary)] overflow-hidden mt-2">
+          <div className="w-full h-2 rounded-full bg-[var(--bg-tertiary)] overflow-hidden mt-3">
             <div
-              className="h-full bg-[var(--primary-btn)] rounded-full transition-all duration-300"
+              className="h-full bg-gray-900 dark:bg-white rounded-full transition-all duration-300"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
@@ -235,10 +251,9 @@ function PuzzlesPage() {
       </section>
 
       {/* Filter Toolbar */}
-      <section className="space-y-3">
-        {/* Top Filter Row: Diagram Type Tabs + View Toggle */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--border-subtle)] pb-2.5">
-          <div className="flex flex-wrap items-center gap-1">
+      <section className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-1.5">
             {(
               [
                 { id: 'all', label: 'All Diagrams' },
@@ -252,17 +267,17 @@ function PuzzlesPage() {
                 key={d.id}
                 type="button"
                 onClick={() => setSelectedDiagramType(d.id)}
-                className={`px-2.5 py-1 rounded-[4px] text-xs font-medium transition-colors flex items-center gap-1.5 ${
+                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${
                   selectedDiagramType === d.id
-                    ? 'bg-[var(--primary-btn)] text-white'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)]'
+                    ? 'bg-gray-900 text-white dark:bg-white dark:text-neutral-900 shadow-xs'
+                    : 'bg-[var(--bg-secondary)]/60 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)]'
                 }`}
               >
                 <span>{d.label}</span>
                 <span
                   className={`font-mono text-[10px] ${
                     selectedDiagramType === d.id
-                      ? 'text-white/80'
+                      ? 'opacity-75'
                       : 'text-[var(--text-tertiary)]'
                   }`}
                 >
@@ -272,11 +287,11 @@ function PuzzlesPage() {
             ))}
           </div>
 
-          <div className="flex items-center gap-1 self-start sm:self-auto bg-[var(--bg-secondary)] p-0.5 rounded-[5px] border border-[var(--border-subtle)]">
+          <div className="flex items-center gap-1 self-start sm:self-auto bg-[var(--bg-secondary)] p-1 rounded-full border border-[var(--border-subtle)]">
             <button
               type="button"
               onClick={() => setViewMode('gallery')}
-              className={`flex items-center gap-1 px-2 py-1 rounded-[4px] text-xs font-medium transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
                 viewMode === 'gallery'
                   ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-xs'
                   : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
@@ -289,7 +304,7 @@ function PuzzlesPage() {
             <button
               type="button"
               onClick={() => setViewMode('table')}
-              className={`flex items-center gap-1 px-2 py-1 rounded-[4px] text-xs font-medium transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
                 viewMode === 'table'
                   ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-xs'
                   : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
@@ -301,10 +316,9 @@ function PuzzlesPage() {
           </div>
         </div>
 
-        {/* Secondary Filter Row: Difficulty + Challenge Type + Search */}
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        {/* Secondary Filter Row */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5">
           <div className="flex flex-wrap items-center gap-2">
-            {/* Difficulty Pills */}
             <div className="flex flex-wrap items-center gap-1">
               {(
                 ['all', 'Beginner', 'Easy', 'Intermediate', 'Advanced'] as const
@@ -313,9 +327,9 @@ function PuzzlesPage() {
                   key={diff}
                   type="button"
                   onClick={() => setSelectedDifficulty(diff)}
-                  className={`px-2 py-0.5 rounded-[4px] text-xs transition-colors ${
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
                     selectedDifficulty === diff
-                      ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] font-medium'
+                      ? 'bg-[var(--text-primary)] text-[var(--bg-primary)]'
                       : 'text-[var(--text-secondary)] hover:bg-[var(--hover-bg)]'
                   }`}
                 >
@@ -326,14 +340,13 @@ function PuzzlesPage() {
 
             <div className="h-4 w-px bg-[var(--border-subtle)] hidden sm:block" />
 
-            {/* Challenge Type Select */}
             <select
               aria-label="Filter by challenge type"
               value={selectedFilter}
               onChange={(e) =>
                 setSelectedFilter(e.target.value as 'all' | LevelType)
               }
-              className="px-2 py-1 text-xs rounded-[4px] border border-[var(--border-subtle)] bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-strong)]"
+              className="px-3 py-1 text-xs rounded-full border border-[var(--border-subtle)] bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-strong)]"
             >
               <option value="all">All Types</option>
               <option value="build">Build</option>
@@ -342,38 +355,35 @@ function PuzzlesPage() {
             </select>
           </div>
 
-          {/* Search Input */}
           <div className="relative flex items-center w-full sm:w-auto">
-            <Search className="w-3.5 h-3.5 text-[var(--text-tertiary)] absolute left-2.5 pointer-events-none" />
+            <Search className="w-3.5 h-3.5 text-[var(--text-tertiary)] absolute left-3 pointer-events-none" />
             <input
               type="text"
               placeholder="Search puzzles..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 pr-3 py-1 w-full sm:w-56 text-xs rounded-[4px] border border-[var(--border-subtle)] bg-[var(--bg-primary)] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:border-[var(--border-strong)]"
+              className="pl-9 pr-4 py-1.5 w-full sm:w-56 text-xs rounded-full border border-[var(--border-subtle)] bg-[var(--bg-primary)] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:border-[var(--border-strong)]"
             />
           </div>
         </div>
 
-        {/* Empty Filter State */}
         {filteredLevels.length === 0 ? (
-          <div className="p-10 rounded-[6px] border border-dashed border-[var(--border-default)] text-center space-y-2">
-            <p className="text-xs font-medium text-[var(--text-primary)]">
+          <div className="p-10 rounded-2xl border border-dashed border-[var(--border-default)] text-center space-y-2">
+            <p className="text-sm font-semibold text-[var(--text-primary)]">
               No puzzles match your current filters.
             </p>
             {hasActiveFilters && (
               <button
                 type="button"
                 onClick={clearFilters}
-                className="text-xs text-[var(--primary-btn)] hover:underline font-medium"
+                className="text-xs text-[var(--primary-btn)] hover:underline font-semibold"
               >
                 Clear all filters
               </button>
             )}
           </div>
         ) : viewMode === 'gallery' ? (
-          /* Cards View */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
             {filteredLevels.map((lvl) => {
               const progress = stats.progressByLevel[lvl.id]
               const isCompleted = progress?.completed
@@ -385,32 +395,30 @@ function PuzzlesPage() {
                   key={lvl.id}
                   to="/play/$levelId"
                   params={{ levelId: lvl.id }}
-                  className="p-4 rounded-[6px] border border-[var(--border-subtle)] bg-[var(--bg-primary)] hover:border-[var(--border-strong)] hover:shadow-sm transition-all flex flex-col justify-between group"
+                  className="p-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] hover:border-[var(--border-strong)] hover:shadow-sm transition-all flex flex-col justify-between group"
                 >
-                  <div className="space-y-2.5">
-                    {/* Top Meta Row */}
+                  <div className="space-y-3">
                     <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-mono text-xs font-semibold text-[var(--text-tertiary)]">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs font-bold text-[var(--text-tertiary)]">
                           #{lvl.number}
                         </span>
                         <span
-                          className={`notion-tag ${dtMeta.tagClass} text-[10px]`}
+                          className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${dtMeta.pillClass}`}
                         >
                           {dtMeta.label}
                         </span>
                       </div>
 
                       {isCompleted ? (
-                        <CheckCircle2 className="w-4 h-4 text-[#448361] dark:text-[#529e72] shrink-0" />
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                       ) : (
-                        <Circle className="w-3.5 h-3.5 text-[var(--text-tertiary)] shrink-0" />
+                        <Circle className="w-4 h-4 text-[var(--text-tertiary)] shrink-0" />
                       )}
                     </div>
 
-                    {/* Title & Scenario */}
                     <div className="space-y-1">
-                      <h2 className="font-semibold text-sm text-[var(--text-primary)] group-hover:text-[var(--primary-btn)] transition-colors leading-snug">
+                      <h2 className="font-bold text-sm text-[var(--text-primary)] group-hover:text-[var(--primary-btn)] transition-colors leading-snug">
                         {lvl.title}
                       </h2>
                       <p className="text-xs text-[var(--text-secondary)] line-clamp-2 leading-relaxed">
@@ -419,17 +427,16 @@ function PuzzlesPage() {
                     </div>
                   </div>
 
-                  {/* Footer */}
                   <div className="pt-3 mt-4 border-t border-[var(--border-subtle)] flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5">
                       <span
-                        className={`notion-tag ${difficultyTagClass(
+                        className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${difficultyPillClass(
                           lvl.difficulty
-                        )} text-[10px]`}
+                        )}`}
                       >
                         {lvl.difficulty}
                       </span>
-                      <span className="notion-tag notion-tag-gray capitalize text-[10px]">
+                      <span className="px-2.5 py-0.5 rounded-full bg-[var(--bg-secondary)] text-[var(--text-secondary)] capitalize text-[11px] font-medium">
                         {lvl.type}
                       </span>
                     </div>
@@ -439,15 +446,15 @@ function PuzzlesPage() {
                         {[1, 2, 3].map((starIdx) => (
                           <Star
                             key={starIdx}
-                            className={`w-3 h-3 ${
+                            className={`w-3.5 h-3.5 ${
                               starIdx <= stars
-                                ? 'fill-[#cb912f] dark:fill-[#dcb14b] text-[#cb912f] dark:text-[#dcb14b]'
+                                ? 'fill-amber-400 text-amber-500'
                                 : 'text-[var(--border-strong)]'
                             }`}
                           />
                         ))}
                       </div>
-                      <ArrowUpRight className="w-3.5 h-3.5 text-[var(--text-tertiary)] group-hover:text-[var(--primary-btn)] transition-colors" />
+                      <ArrowUpRight className="w-4 h-4 text-[var(--text-tertiary)] group-hover:text-[var(--text-primary)] transition-colors" />
                     </div>
                   </div>
                 </Link>
@@ -455,19 +462,18 @@ function PuzzlesPage() {
             })}
           </div>
         ) : (
-          /* Table View */
-          <div className="border border-[var(--border-subtle)] rounded-[6px] overflow-x-auto bg-[var(--bg-primary)]">
+          <div className="border border-[var(--border-subtle)] rounded-2xl overflow-x-auto bg-[var(--bg-primary)]">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-[var(--border-subtle)] bg-[var(--bg-secondary)] text-[var(--text-secondary)]">
-                  <th className="py-2.5 px-3 font-medium w-12">#</th>
-                  <th className="py-2.5 px-3 font-medium">Puzzle</th>
-                  <th className="py-2.5 px-3 font-medium">Diagram</th>
-                  <th className="py-2.5 px-3 font-medium">Difficulty</th>
-                  <th className="py-2.5 px-3 font-medium">Type</th>
-                  <th className="py-2.5 px-3 font-medium">Stars</th>
-                  <th className="py-2.5 px-3 font-medium">Status</th>
-                  <th className="py-2.5 px-3 font-medium text-right">Action</th>
+                <tr className="border-b border-[var(--border-subtle)] bg-[var(--bg-secondary)]/60 text-[var(--text-secondary)]">
+                  <th className="py-3 px-4 font-semibold w-12">#</th>
+                  <th className="py-3 px-4 font-semibold">Puzzle</th>
+                  <th className="py-3 px-4 font-semibold">Diagram</th>
+                  <th className="py-3 px-4 font-semibold">Difficulty</th>
+                  <th className="py-3 px-4 font-semibold">Type</th>
+                  <th className="py-3 px-4 font-semibold">Stars</th>
+                  <th className="py-3 px-4 font-semibold">Status</th>
+                  <th className="py-3 px-4 font-semibold text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border-subtle)]">
@@ -482,10 +488,10 @@ function PuzzlesPage() {
                       key={lvl.id}
                       className="hover:bg-[var(--hover-bg)] transition-colors group"
                     >
-                      <td className="py-2.5 px-3 font-mono text-[var(--text-secondary)]">
+                      <td className="py-3 px-4 font-mono text-[var(--text-secondary)]">
                         #{lvl.number}
                       </td>
-                      <td className="py-2.5 px-3 font-medium text-[var(--text-primary)]">
+                      <td className="py-3 px-4 font-semibold text-[var(--text-primary)]">
                         <Link
                           to="/play/$levelId"
                           params={{ levelId: lvl.id }}
@@ -494,42 +500,44 @@ function PuzzlesPage() {
                           {lvl.title}
                         </Link>
                       </td>
-                      <td className="py-2.5 px-3">
-                        <span className={`notion-tag ${dtMeta.tagClass}`}>
+                      <td className="py-3 px-4">
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${dtMeta.pillClass}`}
+                        >
                           {dtMeta.label}
                         </span>
                       </td>
-                      <td className="py-2.5 px-3">
+                      <td className="py-3 px-4">
                         <span
-                          className={`notion-tag ${difficultyTagClass(
+                          className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${difficultyPillClass(
                             lvl.difficulty
                           )}`}
                         >
                           {lvl.difficulty}
                         </span>
                       </td>
-                      <td className="py-2.5 px-3">
-                        <span className="notion-tag notion-tag-gray capitalize">
+                      <td className="py-3 px-4">
+                        <span className="px-2.5 py-0.5 rounded-full bg-[var(--bg-secondary)] text-[var(--text-secondary)] capitalize text-[11px] font-medium">
                           {lvl.type}
                         </span>
                       </td>
-                      <td className="py-2.5 px-3">
+                      <td className="py-3 px-4">
                         <div className="flex items-center gap-0.5">
                           {[1, 2, 3].map((starIdx) => (
                             <Star
                               key={starIdx}
-                              className={`w-3 h-3 ${
+                              className={`w-3.5 h-3.5 ${
                                 starIdx <= stars
-                                  ? 'fill-[#cb912f] dark:fill-[#dcb14b] text-[#cb912f] dark:text-[#dcb14b]'
+                                  ? 'fill-amber-400 text-amber-500'
                                   : 'text-[var(--border-strong)]'
                               }`}
                             />
                           ))}
                         </div>
                       </td>
-                      <td className="py-2.5 px-3">
+                      <td className="py-3 px-4">
                         {isCompleted ? (
-                          <span className="inline-flex items-center gap-1 text-[#448361] dark:text-[#529e72] font-medium">
+                          <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
                             <CheckCircle2 className="w-3.5 h-3.5" />
                             <span>Solved</span>
                           </span>
@@ -539,14 +547,14 @@ function PuzzlesPage() {
                           </span>
                         )}
                       </td>
-                      <td className="py-2.5 px-3 text-right">
+                      <td className="py-3 px-4 text-right">
                         <Link
                           to="/play/$levelId"
                           params={{ levelId: lvl.id }}
-                          className="inline-flex items-center gap-1 text-[var(--primary-btn)] hover:underline font-medium"
+                          className="inline-flex items-center gap-1 text-[var(--primary-btn)] hover:underline font-semibold"
                         >
                           <span>{isCompleted ? 'Review' : 'Solve'}</span>
-                          <ArrowUpRight className="w-3 h-3" />
+                          <ArrowUpRight className="w-3.5 h-3.5" />
                         </Link>
                       </td>
                     </tr>
