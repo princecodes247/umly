@@ -167,7 +167,7 @@ export const StudioBottomDock: React.FC<StudioBottomDockProps> = ({
       initial={{ y: 20, opacity: 0, scale: 0.96 }}
       animate={{ y: 0, opacity: 1, scale: 1 }}
       transition={{ type: 'spring', stiffness: 450, damping: 30 }}
-      className="studio-bottom-dock absolute bottom-4 left-1/2 -translate-x-1/2 z-30 select-none flex items-center gap-1 p-1 rounded-[10px] bg-[var(--bg-primary)]/95 backdrop-blur-md border border-[var(--border-default)] shadow-xl text-xs font-sans whitespace-nowrap"
+      className="studio-bottom-dock absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-30 select-none flex items-center gap-0.5 sm:gap-1 p-1 max-w-[calc(100vw-1.5rem)] overflow-x-auto no-scrollbar rounded-2xl bg-[var(--bg-primary)]/95 backdrop-blur-md border border-[var(--border-default)] shadow-xl text-xs font-sans whitespace-nowrap"
     >
       {/* Click to auto-drop onto canvas, or drag directly to any spot */}
       <div className="flex items-center gap-0.5">
@@ -183,11 +183,11 @@ export const StudioBottomDock: React.FC<StudioBottomDockProps> = ({
               onAddNode(item.id)
             }}
             title={`${item.label} (${item.shortcut}) — Click to drop on canvas, or drag to position`}
-            className="group relative flex items-center gap-1.5 h-8 px-2.5 rounded-[7px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] active:scale-95 transition-all cursor-grab active:cursor-grabbing"
+            className="group relative flex items-center gap-1.5 h-8 px-2 sm:px-2.5 rounded-xl font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] active:scale-95 transition-all cursor-grab active:cursor-grabbing shrink-0"
           >
             {item.icon}
-            <span className="text-xs font-medium">{item.label}</span>
-            <kbd className="text-[9px] font-mono px-1 py-0 rounded bg-[var(--bg-secondary)] text-[var(--text-tertiary)] border border-[var(--border-subtle)] group-hover:border-[var(--border-default)]">
+            <span className="text-[11px] sm:text-xs font-medium">{item.label}</span>
+            <kbd className="hidden sm:inline-block text-[9px] font-mono px-1 py-0 rounded bg-[var(--bg-secondary)] text-[var(--text-tertiary)] border border-[var(--border-subtle)] group-hover:border-[var(--border-default)]">
               {item.shortcut}
             </kbd>
           </button>
@@ -201,7 +201,7 @@ export const StudioBottomDock: React.FC<StudioBottomDockProps> = ({
         type="button"
         onClick={onTidyLayout}
         title="Tidy Up Layout — Auto-arrange actors, use cases, and system boundary"
-        className="flex items-center gap-1.5 h-8 px-2.5 rounded-[7px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] active:scale-95 font-medium transition-all cursor-pointer"
+        className="flex items-center gap-1.5 h-8 px-2 sm:px-2.5 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] active:scale-95 font-medium transition-all cursor-pointer shrink-0"
       >
         <Wand2 className="w-3.5 h-3.5 text-[var(--primary-btn)]" />
         <span className="hidden sm:inline">Tidy</span>
@@ -212,10 +212,10 @@ export const StudioBottomDock: React.FC<StudioBottomDockProps> = ({
         type="button"
         onClick={onOpenCommandPalette}
         title="Command Palette (Cmd+K)"
-        className="flex items-center gap-1 h-8 px-2 rounded-[7px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] active:scale-95 font-medium transition-all cursor-pointer"
+        className="flex items-center gap-1 h-8 px-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] active:scale-95 font-medium transition-all cursor-pointer shrink-0"
       >
         <Command className="w-3.5 h-3.5" />
-        <kbd className="text-[9px] font-mono px-1 py-0 rounded bg-[var(--bg-secondary)] text-[var(--text-tertiary)] border border-[var(--border-subtle)]">
+        <kbd className="hidden sm:inline-block text-[9px] font-mono px-1 py-0 rounded bg-[var(--bg-secondary)] text-[var(--text-tertiary)] border border-[var(--border-subtle)]">
           ⌘K
         </kbd>
       </button>
@@ -225,7 +225,7 @@ export const StudioBottomDock: React.FC<StudioBottomDockProps> = ({
         type="button"
         onClick={onOpenShortcuts}
         title="Keyboard Shortcuts (?)"
-        className="w-8 h-8 flex items-center justify-center rounded-[7px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] active:scale-95 transition-all cursor-pointer"
+        className="w-8 h-8 flex items-center justify-center rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] active:scale-95 transition-all cursor-pointer shrink-0"
       >
         <HelpCircle className="w-3.5 h-3.5" />
       </button>

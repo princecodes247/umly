@@ -119,7 +119,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
         type="button"
         onClick={onToggleOpen}
         title="Open Properties Inspector"
-        className="absolute top-3 right-3 z-30 p-2 bg-[var(--bg-primary)] border border-[var(--border-default)] rounded-full shadow-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+        className="absolute top-3 right-3 z-20 p-2 bg-[var(--bg-primary)] border border-[var(--border-default)] rounded-full shadow-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
       >
         <ChevronLeft className="w-4 h-4" />
       </button>
@@ -208,7 +208,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
   const edgeData = activeEdge?.data as unknown as UmlEdgeData | undefined
 
   return (
-    <aside className="w-76 shrink-0 h-full flex flex-col bg-[var(--bg-primary)] border border-[var(--border-subtle)] rounded-2xl shadow-xs overflow-hidden text-xs font-sans select-none z-20">
+    <aside className="fixed md:static right-2 top-16 bottom-2 md:inset-auto w-[calc(100vw-1rem)] max-w-xs md:w-76 shrink-0 md:h-full flex flex-col bg-[var(--bg-primary)] border border-[var(--border-subtle)] rounded-2xl shadow-2xl md:shadow-xs overflow-hidden text-xs font-sans select-none z-30 md:z-20">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-subtle)] shrink-0">
         <span className="font-semibold text-xs text-[var(--text-primary)]">

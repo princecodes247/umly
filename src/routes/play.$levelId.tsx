@@ -197,7 +197,7 @@ function PlayLevelPage() {
   )
 
   const scenarioSidebar = (
-    <div className="w-full md:w-72 lg:w-80 shrink-0 h-48 md:h-full flex flex-col min-h-0">
+    <div className="w-full md:w-72 lg:w-80 shrink-0 h-52 sm:h-56 md:h-full flex flex-col min-h-0">
       <ScenarioPanel
         level={level}
         hintsUsedCount={hintsUsed}

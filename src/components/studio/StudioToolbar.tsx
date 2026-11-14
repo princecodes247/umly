@@ -4,7 +4,6 @@ import {
   Undo2,
   Redo2,
   Download,
-  Upload,
   Trash2,
   ChevronDown,
   Check,
@@ -43,7 +42,6 @@ interface StudioToolbarProps {
   onCopyPlantUml?: () => void
   onCopyMermaid?: () => void
   onCopyImageToClipboard?: () => void
-  onImportJson?: (file: File) => void
   isSaved?: boolean
   snapshots?: DiagramSnapshot[]
   onSaveSnapshot?: (label?: string) => void
@@ -61,7 +59,6 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
   onExportPng,
   onExportSvg,
   onExportJson,
-  onImportJson,
   onExportPlantUml,
   onExportMermaid,
   onCopyPlantUml,
@@ -86,7 +83,6 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
   const exportMenuRef = useRef<HTMLDivElement>(null)
   const moreMenuRef = useRef<HTMLDivElement>(null)
   const historyMenuRef = useRef<HTMLDivElement>(null)
-  const importInputRef = useRef<HTMLInputElement>(null)
 
   const handleDiagramCreated = (newId: string) => {
     navigate({ to: '/studio/$diagramId', params: { diagramId: newId } })
@@ -127,7 +123,7 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
 
   return (
     <>
-      <header className="h-14 px-4 bg-[var(--bg-primary)] border-b border-[var(--border-subtle)] flex items-center justify-between gap-2 shrink-0 select-none z-30">
+      <header className="h-14 px-4 bg-[var(--bg-primary)] border-b border-[var(--border-subtle)] flex items-center justify-between gap-2 shrink-0 select-none z-50 relative">
         {/* Left: Back Arrow + Global Nav, Editable Title, Saved Indicator */}
         <div className="flex items-center gap-2 min-w-0">
           {/* Global Nav behind Back Arrow */}
@@ -207,17 +203,6 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
             )}
           </div>
 
-          {/* New Project Flow Trigger */}
-          <button
-            type="button"
-            onClick={() => setShowNewModal(true)}
-            title="Create a new diagram, choose a template, or open a project file"
-            className="flex items-center gap-1.5 py-1 px-3 rounded-full text-xs font-medium bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] transition-colors shrink-0 cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5 text-[var(--primary-btn)]" />
-            <span>New</span>
-          </button>
-
           <div className="h-4 w-px bg-[var(--border-subtle)] mx-0.5 shrink-0" />
 
           {/* Editable Title */}
@@ -245,7 +230,7 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
                 setIsEditingTitle(true)
               }}
               title="Click to rename diagram"
-              className="text-xs sm:text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--hover-bg)] px-2.5 py-1 rounded-lg transition-colors truncate max-w-[140px] sm:max-w-xs md:max-w-sm text-left cursor-pointer"
+              className="text-xs sm:text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--hover-bg)] px-2 sm:px-2.5 py-1 rounded-lg transition-colors truncate max-w-[140px] sm:max-w-xs md:max-w-sm text-left cursor-pointer"
             >
               {title}
             </button>
@@ -283,7 +268,7 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
             >
               <Redo2 className="w-3.5 h-3.5" />
             </button>
-            <div ref={historyMenuRef} className="relative">
+            <div ref={historyMenuRef} className="relative hidden sm:block">
               <button
                 type="button"
                 onClick={() => {
@@ -292,18 +277,17 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
                   setShowMoreMenu(false)
                 }}
                 title="Version History & Snapshots"
-                className={`notion-btn notion-btn-ghost p-1.5 ${
-                  showHistoryMenu
-                    ? 'bg-[var(--hover-bg)] text-[var(--text-primary)]'
-                    : ''
-                }`}
+                className={`notion-btn notion-btn-ghost p-1.5 ${showHistoryMenu
+                  ? 'bg-[var(--hover-bg)] text-[var(--text-primary)]'
+                  : ''
+                  }`}
               >
                 <History className="w-3.5 h-3.5" />
               </button>
 
               {/* Version History Popover */}
               {showHistoryMenu && (
-                <div className="absolute right-0 top-full mt-2 z-50 w-76 bg-[var(--bg-primary)] border border-[var(--border-default)] rounded-2xl shadow-xl p-3.5 space-y-2.5">
+                <div className="absolute right-0 top-full mt-2 z-50 w-[calc(100vw-1.5rem)] max-w-xs sm:w-76 bg-[var(--bg-primary)] border border-[var(--border-default)] rounded-2xl shadow-xl p-3.5 space-y-2.5">
                   <div className="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)]">
                     <div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--text-primary)]">
                       <History className="w-3.5 h-3.5 text-[var(--primary-btn)]" />
@@ -544,40 +528,6 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
 
             {showMoreMenu && (
               <div className="absolute right-0 mt-2 w-64 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-default)] shadow-xl py-1.5 z-50 text-xs">
-                {/* Import Diagram (.umly.json, .drawio) */}
-                {onImportJson && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        importInputRef.current?.click()
-                      }}
-                      className="w-full text-left px-3 py-2 hover:bg-[var(--hover-bg)] flex items-center gap-2.5 text-[var(--text-primary)] cursor-pointer"
-                    >
-                      <Upload className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
-                      <div className="flex flex-col">
-                        <span className="font-medium">Import Diagram</span>
-                        <span className="text-[10px] text-[var(--text-tertiary)]">
-                          Open .umly.json or .drawio file
-                        </span>
-                      </div>
-                    </button>
-                    <input
-                      ref={importInputRef}
-                      type="file"
-                      accept=".json,application/json,.drawio,.xml,text/xml,application/xml"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0]
-                        e.target.value = ''
-                        if (file) {
-                          setShowMoreMenu(false)
-                          onImportJson(file)
-                        }
-                      }}
-                    />
-                  </>
-                )}
 
                 {/* Notation Guide */}
                 <button

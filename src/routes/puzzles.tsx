@@ -160,7 +160,7 @@ function PuzzlesPage() {
   }
 
   return (
-    <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-8 py-8 sm:py-10 space-y-8">
+    <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 space-y-6 sm:space-y-8">
       {/* Page Header */}
       <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
@@ -172,12 +172,12 @@ function PuzzlesPage() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           {stats.completedLevels > 0 && (
             <button
               type="button"
               onClick={handleReset}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-[var(--border-subtle)] text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors"
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full border border-[var(--border-subtle)] text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Reset</span>
@@ -188,7 +188,7 @@ function PuzzlesPage() {
             <Link
               to="/play/$levelId"
               params={{ levelId: nextUnsolvedLevel.id }}
-              className="inline-flex items-center gap-2 rounded-full bg-gray-900 text-white dark:bg-white dark:text-neutral-900 hover:opacity-90 font-semibold text-xs sm:text-sm px-5 py-2.5 transition shadow-xs"
+              className="inline-flex items-center justify-center gap-2 flex-1 sm:flex-initial rounded-full bg-gray-900 text-white dark:bg-white dark:text-neutral-900 hover:opacity-90 font-semibold text-xs sm:text-sm px-5 py-2.5 transition shadow-xs"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
               <span>
@@ -202,13 +202,13 @@ function PuzzlesPage() {
       </header>
 
       {/* Stats Strip */}
-      <section className="grid grid-cols-3 gap-3.5">
-        <div className="p-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-primary)]">
+      <section className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3.5">
+        <div className="p-3.5 sm:p-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-primary)]">
           <span className="text-xs text-[var(--text-tertiary)] font-medium">
             Solved
           </span>
           <div className="mt-1 flex items-baseline gap-1.5">
-            <span className="text-2xl font-extrabold font-mono text-[var(--text-primary)]">
+            <span className="text-xl sm:text-2xl font-extrabold font-mono text-[var(--text-primary)]">
               {stats.completedLevels}
             </span>
             <span className="text-xs font-mono text-[var(--text-tertiary)]">
@@ -217,13 +217,13 @@ function PuzzlesPage() {
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-primary)]">
+        <div className="p-3.5 sm:p-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-primary)]">
           <span className="text-xs text-[var(--text-tertiary)] font-medium">
             Stars Earned
           </span>
           <div className="mt-1 flex items-center gap-1.5">
-            <Star className="w-4 h-4 fill-amber-400 text-amber-500" />
-            <span className="text-2xl font-extrabold font-mono text-[var(--text-primary)]">
+            <Star className="w-4 h-4 fill-amber-400 text-amber-500 shrink-0" />
+            <span className="text-xl sm:text-2xl font-extrabold font-mono text-[var(--text-primary)]">
               {stats.totalStars}
             </span>
             <span className="text-xs font-mono text-[var(--text-tertiary)]">
@@ -232,7 +232,7 @@ function PuzzlesPage() {
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] flex flex-col justify-between">
+        <div className="col-span-2 sm:col-span-1 p-3.5 sm:p-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] flex flex-col justify-between">
           <div className="flex items-center justify-between text-xs">
             <span className="text-[var(--text-tertiary)] font-medium">
               Completion
@@ -267,7 +267,7 @@ function PuzzlesPage() {
                 key={d.id}
                 type="button"
                 onClick={() => setSelectedDiagramType(d.id)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                className={`px-3 sm:px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 whitespace-nowrap ${
                   selectedDiagramType === d.id
                     ? 'bg-gray-900 text-white dark:bg-white dark:text-neutral-900 shadow-xs'
                     : 'bg-[var(--bg-secondary)]/60 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)]'
@@ -463,7 +463,7 @@ function PuzzlesPage() {
           </div>
         ) : (
           <div className="border border-[var(--border-subtle)] rounded-2xl overflow-x-auto bg-[var(--bg-primary)]">
-            <table className="w-full text-left border-collapse text-xs">
+            <table className="w-full min-w-[680px] text-left border-collapse text-xs">
               <thead>
                 <tr className="border-b border-[var(--border-subtle)] bg-[var(--bg-secondary)]/60 text-[var(--text-secondary)]">
                   <th className="py-3 px-4 font-semibold w-12">#</th>

@@ -310,7 +310,9 @@ function StudioCanvasInner({ diagramId, puzzle }: StudioCanvasProps) {
   // Selection states
   const [selectedNodes, setSelectedNodes] = useState<Node[]>([])
   const [selectedEdges, setSelectedEdges] = useState<Edge[]>([])
-  const [isInspectorOpen, setIsInspectorOpen] = useState(true)
+  const [isInspectorOpen, setIsInspectorOpen] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth >= 768 : true
+  )
   const [isSaved, setIsSaved] = useState(true)
 
   // Robust Undo / Redo history refs
@@ -2057,12 +2059,12 @@ function StudioCanvasInner({ diagramId, puzzle }: StudioCanvasProps) {
         edge.id !== edgeId
           ? edge
           : {
-              ...edge,
-              source: edge.target,
-              target: edge.source,
-              sourceHandle: toSourceHandleId(edge.targetHandle),
-              targetHandle: toTargetHandleId(edge.sourceHandle),
-            }
+            ...edge,
+            source: edge.target,
+            target: edge.source,
+            sourceHandle: toSourceHandleId(edge.targetHandle),
+            targetHandle: toTargetHandleId(edge.sourceHandle),
+          }
 
       pushSnapshot()
       setEdges((eds) => eds.map(swapEndpoints))
@@ -2154,12 +2156,12 @@ function StudioCanvasInner({ diagramId, puzzle }: StudioCanvasProps) {
         edge.id !== id
           ? edge
           : {
-              ...edge,
-              source: edge.target,
-              target: edge.source,
-              sourceHandle: toSourceHandleId(edge.targetHandle),
-              targetHandle: toTargetHandleId(edge.sourceHandle),
-            }
+            ...edge,
+            source: edge.target,
+            target: edge.source,
+            sourceHandle: toSourceHandleId(edge.targetHandle),
+            targetHandle: toTargetHandleId(edge.sourceHandle),
+          }
 
       pushSnapshot()
       setEdges((eds) => eds.map(swapEndpoints))
@@ -2424,77 +2426,6 @@ function StudioCanvasInner({ diagramId, puzzle }: StudioCanvasProps) {
       `${safeTitle}.umly.json`
     )
   }, [title, nodes, edges])
-
-  const handleImportJson = useCallback(
-    (file: File) => {
-      const reader = new FileReader()
-      reader.onload = async (e) => {
-        try {
-          const text = e.target?.result as string
-          const isDrawio =
-            /\.(drawio|xml)$/i.test(file.name) ||
-            text.trimStart().startsWith('<')
-
-          if (isDrawio) {
-            const fileTitle = file.name.replace(/\.(drawio|xml)$/i, '')
-            const imported = await parseDrawioXml(text, fileTitle)
-            if (imported && imported.nodes.length > 0) {
-              pushSnapshot()
-              setTitle(imported.title || fileTitle || 'Imported Draw.io Diagram')
-              setDiagramType(imported.diagramType)
-              setNodes(imported.nodes)
-              setEdges(imported.edges)
-              setTimeout(() => {
-                reactFlowInstance.fitView({ padding: 0.2 })
-              }, 50)
-              return
-            }
-            alert(
-              'Could not import Draw.io file. Please select a valid .drawio or .xml file.'
-            )
-            return
-          }
-
-          const parsed = parseDiagramJson(text)
-          if (parsed) {
-            pushSnapshot()
-            setTitle(parsed.title || 'Imported Diagram')
-            const hasDfd = parsed.nodes?.some(
-              (n) =>
-                n.type === 'dfdProcess' ||
-                n.type === 'dfdDataStore' ||
-                n.type === 'dfdExternalEntity'
-            )
-            const hasUmlClass = parsed.nodes?.some((n) => n.type === 'umlClass')
-            const hasErEntity = parsed.nodes?.some((n) => n.type === 'erEntity')
-            setDiagramType(
-              hasDfd
-                ? 'dfd'
-                : hasUmlClass
-                  ? 'class'
-                  : hasErEntity
-                    ? 'er'
-                    : 'use_case'
-            )
-            setNodes(parsed.nodes)
-            setEdges(parsed.edges)
-            setTimeout(() => {
-              reactFlowInstance.fitView({ padding: 0.2 })
-            }, 50)
-          } else {
-            alert(
-              'Invalid diagram file. Please select a valid .umly.json or .drawio file.'
-            )
-          }
-        } catch (err) {
-          console.error('Import error:', err)
-          alert('Failed to read the diagram file.')
-        }
-      }
-      reader.readAsText(file)
-    },
-    [pushSnapshot, reactFlowInstance, setNodes, setEdges]
-  )
 
   // Keyboard-first shortcuts (Item 3 & Item 7)
   useEffect(() => {
@@ -2838,7 +2769,6 @@ function StudioCanvasInner({ diagramId, puzzle }: StudioCanvasProps) {
           onExportMermaid={handleExportMermaid}
           onCopyMermaid={handleCopyMermaid}
           onExportJson={handleExportJson}
-          onImportJson={handleImportJson}
           isSaved={isSaved}
           snapshots={snapshots}
           onSaveSnapshot={handleSaveSnapshot}
@@ -2847,7 +2777,7 @@ function StudioCanvasInner({ diagramId, puzzle }: StudioCanvasProps) {
       )}
 
       {/* Main Studio Workspace: Optional Left Sidebar + Canvas + Inspector */}
-      <div className="flex-1 flex p-1.5 sm:p-2 gap-2 min-h-0 overflow-hidden h-full relative">
+      <div className="flex-1 flex flex-col md:flex-row p-1.5 sm:p-2 gap-2 min-h-0 overflow-hidden h-full relative">
         {puzzle?.leftSidebar}
         {/* Canvas Area */}
         <div
@@ -2881,7 +2811,7 @@ function StudioCanvasInner({ diagramId, puzzle }: StudioCanvasProps) {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -8, scale: 0.96 }}
                 transition={{ type: 'spring', stiffness: 450, damping: 28 }}
-                className="studio-bottom-dock absolute top-3 left-1/2 -translate-x-1/2 z-40 max-w-lg flex items-center gap-2.5 px-3 py-2 rounded-[8px] bg-[var(--bg-primary)] border border-[var(--notion-red-text)]/40 shadow-xl text-xs font-sans"
+                className="studio-bottom-dock absolute top-3 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-1.5rem)] sm:w-auto max-w-lg flex items-center gap-2.5 px-3 py-2 rounded-xl bg-[var(--bg-primary)] border border-[var(--notion-red-text)]/40 shadow-xl text-xs font-sans"
               >
                 <AlertCircle className="w-4 h-4 text-[var(--notion-red-text)] shrink-0" />
                 <span className="text-[var(--text-primary)] leading-snug">
@@ -3341,8 +3271,8 @@ function StudioCanvasInner({ diagramId, puzzle }: StudioCanvasProps) {
                             setEdgeContextMenu(null)
                           }}
                           className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-[6px] transition-colors cursor-pointer ${currentRel === r.id
-                              ? 'bg-[var(--selection-bg)] text-[var(--primary-btn)] font-semibold'
-                              : 'hover:bg-[var(--hover-bg)] text-[var(--text-primary)]'
+                            ? 'bg-[var(--selection-bg)] text-[var(--primary-btn)] font-semibold'
+                            : 'hover:bg-[var(--hover-bg)] text-[var(--text-primary)]'
                             }`}
                         >
                           <span>{r.label}</span>
@@ -3505,7 +3435,7 @@ function StudioCanvasInner({ diagramId, puzzle }: StudioCanvasProps) {
             />
             <Controls
               showInteractive={false}
-              className="!bg-[var(--bg-primary)] !border-[var(--border-default)] !rounded-[4px] !shadow-xs overflow-hidden"
+              className="!mb-14 sm:!mb-0 !bg-[var(--bg-primary)] !border-[var(--border-default)] !rounded-xl !shadow-xs overflow-hidden"
             />
           </ReactFlow>
 
@@ -3571,95 +3501,95 @@ function StudioCanvasInner({ diagramId, puzzle }: StudioCanvasProps) {
         commands={[
           ...(diagramType === 'er'
             ? [
+              {
+                id: 'add-entity',
+                category: 'Create',
+                label: 'New Entity Table',
+                shortcut: 'E',
+                icon: <Table2 className="w-3.5 h-3.5 text-[#2383e2]" />,
+                onSelect: () => handleAddNode('erEntity'),
+              },
+              {
+                id: 'add-boundary',
+                category: 'Create',
+                label: 'New Schema Group',
+                shortcut: 'B',
+                icon: <CircleDot className="w-3.5 h-3.5 text-[#9065b0]" />,
+                onSelect: () => handleAddNode('boundary'),
+              },
+            ]
+            : diagramType === 'class'
+              ? [
                 {
-                  id: 'add-entity',
+                  id: 'add-class',
                   category: 'Create',
-                  label: 'New Entity Table',
-                  shortcut: 'E',
-                  icon: <Table2 className="w-3.5 h-3.5 text-[#2383e2]" />,
-                  onSelect: () => handleAddNode('erEntity'),
+                  label: 'New Class',
+                  shortcut: 'C',
+                  icon: <Boxes className="w-3.5 h-3.5 text-[#2383e2]" />,
+                  onSelect: () => handleAddNode('umlClass'),
                 },
                 {
                   id: 'add-boundary',
                   category: 'Create',
-                  label: 'New Schema Group',
+                  label: 'New Package',
                   shortcut: 'B',
                   icon: <CircleDot className="w-3.5 h-3.5 text-[#9065b0]" />,
                   onSelect: () => handleAddNode('boundary'),
                 },
               ]
-            : diagramType === 'class'
-              ? [
+              : diagramType === 'dfd'
+                ? [
                   {
-                    id: 'add-class',
+                    id: 'add-dfd-process',
                     category: 'Create',
-                    label: 'New Class',
-                    shortcut: 'C',
-                    icon: <Boxes className="w-3.5 h-3.5 text-[#2383e2]" />,
-                    onSelect: () => handleAddNode('umlClass'),
+                    label: 'New Process',
+                    shortcut: 'P',
+                    icon: <Cpu className="w-3.5 h-3.5 text-[#2383e2]" />,
+                    onSelect: () => handleAddNode('dfdProcess'),
+                  },
+                  {
+                    id: 'add-dfd-store',
+                    category: 'Create',
+                    label: 'New Data Store',
+                    shortcut: 'D',
+                    icon: <HardDrive className="w-3.5 h-3.5 text-[#448361]" />,
+                    onSelect: () => handleAddNode('dfdDataStore'),
+                  },
+                  {
+                    id: 'add-dfd-external',
+                    category: 'Create',
+                    label: 'New External Entity',
+                    shortcut: 'E',
+                    icon: <SquareUser className="w-3.5 h-3.5 text-[#9065b0]" />,
+                    onSelect: () => handleAddNode('dfdExternalEntity'),
+                  },
+                ]
+                : [
+                  {
+                    id: 'add-usecase',
+                    category: 'Create',
+                    label: 'New Use Case',
+                    shortcut: 'U',
+                    icon: <CircleDot className="w-3.5 h-3.5 text-[#2383e2]" />,
+                    onSelect: () => handleAddNode('useCase'),
+                  },
+                  {
+                    id: 'add-actor',
+                    category: 'Create',
+                    label: 'New Actor',
+                    shortcut: 'A',
+                    icon: <User className="w-3.5 h-3.5 text-[var(--primary-btn)]" />,
+                    onSelect: () => handleAddNode('actor'),
                   },
                   {
                     id: 'add-boundary',
                     category: 'Create',
-                    label: 'New Package',
+                    label: 'New System Boundary',
                     shortcut: 'B',
                     icon: <CircleDot className="w-3.5 h-3.5 text-[#9065b0]" />,
                     onSelect: () => handleAddNode('boundary'),
                   },
-                ]
-              : diagramType === 'dfd'
-                ? [
-                    {
-                      id: 'add-dfd-process',
-                      category: 'Create',
-                      label: 'New Process',
-                      shortcut: 'P',
-                      icon: <Cpu className="w-3.5 h-3.5 text-[#2383e2]" />,
-                      onSelect: () => handleAddNode('dfdProcess'),
-                    },
-                    {
-                      id: 'add-dfd-store',
-                      category: 'Create',
-                      label: 'New Data Store',
-                      shortcut: 'D',
-                      icon: <HardDrive className="w-3.5 h-3.5 text-[#448361]" />,
-                      onSelect: () => handleAddNode('dfdDataStore'),
-                    },
-                    {
-                      id: 'add-dfd-external',
-                      category: 'Create',
-                      label: 'New External Entity',
-                      shortcut: 'E',
-                      icon: <SquareUser className="w-3.5 h-3.5 text-[#9065b0]" />,
-                      onSelect: () => handleAddNode('dfdExternalEntity'),
-                    },
-                  ]
-                : [
-                {
-                  id: 'add-usecase',
-                  category: 'Create',
-                  label: 'New Use Case',
-                  shortcut: 'U',
-                  icon: <CircleDot className="w-3.5 h-3.5 text-[#2383e2]" />,
-                  onSelect: () => handleAddNode('useCase'),
-                },
-                {
-                  id: 'add-actor',
-                  category: 'Create',
-                  label: 'New Actor',
-                  shortcut: 'A',
-                  icon: <User className="w-3.5 h-3.5 text-[var(--primary-btn)]" />,
-                  onSelect: () => handleAddNode('actor'),
-                },
-                {
-                  id: 'add-boundary',
-                  category: 'Create',
-                  label: 'New System Boundary',
-                  shortcut: 'B',
-                  icon: <CircleDot className="w-3.5 h-3.5 text-[#9065b0]" />,
-                  onSelect: () => handleAddNode('boundary'),
-                },
-              ]),
+                ]),
           {
             id: 'add-note',
             category: 'Create',
