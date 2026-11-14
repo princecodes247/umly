@@ -3,7 +3,6 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import {
   Plus,
   ArrowRight,
-  PenTool,
   Trash2,
   Clock,
   Layers,
@@ -11,7 +10,6 @@ import {
   Database,
   Boxes,
   Workflow,
-  BookOpen,
   Star,
   Play,
   Search,
@@ -28,7 +26,6 @@ import { getPlayerStats, type PlayerStats } from '../lib/storage'
 import { LEVEL_SUMMARIES } from '../data/levels'
 import { DIAGRAM_TEMPLATES } from '../data/templates'
 import { NewDiagramModal } from '../components/studio/NewDiagramModal'
-import { UmlCheatsheetModal } from '../components/game/UmlCheatsheetModal'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 
 export const Route = createFileRoute('/')({
@@ -101,7 +98,6 @@ function DashboardPage() {
     'all' | 'use_case' | 'er' | 'class' | 'dfd'
   >('all')
   const [showNewModal, setShowNewModal] = useState(false)
-  const [showCheatsheet, setShowCheatsheet] = useState(false)
   const [pendingDeleteDraft, setPendingDeleteDraft] = useState<{
     id: string
     title: string
@@ -182,23 +178,6 @@ function DashboardPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setShowCheatsheet(true)}
-            className="notion-btn py-1.5 px-3 text-xs text-[var(--text-secondary)]"
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            <span>Notation Guide</span>
-          </button>
-
-          <Link
-            to="/studio"
-            className="notion-btn py-1.5 px-3 text-xs text-[var(--text-secondary)]"
-          >
-            <PenTool className="w-3.5 h-3.5" />
-            <span>Open Studio</span>
-          </Link>
-
           <button
             type="button"
             onClick={() => setShowNewModal(true)}
@@ -541,11 +520,6 @@ function DashboardPage() {
         isOpen={showNewModal}
         onClose={() => setShowNewModal(false)}
         onCreated={handleDiagramCreated}
-      />
-
-      <UmlCheatsheetModal
-        isOpen={showCheatsheet}
-        onClose={() => setShowCheatsheet(false)}
       />
 
       <ConfirmDialog

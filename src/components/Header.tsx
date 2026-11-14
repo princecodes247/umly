@@ -4,7 +4,7 @@ import {
   Star,
   BookOpen,
   ChevronRight,
-  PenTool,
+  LayoutDashboard,
   Puzzle,
 } from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
@@ -16,6 +16,15 @@ export default function Header() {
   const [totalStars, setTotalStars] = useState(0)
   const [showCheatsheet, setShowCheatsheet] = useState(false)
   const routerState = useRouterState()
+
+  const pathname = routerState.location.pathname
+  const isHome = pathname === '/'
+  const isPuzzles = pathname.startsWith('/puzzles')
+  const matchPlay = pathname.match(/\/play\/([^/]+)/)
+  const currentLevelId = matchPlay ? matchPlay[1] : null
+  const currentLevel = currentLevelId
+    ? LEVEL_SUMMARIES.find((l) => l.id === currentLevelId)
+    : null
 
   useEffect(() => {
     const updateStars = () => {
@@ -30,29 +39,19 @@ export default function Header() {
     updateStars()
     window.addEventListener('storage', updateStars)
     return () => window.removeEventListener('storage', updateStars)
-  }, [])
-
-  const pathname = routerState.location.pathname
-  const isHome = pathname === '/'
-  const isStudio = pathname.startsWith('/studio')
-  const isPuzzles = pathname.startsWith('/puzzles')
-  const matchPlay = pathname.match(/\/play\/([^/]+)/)
-  const currentLevelId = matchPlay ? matchPlay[1] : null
-  const currentLevel = currentLevelId
-    ? LEVEL_SUMMARIES.find((l) => l.id === currentLevelId)
-    : null
+  }, [pathname])
 
   const totalPossibleStars = LEVEL_SUMMARIES.length * 3
 
   return (
     <>
-      <header className="sticky top-0 z-40 h-11 border-b border-[var(--border-subtle)] bg-[var(--bg-primary)] px-3 sm:px-6 select-none transition-colors">
-        <div className="h-full max-w-7xl mx-auto flex items-center justify-between">
-          {/* Notion Breadcrumbs & Brand */}
+      <header className="sticky top-0 z-40 h-11 border-b border-[var(--border-subtle)] bg-[var(--bg-primary)]/95 backdrop-blur-sm px-4 sm:px-8 select-none transition-colors">
+        <div className="h-full max-w-6xl mx-auto flex items-center justify-between">
+          {/* Brand & Primary Nav */}
           <div className="flex items-center gap-1 sm:gap-2 text-xs text-[var(--text-secondary)] overflow-hidden">
             <Link
               to="/"
-              className="flex items-center gap-1.5 px-1.5 py-1 rounded-[4px] hover:bg-[var(--hover-bg)] hover:text-[var(--text-primary)] transition-colors group shrink-0"
+              className="flex items-center gap-1.5 pr-1.5 py-1 rounded-[4px] hover:text-[var(--text-primary)] transition-colors group shrink-0"
             >
               <span className="text-sm">📐</span>
               <span className="font-semibold text-[var(--text-primary)] tracking-tight">
@@ -62,34 +61,22 @@ export default function Header() {
 
             <div className="h-3.5 w-px bg-[var(--border-subtle)] mx-0.5 shrink-0" />
 
-            {/* Mode Switcher */}
-            <div className="flex items-center gap-1">
+            <nav className="flex items-center gap-1" aria-label="Main navigation">
               <Link
                 to="/"
-                className={`px-2 py-1 rounded-[4px] text-xs font-medium transition-colors ${
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] text-xs font-medium transition-colors ${
                   isHome
                     ? 'bg-[var(--hover-bg-strong)] text-[var(--text-primary)] font-semibold'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)]'
                 }`}
               >
-                Home
-              </Link>
-
-              <Link
-                to="/studio"
-                className={`flex items-center gap-1.5 px-2 py-1 rounded-[4px] text-xs font-medium transition-colors ${
-                  isStudio
-                    ? 'bg-[var(--hover-bg-strong)] text-[var(--text-primary)] font-semibold'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)]'
-                }`}
-              >
-                <PenTool className="w-3.5 h-3.5" />
-                <span>Studio</span>
+                <LayoutDashboard className="w-3.5 h-3.5" />
+                <span>Workspace</span>
               </Link>
 
               <Link
                 to="/puzzles"
-                className={`flex items-center gap-1.5 px-2 py-1 rounded-[4px] text-xs font-medium transition-colors ${
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] text-xs font-medium transition-colors ${
                   isPuzzles || currentLevel
                     ? 'bg-[var(--hover-bg-strong)] text-[var(--text-primary)] font-semibold'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)]'
@@ -98,7 +85,7 @@ export default function Header() {
                 <Puzzle className="w-3.5 h-3.5" />
                 <span>Puzzles</span>
               </Link>
-            </div>
+            </nav>
 
             {currentLevel && (
               <>

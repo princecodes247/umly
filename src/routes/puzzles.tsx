@@ -4,14 +4,12 @@ import {
   Star,
   Play,
   RotateCcw,
-  BookOpen,
   LayoutGrid,
   Table as TableIcon,
   Search,
   CheckCircle2,
   Circle,
   ArrowUpRight,
-  PenTool,
 } from 'lucide-react'
 
 import { LEVEL_SUMMARIES } from '../data/levels'
@@ -20,7 +18,6 @@ import {
   resetAllProgress,
   type PlayerStats,
 } from '../lib/storage'
-import { UmlCheatsheetModal } from '../components/game/UmlCheatsheetModal'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import type { LevelDefinition, LevelType, PuzzleDiagramType } from '../types/game'
 
@@ -53,7 +50,6 @@ function PuzzlesPage() {
   >('all')
   const [viewMode, setViewMode] = useState<'gallery' | 'table'>('gallery')
   const [searchQuery, setSearchQuery] = useState('')
-  const [showCheatsheet, setShowCheatsheet] = useState(false)
   const [showResetConfirm, setShowResetConfirm] = useState(false)
 
   const reloadStats = () => {
@@ -171,23 +167,6 @@ function PuzzlesPage() {
               <span>Reset</span>
             </button>
           )}
-
-          <button
-            type="button"
-            onClick={() => setShowCheatsheet(true)}
-            className="notion-btn py-1.5 px-3 text-xs text-[var(--text-secondary)]"
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            <span>Notation Guide</span>
-          </button>
-
-          <Link
-            to="/studio"
-            className="notion-btn py-1.5 px-3 text-xs text-[var(--text-secondary)]"
-          >
-            <PenTool className="w-3.5 h-3.5" />
-            <span>Studio</span>
-          </Link>
 
           {nextUnsolvedLevel && (
             <Link
@@ -578,12 +557,6 @@ function PuzzlesPage() {
           </div>
         )}
       </section>
-
-      {/* Cheatsheet Modal */}
-      <UmlCheatsheetModal
-        isOpen={showCheatsheet}
-        onClose={() => setShowCheatsheet(false)}
-      />
 
       <ConfirmDialog
         isOpen={showResetConfirm}
