@@ -178,7 +178,7 @@ function DashboardPage() {
     LEVEL_SUMMARIES[0]
 
   return (
-    <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-8 py-8 sm:py-10 space-y-10">
+    <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 space-y-8 sm:space-y-10">
       {/* Top Workspace Bar */}
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -193,7 +193,7 @@ function DashboardPage() {
         <button
           type="button"
           onClick={() => setShowNewModal(true)}
-          className="inline-flex items-center gap-2 self-start sm:self-auto rounded-full bg-gray-900 text-white dark:bg-white dark:text-neutral-900 hover:opacity-90 font-semibold text-xs sm:text-sm px-5 py-2.5 transition shadow-xs"
+          className="inline-flex items-center justify-center gap-2 w-full sm:w-auto rounded-full bg-gray-900 text-white dark:bg-white dark:text-neutral-900 hover:opacity-90 font-semibold text-xs sm:text-sm px-5 py-2.5 transition shadow-xs shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>New Diagram</span>
@@ -235,10 +235,10 @@ function DashboardPage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-bold text-[var(--text-primary)]">
+                      <span className="text-sm font-bold text-[var(--text-primary)] truncate">
                         {meta.label}
                       </span>
-                      <Plus className="w-4 h-4 text-[var(--text-tertiary)] group-hover:text-[var(--text-primary)] transition-colors" />
+                      <Plus className="w-4 h-4 text-[var(--text-tertiary)] group-hover:text-[var(--text-primary)] transition-colors shrink-0" />
                     </div>
                     <p className="text-xs text-[var(--text-secondary)] mt-0.5 line-clamp-1">
                       {meta.description}
@@ -325,17 +325,17 @@ function DashboardPage() {
           </div>
 
           {drafts.length > 0 && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               {showAllDrafts && filteredDrafts.length > 5 && (
                 <button
                   type="button"
                   onClick={() => setShowAllDrafts(false)}
-                  className="text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-3 py-1.5 rounded-full hover:bg-[var(--hover-bg)] transition-colors"
+                  className="text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-3 py-1.5 rounded-full hover:bg-[var(--hover-bg)] transition-colors whitespace-nowrap shrink-0"
                 >
                   Show recent 5
                 </button>
               )}
-              <div className="relative flex items-center">
+              <div className="relative flex items-center flex-1 sm:flex-initial">
                 <Search className="w-3.5 h-3.5 text-[var(--text-tertiary)] absolute left-3 pointer-events-none" />
                 <input
                   type="text"
@@ -413,19 +413,19 @@ function DashboardPage() {
                       </h3>
                     </div>
 
-                    <div className="pt-3 mt-4 border-t border-[var(--border-subtle)] flex items-center justify-between text-[11px] text-[var(--text-tertiary)]">
-                      <span className="flex items-center gap-2 font-mono">
-                        <span className="flex items-center gap-1">
+                    <div className="pt-3 mt-4 border-t border-[var(--border-subtle)] flex items-center justify-between gap-2 text-[11px] text-[var(--text-tertiary)]">
+                      <span className="flex items-center gap-2 font-mono min-w-0">
+                        <span className="flex items-center gap-1 shrink-0">
                           <Layers className="w-3 h-3" />
                           {draft.nodes.length}
                         </span>
-                        <span>•</span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {formattedDate}
+                        <span className="shrink-0">•</span>
+                        <span className="flex items-center gap-1 truncate">
+                          <Clock className="w-3 h-3 shrink-0" />
+                          <span className="truncate">{formattedDate}</span>
                         </span>
                       </span>
-                      <span className="text-[var(--text-primary)] font-semibold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
+                      <span className="text-[var(--text-primary)] font-semibold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform shrink-0">
                         <span>Open</span>
                         <ArrowRight className="w-3 h-3" />
                       </span>
@@ -475,7 +475,7 @@ function DashboardPage() {
                 key={tab.id}
                 type="button"
                 onClick={() => setTemplateFilter(tab.id)}
-                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
                   templateFilter === tab.id
                     ? 'bg-gray-900 text-white dark:bg-white dark:text-neutral-900'
                     : 'text-[var(--text-secondary)] hover:bg-[var(--hover-bg)]'
