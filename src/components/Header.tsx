@@ -51,10 +51,11 @@ export default function Header() {
           <div className="flex items-center gap-1.5 sm:gap-3 text-xs text-[var(--text-secondary)] min-w-0">
             <Link
               to="/"
-              className="flex items-center gap-1 sm:gap-1.5 pr-0.5 sm:pr-1 py-1 hover:opacity-80 transition-opacity shrink-0"
+              className="flex items-center gap-1.5 pr-0.5 sm:pr-1 py-1 hover:opacity-80 transition-opacity shrink-0"
+              title="UMLy Home"
             >
               <span className="text-base">📐</span>
-              <span className="text-sm sm:text-base font-extrabold text-[var(--text-primary)] tracking-tight">
+              <span className="hidden sm:inline text-base font-extrabold text-[var(--text-primary)] tracking-tight">
                 UMLy
               </span>
             </Link>
@@ -98,7 +99,7 @@ export default function Header() {
           </div>
 
           {/* Right Action Bar */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             <button
               type="button"
               onClick={() => setShowCheatsheet(true)}

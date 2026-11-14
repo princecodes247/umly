@@ -72,14 +72,14 @@ export default function ThemeToggle() {
       onClick={toggleMode}
       aria-label={label}
       title={label}
-      className="flex items-center gap-1.5 px-2 py-1 rounded-[4px] text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] transition-colors select-none cursor-pointer"
+      className="flex items-center gap-1.5 p-2 sm:px-2.5 sm:py-1.5 rounded-full text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] transition-colors select-none cursor-pointer"
     >
       {mode === 'dark' ? (
         <Moon className="w-3.5 h-3.5" />
       ) : (
         <Sun className="w-3.5 h-3.5" />
       )}
-      <span className="capitalize">{mode}</span>
+      <span className="hidden sm:inline capitalize">{mode}</span>
     </button>
   )
 }
