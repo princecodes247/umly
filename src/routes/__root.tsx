@@ -47,6 +47,7 @@ export const Route = createRootRoute({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   const routerState = useRouterState()
+  const isLandingPage = routerState.location.pathname === '/'
   const isPlayPage = routerState.location.pathname.startsWith('/play')
   const isStudioPage = routerState.location.pathname.startsWith('/studio')
 
@@ -63,7 +64,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           isFullViewportPage ? 'h-screen overflow-hidden' : 'min-h-screen'
         }`}
       >
-        {!isStudioPage && <Header />}
+        {!isStudioPage && !isLandingPage && <Header />}
         <div
           className={`flex-1 flex flex-col w-full ${
             isFullViewportPage ? 'min-h-0' : ''
@@ -71,7 +72,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         >
           {children}
         </div>
-        {!isFullViewportPage && <Footer />}
+        {!isFullViewportPage && !isLandingPage && <Footer />}
         <TanStackDevtools
           config={{
             position: 'bottom-right',

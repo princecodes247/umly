@@ -1,289 +1,314 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import {
-  ArrowRight,
-  CircleDot,
-  Database,
-  Boxes,
-  Workflow,
-  Puzzle,
-  Download,
-  Zap,
-  CheckCircle2,
-  Play,
-} from 'lucide-react'
+import { PenTool, Puzzle, Download } from 'lucide-react'
 import { LEVEL_SUMMARIES } from '../data/levels'
 
 export const Route = createFileRoute('/')({
   component: LandingPage,
 })
 
-const DIAGRAM_CAPABILITIES = [
-  {
-    icon: CircleDot,
-    title: 'Use Case Diagrams',
-    description:
-      'Actors, system boundaries, mandatory «include», optional «extend», and generalizations.',
-    tag: 'UML 2.5',
-    tagClass: 'notion-tag-blue',
-  },
-  {
-    icon: Database,
-    title: 'ER Diagrams',
-    description:
-      'Entities, primary & foreign keys, weak entities, and crow’s foot cardinality.',
-    tag: 'Database',
-    tagClass: 'notion-tag-green',
-  },
-  {
-    icon: Boxes,
-    title: 'Class Diagrams',
-    description:
-      'Classes, interfaces, enums, attributes, methods, realization, and composition.',
-    tag: 'OOP',
-    tagClass: 'notion-tag-purple',
-  },
-  {
-    icon: Workflow,
-    title: 'Data Flow Diagrams',
-    description:
-      'External entities, numbered processes, data stores, and directional data flows.',
-    tag: 'Systems',
-    tagClass: 'notion-tag-orange',
-  },
-] as const
-
-const HIGHLIGHTS = [
-  {
-    icon: Zap,
-    title: 'Zero-Friction Studio',
-    description:
-      'Snap-to-grid canvas, keyboard shortcuts, undo/redo history, and starter templates with no account required.',
-  },
-  {
-    icon: Puzzle,
-    title: 'Auto-Graded Puzzles',
-    description: `${LEVEL_SUMMARIES.length} interactive challenges across Beginner, Easy, Intermediate, and Advanced tiers with instant diagnostics.`,
-  },
-  {
-    icon: Download,
-    title: 'Local-First & Exportable',
-    description:
-      'Drafts persist in your browser automatically. Export crisp PNG, SVG, or JSON files in one click.',
-  },
-] as const
-
-function LandingPage() {
-  const firstLevel = LEVEL_SUMMARIES[0]
-
+function PaintSlooshesAndNodes() {
   return (
-    <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-8 py-10 sm:py-16 space-y-16">
-      {/* Hero */}
-      <section className="max-w-3xl mx-auto text-center space-y-5">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-secondary)]/60 text-[11px] font-medium text-[var(--text-secondary)]">
-          <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary-btn)]" />
-          <span>Browser-native • No login • Local-first</span>
+    <div
+      aria-hidden="true"
+      className="pointer-events-none select-none absolute inset-0 overflow-hidden z-0"
+    >
+      {/* Top-Left Yellow Paint Sloosh */}
+      <svg
+        viewBox="0 0 340 260"
+        fill="none"
+        className="absolute -top-10 -left-12 w-52 sm:w-72 md:w-80 opacity-90"
+      >
+        <path
+          d="M28 18 C 70 -8, 92 78, 52 108 C 12 138, 128 38, 165 62 C 202 86, 84 162, 122 192 C 160 222, 238 92, 276 122 C 304 144, 232 204, 212 224"
+          stroke="#F7C948"
+          strokeWidth="44"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+
+      {/* Top-Right Coral Paint Sloosh */}
+      <svg
+        viewBox="0 0 320 280"
+        fill="none"
+        className="absolute top-12 -right-12 w-48 sm:w-64 md:w-76 opacity-90"
+      >
+        <path
+          d="M285 28 C 235 42, 265 135, 222 146 C 179 157, 218 52, 170 64 C 122 76, 166 198, 118 214 C 70 230, 108 118, 60 138 C 32 150, 44 218, 46 244"
+          stroke="#FF7849"
+          strokeWidth="42"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+
+      {/* Bottom-Left Emerald Paint Sloosh */}
+      <svg
+        viewBox="0 0 360 280"
+        fill="none"
+        className="absolute top-[410px] sm:top-[440px] -left-10 w-56 sm:w-72 md:w-88 opacity-90"
+      >
+        <path
+          d="M22 252 C 56 200, 122 238, 140 190 C 158 142, 82 148, 108 100 C 134 52, 206 138, 236 96 C 266 54, 218 24, 260 28"
+          stroke="#06B67D"
+          strokeWidth="44"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+
+      {/* Bottom-Right Purple Paint Sloosh */}
+      <svg
+        viewBox="0 0 320 260"
+        fill="none"
+        className="absolute top-[430px] sm:top-[460px] -right-12 w-52 sm:w-64 md:w-80 opacity-85"
+      >
+        <path
+          d="M292 228 C 242 216, 264 134, 216 142 C 168 150, 202 222, 152 206 C 102 190, 146 92, 96 86 C 58 82, 68 148, 42 166"
+          stroke="#7C6CF0"
+          strokeWidth="42"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+
+      {/* Floating UML Nodes alongside the slooshes */}
+      {/* Left: Actor Node */}
+      <div className="hidden md:flex flex-col items-center gap-1 absolute top-44 left-12 lg:left-24 -rotate-6 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white/95 dark:bg-neutral-900/95 shadow-md">
+        <svg
+          width="24"
+          height="32"
+          viewBox="0 0 28 36"
+          fill="none"
+          className="text-gray-900 dark:text-white"
+        >
+          <circle cx="14" cy="7" r="5" stroke="currentColor" strokeWidth="1.8" />
+          <path
+            d="M14 12v11M5 17h18M14 23l-6 10M14 23l6 10"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+        </svg>
+        <span className="text-[11px] font-semibold text-gray-900 dark:text-white">
+          Customer
+        </span>
+      </div>
+
+      {/* Left: Class Node */}
+      <div className="hidden lg:block absolute top-[320px] left-16 xl:left-28 rotate-3 w-44 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white/95 dark:bg-neutral-900/95 shadow-md overflow-hidden">
+        <div className="px-2.5 py-1 border-b border-gray-200 dark:border-neutral-700 bg-purple-50 dark:bg-purple-950/50 text-[10px] font-mono text-purple-700 dark:text-purple-300">
+          «interface»
         </div>
-
-        <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-[var(--text-primary)] leading-[1.12]">
-          Design &amp; practice system diagrams, right in your browser.
-        </h1>
-
-        <p className="text-sm sm:text-base text-[var(--text-secondary)] max-w-2xl mx-auto leading-relaxed">
-          UMLy pairs a fast studio for Use Case, ER, Class, and Data Flow
-          diagrams with interactive, auto-graded puzzles.
-        </p>
-
-        <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-          <Link
-            to="/workspace"
-            className="notion-btn notion-btn-primary py-2 px-4 text-xs sm:text-sm font-semibold"
-          >
-            <span>Open Workspace</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-
-          <Link
-            to="/puzzles"
-            className="notion-btn py-2 px-4 text-xs sm:text-sm font-medium text-[var(--text-primary)]"
-          >
-            <Puzzle className="w-4 h-4 text-[var(--text-secondary)]" />
-            <span>Browse {LEVEL_SUMMARIES.length} Puzzles</span>
-          </Link>
+        <div className="px-2.5 py-1.5 font-bold text-xs text-gray-900 dark:text-white border-b border-gray-200 dark:border-neutral-700">
+          PaymentGateway
         </div>
-      </section>
+        <div className="px-2.5 py-1.5 text-[10px] font-mono text-gray-600 dark:text-neutral-300">
+          + charge(amt): bool
+        </div>
+      </div>
 
-      {/* Lightweight Studio Canvas Preview */}
-      <section className="rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-secondary)]/40 p-4 sm:p-6">
-        <div className="flex items-center justify-between pb-3 mb-4 border-b border-[var(--border-subtle)]">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[var(--border-strong)]" />
-            <span className="w-2.5 h-2.5 rounded-full bg-[var(--border-strong)]" />
-            <span className="w-2.5 h-2.5 rounded-full bg-[var(--border-strong)]" />
-            <span className="ml-2 text-[11px] font-mono text-[var(--text-tertiary)]">
-              checkout-architecture.umly
-            </span>
-          </div>
-          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#448361] dark:text-[#529e72]">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Auto-saved locally</span>
+      {/* Right: Use Case Oval */}
+      <div className="hidden md:flex flex-col items-center justify-center absolute top-40 right-12 lg:right-24 rotate-6 px-6 py-3 rounded-full border-2 border-gray-900 dark:border-neutral-200 bg-white/95 dark:bg-neutral-900/95 shadow-md">
+        <span className="text-[10px] font-mono text-gray-500 dark:text-neutral-400">
+          «use case»
+        </span>
+        <span className="text-xs font-bold text-gray-900 dark:text-white">
+          Checkout Cart
+        </span>
+      </div>
+
+      {/* Right: ER Entity Node */}
+      <div className="hidden lg:block absolute top-[315px] right-16 xl:right-28 -rotate-3 w-44 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white/95 dark:bg-neutral-900/95 shadow-md overflow-hidden">
+        <div className="px-2.5 py-1.5 border-b border-gray-200 dark:border-neutral-700 bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-between">
+          <span className="text-xs font-bold text-gray-900 dark:text-white">
+            OrderItem
+          </span>
+          <span className="text-[10px] font-mono text-emerald-700 dark:text-emerald-300">
+            1 : N
           </span>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
-          {/* Node 1 */}
-          <div className="p-3.5 rounded-[6px] border border-[var(--border-default)] bg-[var(--bg-primary)] space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="notion-tag notion-tag-purple text-[10px]">
-                «interface»
-              </span>
-              <span className="text-[10px] font-mono text-[var(--text-tertiary)]">
-                Class
-              </span>
-            </div>
-            <div className="text-xs font-semibold text-[var(--text-primary)]">
-              PaymentProcessor
-            </div>
-            <div className="pt-1.5 border-t border-[var(--border-subtle)] text-[11px] font-mono text-[var(--text-secondary)]">
-              + charge(amount): boolean
-            </div>
-          </div>
-
-          {/* Node 2 */}
-          <div className="p-3.5 rounded-[6px] border border-[var(--primary-btn)] bg-[var(--bg-primary)] space-y-1.5 shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="notion-tag notion-tag-green text-[10px]">
-                Entity
-              </span>
-              <span className="text-[10px] font-mono text-[var(--primary-btn)]">
-                1 : N
-              </span>
-            </div>
-            <div className="text-xs font-semibold text-[var(--text-primary)]">
-              Order
-            </div>
-            <div className="pt-1.5 border-t border-[var(--border-subtle)] text-[11px] font-mono text-[var(--text-secondary)] space-y-0.5">
-              <div>PK order_id : UUID</div>
-              <div>FK customer_id : UUID</div>
-            </div>
-          </div>
-
-          {/* Node 3 */}
-          <div className="p-3.5 rounded-[6px] border border-[var(--border-default)] bg-[var(--bg-primary)] space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="notion-tag notion-tag-orange text-[10px]">
-                1.0 Process
-              </span>
-              <span className="text-[10px] font-mono text-[var(--text-tertiary)]">
-                DFD
-              </span>
-            </div>
-            <div className="text-xs font-semibold text-[var(--text-primary)]">
-              Process Checkout
-            </div>
-            <div className="pt-1.5 border-t border-[var(--border-subtle)] text-[11px] text-[var(--text-secondary)]">
-              Customer → Process → D1 Orders
-            </div>
-          </div>
+        <div className="px-2.5 py-1.5 text-[10px] font-mono text-gray-600 dark:text-neutral-300 space-y-0.5">
+          <div>PK order_id : UUID</div>
+          <div>FK product_id : UUID</div>
         </div>
-      </section>
+      </div>
 
-      {/* Supported Diagram Types */}
-      <section className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
-          <div>
-            <h2 className="text-base sm:text-lg font-semibold text-[var(--text-primary)]">
-              Four diagram types, one unified studio
-            </h2>
-            <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-              Every diagram type includes dedicated nodes, relationship connectors, and starter templates.
+      {/* Bottom-Left: DFD Process */}
+      <div className="hidden md:flex items-center gap-2 absolute top-[545px] left-24 lg:left-40 rotate-2 px-3.5 py-2 rounded-xl border border-amber-400 bg-white/95 dark:bg-neutral-900/95 shadow-md">
+        <span className="px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200 text-[10px] font-mono font-bold">
+          1.0
+        </span>
+        <span className="text-xs font-bold text-gray-900 dark:text-white">
+          Process Order
+        </span>
+      </div>
+
+      {/* Bottom-Right: DFD Data Store */}
+      <div className="hidden md:flex items-center gap-2 absolute top-[540px] right-24 lg:right-40 -rotate-2 px-3.5 py-2 border-y-2 border-l-2 border-gray-900 dark:border-neutral-200 bg-white/95 dark:bg-neutral-900/95 shadow-md">
+        <span className="text-[10px] font-mono font-bold text-gray-500 dark:text-neutral-400 pr-2 border-r border-gray-300 dark:border-neutral-700">
+          D1
+        </span>
+        <span className="text-xs font-bold text-gray-900 dark:text-white">
+          Orders Store
+        </span>
+      </div>
+    </div>
+  )
+}
+
+function LandingPage() {
+  return (
+    <div className="relative flex flex-col min-h-screen bg-[var(--bg-primary)] overflow-hidden">
+      <PaintSlooshesAndNodes />
+
+      {/* Jive-style 3-column Header */}
+      <header className="relative z-20 px-4 lg:px-6 py-4">
+        <nav className="grid grid-cols-3 items-center mx-auto max-w-screen-xl">
+          <div className="flex justify-start items-center col-span-1">
+            <Link
+              to="/puzzles"
+              className="md:hidden text-[var(--text-primary)] bg-[var(--bg-primary)] border border-gray-200 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-800 font-medium rounded-full text-sm px-4 py-2 transition"
+            >
+              Puzzles
+            </Link>
+          </div>
+
+          <div className="flex items-center justify-center col-span-1">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 text-2xl font-extrabold tracking-tight text-[var(--text-primary)]"
+            >
+              <span>📐</span>
+              <span>UMLy</span>
+            </Link>
+          </div>
+
+          <div className="flex justify-end items-center col-span-1">
+            <Link
+              to="/puzzles"
+              className="hidden md:inline-flex text-[var(--text-primary)] bg-[var(--bg-primary)] border border-gray-200 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-800 font-medium rounded-full text-sm md:text-base px-5 py-2 transition"
+            >
+              Puzzles
+            </Link>
+            <Link
+              to="/workspace"
+              className="text-white dark:text-neutral-900 bg-gray-900 dark:bg-white hover:opacity-90 font-medium rounded-full text-sm md:text-base px-5 py-2 ml-2 transition"
+            >
+              Workspace
+            </Link>
+          </div>
+        </nav>
+      </header>
+
+      {/* Hero Section */}
+      <main className="relative z-10 flex-grow">
+        <section className="max-w-screen-xl px-6 pt-14 pb-20 sm:pt-20 sm:pb-28 mx-auto text-center">
+          <div className="max-w-xl mx-auto">
+            <h1 className="text-5xl font-extrabold leading-none tracking-tight text-[var(--text-primary)] md:text-7xl mb-6">
+              Don&apos;t make diagramming awkward
+            </h1>
+            <p className="mb-8 text-base sm:text-xl font-normal text-[var(--text-secondary)] leading-relaxed">
+              No more fighting clunky desktop tools or messy whiteboards. UMLy
+              makes it effortless to sketch Use Case, ER, Class, and Data Flow
+              diagrams—and practice with auto-graded puzzles.
             </p>
+            <Link
+              to="/workspace"
+              className="inline-block text-white dark:text-neutral-900 bg-gray-900 dark:bg-white hover:opacity-90 font-semibold rounded-full text-base sm:text-lg px-9 py-4 transition shadow-sm"
+            >
+              Start diagramming free
+            </Link>
           </div>
-          <Link
-            to="/workspace"
-            className="text-xs text-[var(--primary-btn)] hover:underline font-medium inline-flex items-center gap-1"
-          >
-            <span>Create a diagram</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
+        </section>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {DIAGRAM_CAPABILITIES.map((item) => {
-            const Icon = item.icon
-            return (
-              <div
-                key={item.title}
-                className="p-4 rounded-[6px] border border-[var(--border-subtle)] bg-[var(--bg-primary)] space-y-2.5"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="w-8 h-8 rounded-[5px] bg-[var(--bg-secondary)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-primary)]">
-                    <Icon className="w-4 h-4" />
-                  </div>
-                  <span className={`notion-tag ${item.tagClass} text-[10px]`}>
-                    {item.tag}
-                  </span>
-                </div>
-                <h3 className="text-xs font-semibold text-[var(--text-primary)]">
-                  {item.title}
-                </h3>
-                <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed">
-                  {item.description}
-                </p>
+        {/* Jive-style 3-Step Features Section */}
+        <section className="max-w-screen-xl px-6 py-12 sm:py-16 mx-auto text-center">
+          <div className="space-y-10 md:grid md:grid-cols-3 md:gap-12 md:space-y-0 mb-14">
+            <div className="max-w-xs mx-auto">
+              <div className="mx-auto mb-4 w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-300 flex items-center justify-center">
+                <PenTool className="w-6 h-6" />
               </div>
-            )
-          })}
-        </div>
-      </section>
-
-      {/* Core Highlights */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6 border-t border-[var(--border-subtle)]">
-        {HIGHLIGHTS.map((feat) => {
-          const Icon = feat.icon
-          return (
-            <div key={feat.title} className="space-y-1.5">
-              <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-primary)]">
-                <Icon className="w-4 h-4 text-[var(--primary-btn)]" />
-                <span>{feat.title}</span>
-              </div>
-              <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-                {feat.description}
+              <h3 className="mb-2 text-2xl font-bold text-[var(--text-primary)]">
+                Pick a diagram type
+              </h3>
+              <p className="text-[var(--text-secondary)] text-base sm:text-lg">
+                Sketch Use Case, ER, Class, and Data Flow diagrams with dedicated
+                nodes and smart connectors.
               </p>
             </div>
-          )
-        })}
-      </section>
 
-      {/* Bottom CTA */}
-      <section className="p-6 rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-secondary)]/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <h2 className="text-sm sm:text-base font-semibold text-[var(--text-primary)]">
-            Ready to model your next system?
-          </h2>
-          <p className="text-xs text-[var(--text-secondary)]">
-            Jump straight into the workspace or test your skills with Level 1.
-          </p>
-        </div>
+            <div className="max-w-xs mx-auto">
+              <div className="mx-auto mb-4 w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-300 flex items-center justify-center">
+                <Puzzle className="w-6 h-6" />
+              </div>
+              <h3 className="mb-2 text-2xl font-bold text-[var(--text-primary)]">
+                Practice with puzzles
+              </h3>
+              <p className="text-[var(--text-secondary)] text-base sm:text-lg">
+                Master relationships across {LEVEL_SUMMARIES.length} interactive
+                challenges with instant auto-graded feedback.
+              </p>
+            </div>
 
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <div className="max-w-xs mx-auto">
+              <div className="mx-auto mb-4 w-12 h-12 rounded-2xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-300 flex items-center justify-center">
+                <Download className="w-6 h-6" />
+              </div>
+              <h3 className="mb-2 text-2xl font-bold text-[var(--text-primary)]">
+                Export from your browser
+              </h3>
+              <p className="text-[var(--text-secondary)] text-base sm:text-lg">
+                Everything stays saved locally with zero setup. Export crisp PNG,
+                SVG, or JSON in one click.
+              </p>
+            </div>
+          </div>
+
           <Link
             to="/workspace"
-            className="notion-btn notion-btn-primary py-1.5 px-3.5 text-xs font-semibold"
+            className="inline-block text-white dark:text-neutral-900 bg-gray-900 dark:bg-white hover:opacity-90 font-semibold rounded-full text-lg sm:text-xl px-12 py-4 transition"
           >
-            <span>Open Workspace</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            Start diagramming
           </Link>
-          {firstLevel && (
-            <Link
-              to="/play/$levelId"
-              params={{ levelId: firstLevel.id }}
-              className="notion-btn py-1.5 px-3.5 text-xs font-medium"
-            >
-              <Play className="w-3.5 h-3.5 fill-current text-[var(--text-secondary)]" />
-              <span>Start Level 1</span>
-            </Link>
-          )}
+        </section>
+      </main>
+
+      {/* Jive-style Centered Footer */}
+      <footer className="relative z-10 p-6 md:p-10 text-center">
+        <div className="mx-auto max-w-screen-xl">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 text-xl font-extrabold tracking-tight text-[var(--text-primary)]"
+          >
+            <span>📐</span>
+            <span>UMLy</span>
+          </Link>
+          <p className="my-4 text-sm text-[var(--text-secondary)]">
+            Sketch cleanly and master system design.
+          </p>
+          <ul className="flex flex-wrap justify-center items-center gap-6 mb-4 text-sm text-[var(--text-primary)]">
+            <li>
+              <Link to="/workspace" className="hover:opacity-70 transition">
+                Workspace
+              </Link>
+            </li>
+            <li>
+              <Link to="/puzzles" className="hover:opacity-70 transition">
+                Puzzles
+              </Link>
+            </li>
+            <li>
+              <Link to="/studio" className="hover:opacity-70 transition">
+                Studio
+              </Link>
+            </li>
+          </ul>
+          <span className="text-xs text-[var(--text-tertiary)]">
+            &copy; {new Date().getFullYear()} UMLy
+          </span>
         </div>
-      </section>
-    </main>
+      </footer>
+    </div>
   )
 }
