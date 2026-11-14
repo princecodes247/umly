@@ -234,7 +234,7 @@ function LandingPage() {
         <section className="max-w-screen-xl px-6 pt-14 pb-20 sm:pt-20 sm:pb-28 mx-auto text-center">
           <div className="max-w-xl mx-auto">
             <h1 className="text-5xl font-extrabold leading-none tracking-tight text-[var(--text-primary)] md:text-7xl mb-6">
-              Diagram systems without the clutter
+              UML diagrams made easy
             </h1>
             <p className="mb-8 text-base sm:text-xl font-normal text-[var(--text-secondary)] leading-relaxed">
               Skip clunky desktop tools and messy whiteboards. Sketch Use Case,
