@@ -234,12 +234,12 @@ function LandingPage() {
         <section className="max-w-screen-xl px-6 pt-14 pb-20 sm:pt-20 sm:pb-28 mx-auto text-center">
           <div className="max-w-xl mx-auto">
             <h1 className="text-5xl font-extrabold leading-none tracking-tight text-[var(--text-primary)] md:text-7xl mb-6">
-              Don&apos;t make diagramming awkward
+              Diagram systems without the clutter
             </h1>
             <p className="mb-8 text-base sm:text-xl font-normal text-[var(--text-secondary)] leading-relaxed">
-              No more fighting clunky desktop tools or messy whiteboards. UMLy
-              makes it effortless to sketch Use Case, ER, Class, and Data Flow
-              diagrams—and practice with auto-graded puzzles.
+              Skip clunky desktop tools and messy whiteboards. Sketch Use Case,
+              ER, Class, and Data Flow diagrams right in your browser, or sharpen
+              your skills with auto-graded puzzles.
             </p>
             <Link
               to="/workspace"
