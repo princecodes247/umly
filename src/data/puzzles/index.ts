@@ -273,8 +273,108 @@ export const PUZZLE_SUMMARIES: LevelSummary[] = [
     "scenario": "In a rich-text editor, a Document strictly owns its Page objects (pages cannot exist without the document). Meanwhile, TextBlock and ImageBlock are specialized types of Block."
   },
   {
-    "id": "dfd-1-checkout-flow",
+    "id": "class-3-notification-inheritance",
     "number": 28,
+    "title": "Notification Channel Hierarchy",
+    "diagramType": "class",
+    "type": "build",
+    "difficulty": "Beginner",
+    "category": "Class Architecture",
+    "scenario": "A messaging module defines an abstract Notification base class with send(). EmailNotification and SmsNotification are concrete subclasses that inherit from Notification."
+  },
+  {
+    "id": "class-4-library-aggregation",
+    "number": 29,
+    "title": "University Department & Faculty",
+    "diagramType": "class",
+    "type": "build",
+    "difficulty": "Easy",
+    "category": "Class Architecture",
+    "scenario": "A University strictly owns its Departments (if a university closes, its departments cease to exist). A Department groups Professors, though Professors can exist independently. Professors are associated with the Courses they teach."
+  },
+  {
+    "id": "class-5-classify-storage-drivers",
+    "number": 30,
+    "title": "Classify Storage Drivers & Consumer",
+    "diagramType": "class",
+    "type": "classify",
+    "difficulty": "Easy",
+    "category": "Class Architecture",
+    "scenario": "A MediaService uploads files through a StorageDriver interface. S3Driver and LocalDiskDriver provide concrete implementations of StorageDriver."
+  },
+  {
+    "id": "class-6-fix-order-ownership",
+    "number": 31,
+    "title": "Repair Order & LineItem Ownership",
+    "diagramType": "class",
+    "type": "fix",
+    "difficulty": "Easy",
+    "category": "Class Architecture",
+    "scenario": "An e-commerce class model mistakenly uses Generalization between OrderItem and Order (an OrderItem is not a type of Order!). Instead, an Order strictly owns its OrderItems, Customer places Orders, and OrderItem references a Product."
+  },
+  {
+    "id": "class-7-observer-pattern",
+    "number": 32,
+    "title": "Event Bus & Observer Pattern",
+    "diagramType": "class",
+    "type": "build",
+    "difficulty": "Intermediate",
+    "category": "Class Architecture",
+    "scenario": "An event-driven system uses the Observer pattern. OrderPublisher implements the EventSubject interface, while EmailSubscriber and AnalyticsSubscriber implement the Observer interface. EventSubject aggregates registered Observers."
+  },
+  {
+    "id": "class-8-fix-vehicle-hierarchy",
+    "number": 33,
+    "title": "Fix the Vehicle & Engine Hierarchy",
+    "diagramType": "class",
+    "type": "fix",
+    "difficulty": "Intermediate",
+    "category": "Class Architecture",
+    "scenario": "A fleet telemetry system models abstract vehicles, concrete cars, their internal engines and wheels, and drivers who operate cars. The current diagram has two structural bugs: the inheritance arrow between Vehicle and Car points the wrong way, and Engine is modeled as loosely shared rather than exclusively owned by a Car."
+  },
+  {
+    "id": "class-9-classify-rpg-entities",
+    "number": 34,
+    "title": "Classify RPG Character & Inventory",
+    "diagramType": "class",
+    "type": "classify",
+    "difficulty": "Intermediate",
+    "category": "Class Architecture",
+    "scenario": "In an RPG engine, Warrior is a specialized Character. Every Character owns an exclusive Inventory bag that is destroyed if the character is deleted. An Inventory holds Items that can be dropped, traded, or picked up independently. Weapon is a specialized type of Item."
+  },
+  {
+    "id": "class-10-ecommerce-checkout-architecture",
+    "number": 35,
+    "title": "E-Commerce Checkout Architecture",
+    "diagramType": "class",
+    "type": "build",
+    "difficulty": "Advanced",
+    "category": "Class Architecture",
+    "scenario": "An e-commerce checkout service processes an Order containing exclusive OrderLines and tracks its lifecycle using an OrderStatus enum. To stay extensible, CheckoutController depends on a DiscountPolicy interface rather than concrete discount rules like PercentageDiscount."
+  },
+  {
+    "id": "class-11-fix-plugin-architecture",
+    "number": 36,
+    "title": "Fix the Extensible Plugin Host",
+    "diagramType": "class",
+    "type": "fix",
+    "difficulty": "Advanced",
+    "category": "Class Architecture",
+    "scenario": "A CMS loads plugins through a Plugin interface, owns a dedicated PluginConfig per host instance, and lets plugins log via a Logger interface. The current diagram breaks Dependency Inversion and ownership rules: one Realization arrow is reversed, PluginHost bypasses the Plugin interface to depend directly on AuthPlugin, and PluginConfig is marked as shared Aggregation."
+  },
+  {
+    "id": "class-12-enterprise-cqrs-pipeline",
+    "number": 37,
+    "title": "Enterprise CQRS Command Pipeline",
+    "diagramType": "class",
+    "type": "build",
+    "difficulty": "Advanced",
+    "category": "Class Architecture",
+    "scenario": "An event-sourced microservice routes commands through a CommandBus to a CommandHandler interface. CreateOrderHandler implements that contract, emits an OrderCreatedEvent (a specialized abstract DomainEvent), and appends it to an EventStore interface."
+  },
+  {
+    "id": "dfd-1-checkout-flow",
+    "number": 38,
     "title": "Online Order Data Flow",
     "diagramType": "dfd",
     "type": "build",
@@ -284,7 +384,7 @@ export const PUZZLE_SUMMARIES: LevelSummary[] = [
   },
   {
     "id": "dfd-2-fix-illegal-store-flow",
-    "number": 29,
+    "number": 39,
     "title": "Fix Illegal Direct Store Flow",
     "diagramType": "dfd",
     "type": "fix",
@@ -322,6 +422,16 @@ export const PUZZLE_FILE_BY_ID: Record<string, string> = {
   "er-12-airline-booking": "./puzzles/er/er-12-airline-booking.json",
   "class-1-payment-strategy": "./puzzles/class/class-1-payment-strategy.json",
   "class-2-composition-vs-inheritance": "./puzzles/class/class-2-composition-vs-inheritance.json",
+  "class-3-notification-inheritance": "./puzzles/class/class-3-notification-inheritance.json",
+  "class-4-library-aggregation": "./puzzles/class/class-4-library-aggregation.json",
+  "class-5-classify-storage-drivers": "./puzzles/class/class-5-classify-storage-drivers.json",
+  "class-6-fix-order-ownership": "./puzzles/class/class-6-fix-order-ownership.json",
+  "class-7-observer-pattern": "./puzzles/class/class-7-observer-pattern.json",
+  "class-8-fix-vehicle-hierarchy": "./puzzles/class/class-8-fix-vehicle-hierarchy.json",
+  "class-9-classify-rpg-entities": "./puzzles/class/class-9-classify-rpg-entities.json",
+  "class-10-ecommerce-checkout-architecture": "./puzzles/class/class-10-ecommerce-checkout-architecture.json",
+  "class-11-fix-plugin-architecture": "./puzzles/class/class-11-fix-plugin-architecture.json",
+  "class-12-enterprise-cqrs-pipeline": "./puzzles/class/class-12-enterprise-cqrs-pipeline.json",
   "dfd-1-checkout-flow": "./puzzles/dfd/dfd-1-checkout-flow.json",
   "dfd-2-fix-illegal-store-flow": "./puzzles/dfd/dfd-2-fix-illegal-store-flow.json"
 }

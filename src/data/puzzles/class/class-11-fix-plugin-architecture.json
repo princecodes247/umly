@@ -1,0 +1,149 @@
+{
+  "id": "class-11-fix-plugin-architecture",
+  "number": 21,
+  "title": "Fix the Extensible Plugin Host",
+  "diagramType": "class",
+  "type": "fix",
+  "difficulty": "Advanced",
+  "category": "Class Architecture",
+  "scenario": "A CMS loads plugins through a Plugin interface, owns a dedicated PluginConfig per host instance, and lets plugins log via a Logger interface. The current diagram breaks Dependency Inversion and ownership rules: one Realization arrow is reversed, PluginHost bypasses the Plugin interface to depend directly on AuthPlugin, and PluginConfig is marked as shared Aggregation.",
+  "goal": "Repair the three architectural defects so PluginHost depends only on abstractions, owns its configuration exclusively, and both plugins cleanly implement Plugin.",
+  "learningObjective": "Enforce the Dependency Inversion Principle and spot reversed realization and weak ownership bugs in a multi-class diagram.",
+  "hints": [
+    "Realization arrows must point from concrete classes (MarkdownPlugin, AuthPlugin) toward the Plugin interface.",
+    "PluginHost should depend on the Plugin interface rather than concrete AuthPlugin (Dependency Inversion).",
+    "Change PluginHost -> PluginConfig from Aggregation to Composition, reverse Plugin -> MarkdownPlugin to MarkdownPlugin -> Plugin, and rewire PluginHost -> AuthPlugin to PluginHost -> Plugin."
+  ],
+  "solutionExplanation": "Both MarkdownPlugin and AuthPlugin realize Plugin. PluginHost depends on the Plugin interface (not concrete AuthPlugin) and composes its own PluginConfig. AuthPlugin continues to depend on Logger.",
+  "initialNodes": [
+    {
+      "id": "cls-host",
+      "type": "umlClass",
+      "position": { "x": 80, "y": 80 },
+      "data": {
+        "label": "PluginHost",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classAttributes": [],
+        "classMethods": [
+          { "id": "m1", "visibility": "+", "name": "register", "params": "plugin: Plugin", "returnType": "void" }
+        ]
+      }
+    },
+    {
+      "id": "cls-plugin",
+      "type": "umlClass",
+      "position": { "x": 380, "y": 80 },
+      "data": {
+        "label": "Plugin",
+        "nodeType": "umlClass",
+        "classKind": "interface",
+        "classAttributes": [],
+        "classMethods": [
+          { "id": "m1", "visibility": "+", "name": "init", "params": "", "returnType": "void" }
+        ]
+      }
+    },
+    {
+      "id": "cls-markdown",
+      "type": "umlClass",
+      "position": { "x": 380, "y": 290 },
+      "data": {
+        "label": "MarkdownPlugin",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classAttributes": [],
+        "classMethods": [
+          { "id": "m1", "visibility": "+", "name": "init", "params": "", "returnType": "void" }
+        ]
+      }
+    },
+    {
+      "id": "cls-auth",
+      "type": "umlClass",
+      "position": { "x": 660, "y": 290 },
+      "data": {
+        "label": "AuthPlugin",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classAttributes": [],
+        "classMethods": [
+          { "id": "m1", "visibility": "+", "name": "init", "params": "", "returnType": "void" }
+        ]
+      }
+    },
+    {
+      "id": "cls-config",
+      "type": "umlClass",
+      "position": { "x": 80, "y": 290 },
+      "data": {
+        "label": "PluginConfig",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classAttributes": [
+          { "id": "a1", "visibility": "-", "name": "strictMode", "type": "boolean" }
+        ],
+        "classMethods": []
+      }
+    },
+    {
+      "id": "cls-logger",
+      "type": "umlClass",
+      "position": { "x": 660, "y": 80 },
+      "data": {
+        "label": "Logger",
+        "nodeType": "umlClass",
+        "classKind": "interface",
+        "classAttributes": [],
+        "classMethods": [
+          { "id": "m1", "visibility": "+", "name": "info", "params": "msg: string", "returnType": "void" }
+        ]
+      }
+    }
+  ],
+  "initialEdges": [
+    {
+      "id": "e-bug-md",
+      "source": "cls-plugin",
+      "target": "cls-markdown",
+      "data": { "relationshipType": "realization" }
+    },
+    {
+      "id": "e-ok-auth",
+      "source": "cls-auth",
+      "target": "cls-plugin",
+      "data": { "relationshipType": "realization" }
+    },
+    {
+      "id": "e-bug-dip",
+      "source": "cls-host",
+      "target": "cls-auth",
+      "data": { "relationshipType": "dependency" }
+    },
+    {
+      "id": "e-bug-cfg",
+      "source": "cls-host",
+      "target": "cls-config",
+      "data": { "relationshipType": "aggregation" }
+    },
+    {
+      "id": "e-ok-log",
+      "source": "cls-auth",
+      "target": "cls-logger",
+      "data": { "relationshipType": "dependency" }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Repaired plugin architecture honoring Dependency Inversion and strict config ownership",
+      "edges": [
+        { "source": "cls-markdown", "target": "cls-plugin", "type": "realization", "description": "MarkdownPlugin implements Plugin" },
+        { "source": "cls-auth", "target": "cls-plugin", "type": "realization", "description": "AuthPlugin implements Plugin" },
+        { "source": "cls-host", "target": "cls-plugin", "type": "dependency", "description": "PluginHost depends on Plugin interface" },
+        { "source": "cls-host", "target": "cls-config", "type": "composition", "description": "PluginHost exclusively owns PluginConfig" },
+        { "source": "cls-auth", "target": "cls-logger", "type": "dependency", "description": "AuthPlugin logs via Logger interface" }
+      ]
+    }
+  ]
+}
+

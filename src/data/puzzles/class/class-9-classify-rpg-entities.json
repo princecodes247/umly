@@ -1,0 +1,134 @@
+{
+  "id": "class-9-classify-rpg-entities",
+  "number": 19,
+  "title": "Classify RPG Character & Inventory",
+  "diagramType": "class",
+  "type": "classify",
+  "difficulty": "Intermediate",
+  "category": "Class Architecture",
+  "scenario": "In an RPG engine, Warrior is a specialized Character. Every Character owns an exclusive Inventory bag that is destroyed if the character is deleted. An Inventory holds Items that can be dropped, traded, or picked up independently. Weapon is a specialized type of Item.",
+  "goal": "Classify all four existing connections using the exact UML relationship type for each inheritance, ownership, or shared containment rule.",
+  "learningObjective": "Differentiate generalization hierarchies from composition (owned container) and aggregation (independent collectibles).",
+  "hints": [
+    "Warrior -> Character and Weapon -> Item are both 'is-a' inheritance relationships between classes.",
+    "A Character's Inventory cannot exist without its Character, whereas Items can survive outside any Inventory.",
+    "Use Generalization for Warrior -> Character and Weapon -> Item, Composition for Character -> Inventory, and Aggregation for Inventory -> Item."
+  ],
+  "solutionExplanation": "Warrior extends Character and Weapon extends Item via Generalization. Character owns Inventory via Composition (lifecycle-bound), while Inventory holds independent Items via Aggregation.",
+  "initialNodes": [
+    {
+      "id": "cls-character",
+      "type": "umlClass",
+      "position": { "x": 100, "y": 60 },
+      "data": {
+        "label": "Character",
+        "nodeType": "umlClass",
+        "classKind": "abstract",
+        "classAttributes": [
+          { "id": "a1", "visibility": "#", "name": "hp", "type": "number" }
+        ],
+        "classMethods": [
+          { "id": "m1", "visibility": "+", "name": "attack", "params": "", "returnType": "number", "isAbstract": true }
+        ]
+      }
+    },
+    {
+      "id": "cls-warrior",
+      "type": "umlClass",
+      "position": { "x": 100, "y": 270 },
+      "data": {
+        "label": "Warrior",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classAttributes": [
+          { "id": "a1", "visibility": "-", "name": "rage", "type": "number" }
+        ],
+        "classMethods": [
+          { "id": "m1", "visibility": "+", "name": "attack", "params": "", "returnType": "number" }
+        ]
+      }
+    },
+    {
+      "id": "cls-inventory",
+      "type": "umlClass",
+      "position": { "x": 400, "y": 60 },
+      "data": {
+        "label": "Inventory",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classAttributes": [
+          { "id": "a1", "visibility": "-", "name": "capacity", "type": "number" }
+        ],
+        "classMethods": [
+          { "id": "m1", "visibility": "+", "name": "addItem", "params": "item: Item", "returnType": "void" }
+        ]
+      }
+    },
+    {
+      "id": "cls-item",
+      "type": "umlClass",
+      "position": { "x": 400, "y": 270 },
+      "data": {
+        "label": "Item",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classAttributes": [
+          { "id": "a1", "visibility": "+", "name": "weight", "type": "number" }
+        ],
+        "classMethods": []
+      }
+    },
+    {
+      "id": "cls-weapon",
+      "type": "umlClass",
+      "position": { "x": 400, "y": 460 },
+      "data": {
+        "label": "Weapon",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classAttributes": [
+          { "id": "a1", "visibility": "-", "name": "damage", "type": "number" }
+        ],
+        "classMethods": []
+      }
+    }
+  ],
+  "initialEdges": [
+    {
+      "id": "e1",
+      "source": "cls-warrior",
+      "target": "cls-character",
+      "data": { "relationshipType": "association" }
+    },
+    {
+      "id": "e2",
+      "source": "cls-character",
+      "target": "cls-inventory",
+      "data": { "relationshipType": "association" }
+    },
+    {
+      "id": "e3",
+      "source": "cls-inventory",
+      "target": "cls-item",
+      "data": { "relationshipType": "association" }
+    },
+    {
+      "id": "e4",
+      "source": "cls-weapon",
+      "target": "cls-item",
+      "data": { "relationshipType": "association" }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Classified RPG inheritance, composition, and aggregation",
+      "edges": [
+        { "source": "cls-warrior", "target": "cls-character", "type": "generalization", "description": "Warrior extends Character" },
+        { "source": "cls-character", "target": "cls-inventory", "type": "composition", "description": "Character exclusively owns its Inventory" },
+        { "source": "cls-inventory", "target": "cls-item", "type": "aggregation", "description": "Inventory holds independent Items" },
+        { "source": "cls-weapon", "target": "cls-item", "type": "generalization", "description": "Weapon extends Item" }
+      ]
+    }
+  ]
+}
+

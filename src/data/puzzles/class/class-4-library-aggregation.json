@@ -1,0 +1,83 @@
+{
+  "id": "class-4-library-aggregation",
+  "number": 14,
+  "title": "University Department & Faculty",
+  "diagramType": "class",
+  "type": "build",
+  "difficulty": "Easy",
+  "category": "Class Architecture",
+  "scenario": "A University strictly owns its Departments (if a university closes, its departments cease to exist). A Department groups Professors, though Professors can exist independently. Professors are associated with the Courses they teach.",
+  "goal": "Model strict ownership, shared membership, and teaching relationships across University, Department, Professor, and Course.",
+  "learningObjective": "Distinguish Composition (strong ownership), Aggregation (weak/shared ownership), and Association.",
+  "hints": [
+    "Strong lifecycle ownership uses Composition (University -> Department).",
+    "Independent parts grouped into a whole use Aggregation (Department -> Professor).",
+    "Use Association between Professor and Course."
+  ],
+  "solutionExplanation": "University composes Department, Department aggregates Professor, and Professor associates with Course.",
+  "initialNodes": [
+    {
+      "id": "cls-uni",
+      "type": "umlClass",
+      "position": { "x": 70, "y": 90 },
+      "data": {
+        "label": "University",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classAttributes": [
+          { "id": "a1", "visibility": "-", "name": "name", "type": "string" }
+        ]
+      }
+    },
+    {
+      "id": "cls-dept",
+      "type": "umlClass",
+      "position": { "x": 360, "y": 90 },
+      "data": {
+        "label": "Department",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classAttributes": [
+          { "id": "a2", "visibility": "-", "name": "code", "type": "string" }
+        ]
+      }
+    },
+    {
+      "id": "cls-prof",
+      "type": "umlClass",
+      "position": { "x": 360, "y": 300 },
+      "data": {
+        "label": "Professor",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classAttributes": [
+          { "id": "a3", "visibility": "-", "name": "facultyId", "type": "string" }
+        ]
+      }
+    },
+    {
+      "id": "cls-course",
+      "type": "umlClass",
+      "position": { "x": 70, "y": 300 },
+      "data": {
+        "label": "Course",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classAttributes": [
+          { "id": "a4", "visibility": "-", "name": "title", "type": "string" }
+        ]
+      }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Composition, Aggregation, and Association in academic domain",
+      "edges": [
+        { "source": "cls-uni", "target": "cls-dept", "type": "composition", "description": "University strictly owns Departments" },
+        { "source": "cls-dept", "target": "cls-prof", "type": "aggregation", "description": "Department aggregates Professors" },
+        { "source": "cls-prof", "target": "cls-course", "type": "association", "bidirectional": true, "description": "Professor teaches Courses" }
+      ]
+    }
+  ]
+}
+

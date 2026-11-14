@@ -1,0 +1,136 @@
+{
+  "id": "class-8-fix-vehicle-hierarchy",
+  "number": 18,
+  "title": "Fix the Vehicle & Engine Hierarchy",
+  "diagramType": "class",
+  "type": "fix",
+  "difficulty": "Intermediate",
+  "category": "Class Architecture",
+  "scenario": "A fleet telemetry system models abstract vehicles, concrete cars, their internal engines and wheels, and drivers who operate cars. The current diagram has two structural bugs: the inheritance arrow between Vehicle and Car points the wrong way, and Engine is modeled as loosely shared rather than exclusively owned by a Car.",
+  "goal": "Inspect all existing relationships and fix the two incorrect ones so inheritance points from Car to Vehicle and Engine lifetime is strictly tied to Car.",
+  "learningObjective": "Spot and correct reversed generalization arrows and distinguish strict composition from weak aggregation.",
+  "hints": [
+    "Generalization arrows always point from the subclass (Car) to the superclass (Vehicle).",
+    "An Engine built inside a Car is owned exclusively by that Car and does not outlive it in this fleet model.",
+    "Reverse the Vehicle-to-Car generalization so Car points to Vehicle, and change Car-to-Engine from Aggregation to Composition."
+  ],
+  "solutionExplanation": "Car inherits from Vehicle via Generalization (Car -> Vehicle). Car strictly owns its Engine and Wheels via Composition, while Driver operates Car via an undirected Association.",
+  "initialNodes": [
+    {
+      "id": "cls-vehicle",
+      "type": "umlClass",
+      "position": { "x": 120, "y": 40 },
+      "data": {
+        "label": "Vehicle",
+        "nodeType": "umlClass",
+        "classKind": "abstract",
+        "classAttributes": [
+          { "id": "a1", "visibility": "#", "name": "vin", "type": "string" }
+        ],
+        "classMethods": [
+          { "id": "m1", "visibility": "+", "name": "move", "params": "", "returnType": "void", "isAbstract": true }
+        ]
+      }
+    },
+    {
+      "id": "cls-car",
+      "type": "umlClass",
+      "position": { "x": 120, "y": 240 },
+      "data": {
+        "label": "Car",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classAttributes": [
+          { "id": "a1", "visibility": "-", "name": "doors", "type": "number" }
+        ],
+        "classMethods": [
+          { "id": "m1", "visibility": "+", "name": "move", "params": "", "returnType": "void" }
+        ]
+      }
+    },
+    {
+      "id": "cls-engine",
+      "type": "umlClass",
+      "position": { "x": 420, "y": 140 },
+      "data": {
+        "label": "Engine",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classAttributes": [
+          { "id": "a1", "visibility": "-", "name": "horsepower", "type": "number" }
+        ],
+        "classMethods": [
+          { "id": "m1", "visibility": "+", "name": "ignite", "params": "", "returnType": "void" }
+        ]
+      }
+    },
+    {
+      "id": "cls-wheel",
+      "type": "umlClass",
+      "position": { "x": 420, "y": 340 },
+      "data": {
+        "label": "Wheel",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classAttributes": [
+          { "id": "a1", "visibility": "-", "name": "diameter", "type": "number" }
+        ],
+        "classMethods": []
+      }
+    },
+    {
+      "id": "cls-driver",
+      "type": "umlClass",
+      "position": { "x": 120, "y": 440 },
+      "data": {
+        "label": "Driver",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classAttributes": [
+          { "id": "a1", "visibility": "-", "name": "licenseId", "type": "string" }
+        ],
+        "classMethods": [
+          { "id": "m1", "visibility": "+", "name": "drive", "params": "car: Car", "returnType": "void" }
+        ]
+      }
+    }
+  ],
+  "initialEdges": [
+    {
+      "id": "e-bug-gen",
+      "source": "cls-vehicle",
+      "target": "cls-car",
+      "data": { "relationshipType": "generalization" }
+    },
+    {
+      "id": "e-bug-engine",
+      "source": "cls-car",
+      "target": "cls-engine",
+      "data": { "relationshipType": "aggregation" }
+    },
+    {
+      "id": "e-wheel",
+      "source": "cls-car",
+      "target": "cls-wheel",
+      "data": { "relationshipType": "composition" }
+    },
+    {
+      "id": "e-driver",
+      "source": "cls-driver",
+      "target": "cls-car",
+      "data": { "relationshipType": "association" }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Fixed inheritance direction and exclusive Engine composition",
+      "edges": [
+        { "source": "cls-car", "target": "cls-vehicle", "type": "generalization", "description": "Car extends abstract Vehicle" },
+        { "source": "cls-car", "target": "cls-engine", "type": "composition", "description": "Car exclusively owns its Engine" },
+        { "source": "cls-car", "target": "cls-wheel", "type": "composition", "description": "Car exclusively owns its Wheels" },
+        { "source": "cls-driver", "target": "cls-car", "type": "association", "bidirectional": true, "description": "Driver operates Car" }
+      ]
+    }
+  ]
+}
+

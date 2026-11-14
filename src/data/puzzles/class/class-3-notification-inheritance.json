@@ -1,0 +1,78 @@
+{
+  "id": "class-3-notification-inheritance",
+  "number": 13,
+  "title": "Notification Channel Hierarchy",
+  "diagramType": "class",
+  "type": "build",
+  "difficulty": "Beginner",
+  "category": "Class Architecture",
+  "scenario": "A messaging module defines an abstract Notification base class with send(). EmailNotification and SmsNotification are concrete subclasses that inherit from Notification.",
+  "goal": "Model the inheritance hierarchy connecting both concrete notification channels to their abstract base class.",
+  "learningObjective": "Use Generalization arrows correctly from subclasses to an abstract superclass.",
+  "hints": [
+    "Generalization uses a hollow triangular arrow pointing from child to parent.",
+    "Both EmailNotification and SmsNotification inherit from Notification.",
+    "Draw Generalization from EmailNotification -> Notification and SmsNotification -> Notification."
+  ],
+  "solutionExplanation": "EmailNotification and SmsNotification both specialize the abstract Notification class via Generalization.",
+  "initialNodes": [
+    {
+      "id": "cls-notification",
+      "type": "umlClass",
+      "position": { "x": 280, "y": 70 },
+      "data": {
+        "label": "Notification",
+        "nodeType": "umlClass",
+        "classKind": "abstract",
+        "classAttributes": [
+          { "id": "a1", "visibility": "#", "name": "recipient", "type": "string" }
+        ],
+        "classMethods": [
+          { "id": "m1", "visibility": "+", "name": "send", "returnType": "void", "isAbstract": true }
+        ]
+      }
+    },
+    {
+      "id": "cls-email",
+      "type": "umlClass",
+      "position": { "x": 100, "y": 290 },
+      "data": {
+        "label": "EmailNotification",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classAttributes": [
+          { "id": "a2", "visibility": "-", "name": "subject", "type": "string" }
+        ],
+        "classMethods": [
+          { "id": "m2", "visibility": "+", "name": "send", "returnType": "void" }
+        ]
+      }
+    },
+    {
+      "id": "cls-sms",
+      "type": "umlClass",
+      "position": { "x": 460, "y": 290 },
+      "data": {
+        "label": "SmsNotification",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classAttributes": [
+          { "id": "a3", "visibility": "-", "name": "phone", "type": "string" }
+        ],
+        "classMethods": [
+          { "id": "m3", "visibility": "+", "name": "send", "returnType": "void" }
+        ]
+      }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Abstract Notification superclass with two concrete subclasses",
+      "edges": [
+        { "source": "cls-email", "target": "cls-notification", "type": "generalization", "description": "EmailNotification inherits from Notification" },
+        { "source": "cls-sms", "target": "cls-notification", "type": "generalization", "description": "SmsNotification inherits from Notification" }
+      ]
+    }
+  ]
+}
+

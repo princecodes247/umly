@@ -1,0 +1,98 @@
+{
+  "id": "class-7-observer-pattern",
+  "number": 17,
+  "title": "Event Bus & Observer Pattern",
+  "diagramType": "class",
+  "type": "build",
+  "difficulty": "Intermediate",
+  "category": "Class Architecture",
+  "scenario": "An event-driven system uses the Observer pattern. OrderPublisher implements the EventSubject interface, while EmailSubscriber and AnalyticsSubscriber implement the Observer interface. EventSubject aggregates registered Observers.",
+  "goal": "Wire the Observer pattern interfaces, concrete implementations, and subject-observer relationship.",
+  "learningObjective": "Model the Observer design pattern using Realization and Aggregation.",
+  "hints": [
+    "Concrete classes (OrderPublisher, EmailSubscriber, AnalyticsSubscriber) realize their respective interfaces.",
+    "EventSubject holds a list of independent Observer instances (Aggregation).",
+    "Connect OrderPublisher -> EventSubject (Realization), EmailSubscriber & AnalyticsSubscriber -> Observer (Realization), and EventSubject -> Observer (Aggregation)."
+  ],
+  "solutionExplanation": "OrderPublisher realizes EventSubject, both subscribers realize Observer, and EventSubject aggregates Observer.",
+  "initialNodes": [
+    {
+      "id": "cls-subject",
+      "type": "umlClass",
+      "position": { "x": 120, "y": 70 },
+      "data": {
+        "label": "EventSubject",
+        "nodeType": "umlClass",
+        "classKind": "interface",
+        "classMethods": [
+          { "id": "m1", "visibility": "+", "name": "subscribe", "params": "obs: Observer", "returnType": "void" },
+          { "id": "m2", "visibility": "+", "name": "notify", "returnType": "void" }
+        ]
+      }
+    },
+    {
+      "id": "cls-publisher",
+      "type": "umlClass",
+      "position": { "x": 120, "y": 300 },
+      "data": {
+        "label": "OrderPublisher",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classMethods": [
+          { "id": "m3", "visibility": "+", "name": "notify", "returnType": "void" }
+        ]
+      }
+    },
+    {
+      "id": "cls-observer",
+      "type": "umlClass",
+      "position": { "x": 450, "y": 70 },
+      "data": {
+        "label": "Observer",
+        "nodeType": "umlClass",
+        "classKind": "interface",
+        "classMethods": [
+          { "id": "m4", "visibility": "+", "name": "onEvent", "params": "payload: any", "returnType": "void" }
+        ]
+      }
+    },
+    {
+      "id": "cls-email-sub",
+      "type": "umlClass",
+      "position": { "x": 360, "y": 300 },
+      "data": {
+        "label": "EmailSubscriber",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classMethods": [
+          { "id": "m5", "visibility": "+", "name": "onEvent", "params": "payload: any", "returnType": "void" }
+        ]
+      }
+    },
+    {
+      "id": "cls-analytics-sub",
+      "type": "umlClass",
+      "position": { "x": 580, "y": 300 },
+      "data": {
+        "label": "AnalyticsSubscriber",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classMethods": [
+          { "id": "m6", "visibility": "+", "name": "onEvent", "params": "payload: any", "returnType": "void" }
+        ]
+      }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Observer pattern with Realization and Aggregation",
+      "edges": [
+        { "source": "cls-publisher", "target": "cls-subject", "type": "realization", "description": "OrderPublisher implements EventSubject" },
+        { "source": "cls-email-sub", "target": "cls-observer", "type": "realization", "description": "EmailSubscriber implements Observer" },
+        { "source": "cls-analytics-sub", "target": "cls-observer", "type": "realization", "description": "AnalyticsSubscriber implements Observer" },
+        { "source": "cls-subject", "target": "cls-observer", "type": "aggregation", "description": "EventSubject aggregates Observers" }
+      ]
+    }
+  ]
+}
+

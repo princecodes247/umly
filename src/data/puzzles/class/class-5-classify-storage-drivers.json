@@ -1,0 +1,83 @@
+{
+  "id": "class-5-classify-storage-drivers",
+  "number": 15,
+  "title": "Classify Storage Drivers & Consumer",
+  "diagramType": "class",
+  "type": "classify",
+  "difficulty": "Easy",
+  "category": "Class Architecture",
+  "scenario": "A MediaService uploads files through a StorageDriver interface. S3Driver and LocalDiskDriver provide concrete implementations of StorageDriver.",
+  "goal": "Classify and wire the interface implementations and the service dependency using the proper UML Class relationships.",
+  "learningObjective": "Differentiate Realization (implementing an interface) from Dependency (consuming an interface).",
+  "hints": [
+    "Concrete classes implementing an interface use Realization.",
+    "MediaService only uses StorageDriver as a parameter/collaborator, which is a Dependency.",
+    "Point Realization from S3Driver & LocalDiskDriver -> StorageDriver, and Dependency from MediaService -> StorageDriver."
+  ],
+  "solutionExplanation": "S3Driver and LocalDiskDriver realize StorageDriver, while MediaService depends on StorageDriver.",
+  "initialNodes": [
+    {
+      "id": "cls-driver",
+      "type": "umlClass",
+      "position": { "x": 290, "y": 70 },
+      "data": {
+        "label": "StorageDriver",
+        "nodeType": "umlClass",
+        "classKind": "interface",
+        "classMethods": [
+          { "id": "m1", "visibility": "+", "name": "putObject", "params": "key: string", "returnType": "Promise<string>" }
+        ]
+      }
+    },
+    {
+      "id": "cls-s3",
+      "type": "umlClass",
+      "position": { "x": 80, "y": 280 },
+      "data": {
+        "label": "S3Driver",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classMethods": [
+          { "id": "m2", "visibility": "+", "name": "putObject", "params": "key: string", "returnType": "Promise<string>" }
+        ]
+      }
+    },
+    {
+      "id": "cls-disk",
+      "type": "umlClass",
+      "position": { "x": 320, "y": 280 },
+      "data": {
+        "label": "LocalDiskDriver",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classMethods": [
+          { "id": "m3", "visibility": "+", "name": "putObject", "params": "key: string", "returnType": "Promise<string>" }
+        ]
+      }
+    },
+    {
+      "id": "cls-media",
+      "type": "umlClass",
+      "position": { "x": 580, "y": 70 },
+      "data": {
+        "label": "MediaService",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classMethods": [
+          { "id": "m4", "visibility": "+", "name": "uploadAvatar", "params": "file: Blob", "returnType": "void" }
+        ]
+      }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Storage driver realizations and service dependency",
+      "edges": [
+        { "source": "cls-s3", "target": "cls-driver", "type": "realization", "description": "S3Driver implements StorageDriver" },
+        { "source": "cls-disk", "target": "cls-driver", "type": "realization", "description": "LocalDiskDriver implements StorageDriver" },
+        { "source": "cls-media", "target": "cls-driver", "type": "dependency", "description": "MediaService depends on StorageDriver" }
+      ]
+    }
+  ]
+}
+

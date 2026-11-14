@@ -1,0 +1,118 @@
+{
+  "id": "class-12-enterprise-cqrs-pipeline",
+  "number": 22,
+  "title": "Enterprise CQRS Command Pipeline",
+  "diagramType": "class",
+  "type": "build",
+  "difficulty": "Advanced",
+  "category": "Class Architecture",
+  "scenario": "An event-sourced microservice routes commands through a CommandBus to a CommandHandler interface. CreateOrderHandler implements that contract, emits an OrderCreatedEvent (a specialized abstract DomainEvent), and appends it to an EventStore interface.",
+  "goal": "Model the full CQRS command-handling pipeline connecting the bus, handler abstraction, concrete handler, domain event hierarchy, and event store.",
+  "learningObjective": "Architect a decoupled CQRS pipeline combining Realization, Generalization, and abstraction-based Dependencies.",
+  "hints": [
+    "CommandBus dispatches through the CommandHandler interface, and CreateOrderHandler implements CommandHandler.",
+    "OrderCreatedEvent inherits from the abstract DomainEvent class, while CreateOrderHandler creates OrderCreatedEvent and persists via EventStore.",
+    "Connect CommandBus -> CommandHandler (Dependency), CreateOrderHandler -> CommandHandler (Realization), OrderCreatedEvent -> DomainEvent (Generalization), CreateOrderHandler -> OrderCreatedEvent (Dependency), and CreateOrderHandler -> EventStore (Dependency)."
+  ],
+  "solutionExplanation": "CommandBus depends on the CommandHandler interface. CreateOrderHandler realizes CommandHandler, depends on OrderCreatedEvent (which generalizes DomainEvent), and depends on the EventStore interface to persist events.",
+  "initialNodes": [
+    {
+      "id": "cls-bus",
+      "type": "umlClass",
+      "position": { "x": 80, "y": 80 },
+      "data": {
+        "label": "CommandBus",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classAttributes": [],
+        "classMethods": [
+          { "id": "m1", "visibility": "+", "name": "dispatch", "params": "handler: CommandHandler", "returnType": "void" }
+        ]
+      }
+    },
+    {
+      "id": "cls-handler-if",
+      "type": "umlClass",
+      "position": { "x": 380, "y": 80 },
+      "data": {
+        "label": "CommandHandler",
+        "nodeType": "umlClass",
+        "classKind": "interface",
+        "classAttributes": [],
+        "classMethods": [
+          { "id": "m1", "visibility": "+", "name": "handle", "params": "cmd: object", "returnType": "void" }
+        ]
+      }
+    },
+    {
+      "id": "cls-create-handler",
+      "type": "umlClass",
+      "position": { "x": 380, "y": 290 },
+      "data": {
+        "label": "CreateOrderHandler",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classAttributes": [],
+        "classMethods": [
+          { "id": "m1", "visibility": "+", "name": "handle", "params": "cmd: object", "returnType": "void" }
+        ]
+      }
+    },
+    {
+      "id": "cls-domain-event",
+      "type": "umlClass",
+      "position": { "x": 80, "y": 490 },
+      "data": {
+        "label": "DomainEvent",
+        "nodeType": "umlClass",
+        "classKind": "abstract",
+        "classAttributes": [
+          { "id": "a1", "visibility": "#", "name": "occurredAt", "type": "Date" }
+        ],
+        "classMethods": []
+      }
+    },
+    {
+      "id": "cls-order-event",
+      "type": "umlClass",
+      "position": { "x": 80, "y": 290 },
+      "data": {
+        "label": "OrderCreatedEvent",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classAttributes": [
+          { "id": "a1", "visibility": "+", "name": "orderId", "type": "string" }
+        ],
+        "classMethods": []
+      }
+    },
+    {
+      "id": "cls-event-store",
+      "type": "umlClass",
+      "position": { "x": 680, "y": 290 },
+      "data": {
+        "label": "EventStore",
+        "nodeType": "umlClass",
+        "classKind": "interface",
+        "classAttributes": [],
+        "classMethods": [
+          { "id": "m1", "visibility": "+", "name": "append", "params": "event: DomainEvent", "returnType": "void" }
+        ]
+      }
+    }
+  ],
+  "initialEdges": [],
+  "solutions": [
+    {
+      "description": "CQRS pipeline with interface realization, event inheritance, and decoupled dependencies",
+      "edges": [
+        { "source": "cls-bus", "target": "cls-handler-if", "type": "dependency", "description": "CommandBus dispatches via CommandHandler interface" },
+        { "source": "cls-create-handler", "target": "cls-handler-if", "type": "realization", "description": "CreateOrderHandler implements CommandHandler" },
+        { "source": "cls-order-event", "target": "cls-domain-event", "type": "generalization", "description": "OrderCreatedEvent extends DomainEvent" },
+        { "source": "cls-create-handler", "target": "cls-order-event", "type": "dependency", "description": "CreateOrderHandler emits OrderCreatedEvent" },
+        { "source": "cls-create-handler", "target": "cls-event-store", "type": "dependency", "description": "CreateOrderHandler appends to EventStore" }
+      ]
+    }
+  ]
+}
+

@@ -1,0 +1,125 @@
+{
+  "id": "class-10-ecommerce-checkout-architecture",
+  "number": 20,
+  "title": "E-Commerce Checkout Architecture",
+  "diagramType": "class",
+  "type": "build",
+  "difficulty": "Advanced",
+  "category": "Class Architecture",
+  "scenario": "An e-commerce checkout service processes an Order containing exclusive OrderLines and tracks its lifecycle using an OrderStatus enum. To stay extensible, CheckoutController depends on a DiscountPolicy interface rather than concrete discount rules like PercentageDiscount.",
+  "goal": "Connect all six types to model controller dependencies, interface implementation, line-item ownership, and order status tracking.",
+  "learningObjective": "Combine Dependency Injection, Realization, Composition, and Enum Association in a cohesive domain architecture.",
+  "hints": [
+    "CheckoutController uses both Order and DiscountPolicy transiently during checkout.",
+    "PercentageDiscount implements the DiscountPolicy interface, while Order owns OrderLines exclusively.",
+    "Connect CheckoutController -> Order (Dependency), CheckoutController -> DiscountPolicy (Dependency), PercentageDiscount -> DiscountPolicy (Realization), Order -> OrderLine (Composition), and Order <-> OrderStatus (Association)."
+  ],
+  "solutionExplanation": "CheckoutController depends on Order and the DiscountPolicy interface. PercentageDiscount realizes DiscountPolicy. Order composes OrderLines (strict lifecycle ownership) and associates with the OrderStatus enum.",
+  "initialNodes": [
+    {
+      "id": "cls-controller",
+      "type": "umlClass",
+      "position": { "x": 80, "y": 80 },
+      "data": {
+        "label": "CheckoutController",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classAttributes": [],
+        "classMethods": [
+          { "id": "m1", "visibility": "+", "name": "checkout", "params": "order: Order, policy: DiscountPolicy", "returnType": "number" }
+        ]
+      }
+    },
+    {
+      "id": "cls-discount",
+      "type": "umlClass",
+      "position": { "x": 400, "y": 80 },
+      "data": {
+        "label": "DiscountPolicy",
+        "nodeType": "umlClass",
+        "classKind": "interface",
+        "classAttributes": [],
+        "classMethods": [
+          { "id": "m1", "visibility": "+", "name": "apply", "params": "subtotal: number", "returnType": "number" }
+        ]
+      }
+    },
+    {
+      "id": "cls-percent",
+      "type": "umlClass",
+      "position": { "x": 400, "y": 290 },
+      "data": {
+        "label": "PercentageDiscount",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classAttributes": [
+          { "id": "a1", "visibility": "-", "name": "rate", "type": "number" }
+        ],
+        "classMethods": [
+          { "id": "m1", "visibility": "+", "name": "apply", "params": "subtotal: number", "returnType": "number" }
+        ]
+      }
+    },
+    {
+      "id": "cls-order",
+      "type": "umlClass",
+      "position": { "x": 80, "y": 290 },
+      "data": {
+        "label": "Order",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classAttributes": [
+          { "id": "a1", "visibility": "-", "name": "id", "type": "string" },
+          { "id": "a2", "visibility": "-", "name": "status", "type": "OrderStatus" }
+        ],
+        "classMethods": [
+          { "id": "m1", "visibility": "+", "name": "total", "params": "", "returnType": "number" }
+        ]
+      }
+    },
+    {
+      "id": "cls-order-line",
+      "type": "umlClass",
+      "position": { "x": 80, "y": 500 },
+      "data": {
+        "label": "OrderLine",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classAttributes": [
+          { "id": "a1", "visibility": "-", "name": "sku", "type": "string" },
+          { "id": "a2", "visibility": "-", "name": "qty", "type": "number" }
+        ],
+        "classMethods": []
+      }
+    },
+    {
+      "id": "cls-status",
+      "type": "umlClass",
+      "position": { "x": 400, "y": 500 },
+      "data": {
+        "label": "OrderStatus",
+        "nodeType": "umlClass",
+        "classKind": "enum",
+        "classAttributes": [
+          { "id": "a1", "visibility": "+", "name": "PENDING", "type": "const" },
+          { "id": "a2", "visibility": "+", "name": "PAID", "type": "const" }
+        ],
+        "classMethods": []
+      }
+    }
+  ],
+  "initialEdges": [],
+  "solutions": [
+    {
+      "description": "Checkout architecture with interface realization, composition, dependencies, and enum association",
+      "edges": [
+        { "source": "cls-controller", "target": "cls-order", "type": "dependency", "description": "CheckoutController processes Order" },
+        { "source": "cls-controller", "target": "cls-discount", "type": "dependency", "description": "CheckoutController depends on DiscountPolicy abstraction" },
+        { "source": "cls-percent", "target": "cls-discount", "type": "realization", "description": "PercentageDiscount implements DiscountPolicy" },
+        { "source": "cls-order", "target": "cls-order-line", "type": "composition", "description": "Order exclusively owns its OrderLines" },
+        { "source": "cls-order", "target": "cls-status", "type": "association", "bidirectional": true, "description": "Order references OrderStatus enum" }
+      ]
+    }
+  ]
+}
+

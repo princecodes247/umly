@@ -1,0 +1,103 @@
+{
+  "id": "class-6-fix-order-ownership",
+  "number": 16,
+  "title": "Repair Order & LineItem Ownership",
+  "diagramType": "class",
+  "type": "fix",
+  "difficulty": "Easy",
+  "category": "Class Architecture",
+  "scenario": "An e-commerce class model mistakenly uses Generalization between OrderItem and Order (an OrderItem is not a type of Order!). Instead, an Order strictly owns its OrderItems, Customer places Orders, and OrderItem references a Product.",
+  "goal": "Fix the invalid inheritance edge and model the true ownership and association relationships.",
+  "learningObjective": "Correctly replace mistaken inheritance ('is-a') with Composition ('owns-a') and Associations.",
+  "hints": [
+    "Check the relationship between OrderItem and Order — Composition should replace Generalization.",
+    "Make sure the Composition arrow starts at the owner (Order -> OrderItem).",
+    "Keep Customer -> Order and OrderItem -> Product as Associations."
+  ],
+  "solutionExplanation": "Order composes OrderItem (strict ownership), while Customer associates with Order and OrderItem associates with Product.",
+  "initialNodes": [
+    {
+      "id": "cls-customer",
+      "type": "umlClass",
+      "position": { "x": 70, "y": 90 },
+      "data": {
+        "label": "Customer",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classAttributes": [
+          { "id": "a1", "visibility": "-", "name": "email", "type": "string" }
+        ]
+      }
+    },
+    {
+      "id": "cls-order",
+      "type": "umlClass",
+      "position": { "x": 360, "y": 90 },
+      "data": {
+        "label": "Order",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classAttributes": [
+          { "id": "a2", "visibility": "-", "name": "orderId", "type": "string" }
+        ]
+      }
+    },
+    {
+      "id": "cls-item",
+      "type": "umlClass",
+      "position": { "x": 360, "y": 300 },
+      "data": {
+        "label": "OrderItem",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classAttributes": [
+          { "id": "a3", "visibility": "-", "name": "quantity", "type": "number" }
+        ]
+      }
+    },
+    {
+      "id": "cls-product",
+      "type": "umlClass",
+      "position": { "x": 70, "y": 300 },
+      "data": {
+        "label": "Product",
+        "nodeType": "umlClass",
+        "classKind": "class",
+        "classAttributes": [
+          { "id": "a4", "visibility": "-", "name": "sku", "type": "string" }
+        ]
+      }
+    }
+  ],
+  "initialEdges": [
+    {
+      "id": "good-cust-order",
+      "source": "cls-customer",
+      "target": "cls-order",
+      "data": { "relationshipType": "association" }
+    },
+    {
+      "id": "bad-item-order",
+      "source": "cls-item",
+      "target": "cls-order",
+      "data": { "relationshipType": "generalization" }
+    },
+    {
+      "id": "good-item-product",
+      "source": "cls-item",
+      "target": "cls-product",
+      "data": { "relationshipType": "association" }
+    }
+  ],
+  "solutions": [
+    {
+      "description": "Order owns OrderItem via Composition",
+      "edges": [
+        { "source": "cls-customer", "target": "cls-order", "type": "association", "bidirectional": true, "description": "Customer places Orders" },
+        { "source": "cls-order", "target": "cls-item", "type": "composition", "description": "Order strictly owns OrderItems" },
+        { "source": "cls-item", "target": "cls-product", "type": "association", "bidirectional": true, "description": "OrderItem references Product" }
+      ]
+    }
+  ]
+}
+
