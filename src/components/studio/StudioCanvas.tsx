@@ -71,13 +71,11 @@ import {
   exportDiagramAsPng,
   exportDiagramAsSvg,
   exportDiagramAsJson,
-  parseDiagramJson,
   copyDiagramAsPngToClipboard,
   generatePlantUml,
   generateMermaid,
   downloadTextFile,
 } from '../../lib/exportDiagram'
-import { parseDrawioXml } from '../../lib/importDrawio'
 import {
   getDiagramDraft,
   saveDiagramDraft,

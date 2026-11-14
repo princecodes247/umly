@@ -46,12 +46,12 @@ export function ConfirmDialog({
       aria-labelledby="confirm-dialog-title"
     >
       <div
-        className="w-full max-w-sm bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+        className="w-full max-w-sm bg-[var(--bg-modal)] border border-[var(--border-default)] rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-5 flex items-start gap-3.5">
           <div
-            className={`w-9 h-9 rounded-md flex items-center justify-center shrink-0 ${
+            className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
               isDanger
                 ? 'bg-red-500/10 text-red-600 dark:text-red-400'
                 : 'bg-[var(--bg-secondary)] text-[var(--text-primary)]'
@@ -71,7 +71,7 @@ export function ConfirmDialog({
               <button
                 type="button"
                 onClick={onCancel}
-                className="p-1 -mt-1 -mr-1 rounded text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] transition-colors"
+                className="p-1 -mt-1 -mr-1 rounded-full text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] transition-colors cursor-pointer"
                 aria-label="Close dialog"
               >
                 <X className="w-4 h-4" />
