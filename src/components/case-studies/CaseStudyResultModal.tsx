@@ -5,9 +5,7 @@ import {
   AlertCircle,
   AlertTriangle,
   ArrowRight,
-  Columns2,
   Trophy,
-  ClipboardCheck,
 } from 'lucide-react'
 import type { CaseStudy, CaseStudyEvaluation } from '../../types/caseStudy'
 
@@ -42,19 +40,11 @@ export function CaseStudyResultModal({
         {/* Header */}
         <div className="px-5 py-4 border-b border-[var(--border-subtle)] flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div
-              className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                passed
-                  ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/70 dark:text-emerald-400'
-                  : 'bg-amber-100 text-amber-600 dark:bg-amber-950/70 dark:text-amber-400'
-              }`}
-            >
-              {passed ? (
-                <Trophy className="w-4.5 h-4.5" />
-              ) : (
-                <ClipboardCheck className="w-4.5 h-4.5" />
-              )}
-            </div>
+            {passed && (
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-emerald-100 text-emerald-600 dark:bg-emerald-950/70 dark:text-emerald-400">
+                <Trophy className="w-4 h-4" />
+              </div>
+            )}
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <h2 className="text-sm font-bold text-[var(--text-primary)] truncate">
@@ -201,10 +191,9 @@ export function CaseStudyResultModal({
               <button
                 type="button"
                 onClick={onCompareReference}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border border-[var(--border-subtle)] bg-[var(--bg-primary)] text-[var(--text-primary)] hover:bg-[var(--hover-bg)] transition-colors"
+                className="px-3 py-1.5 rounded-xl text-xs font-semibold border border-[var(--border-subtle)] bg-[var(--bg-primary)] text-[var(--text-primary)] hover:bg-[var(--hover-bg)] transition-colors"
               >
-                <Columns2 className="w-3.5 h-3.5" />
-                <span>Compare Reference</span>
+                Compare Reference
               </button>
             )}
           </div>

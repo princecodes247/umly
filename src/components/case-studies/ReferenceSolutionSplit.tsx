@@ -13,7 +13,7 @@ import {
   type EdgeTypes,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { X, Download, BookOpenCheck } from 'lucide-react'
+import { X } from 'lucide-react'
 import type { CaseStudy } from '../../types/caseStudy'
 import { ActorNode } from '../canvas/nodes/ActorNode'
 import { UseCaseNode } from '../canvas/nodes/UseCaseNode'
@@ -84,22 +84,18 @@ export function ReferenceSolutionSplit({
     <section className="w-full lg:w-[44%] xl:w-[42%] shrink-0 h-[420px] lg:h-full border-t lg:border-t-0 lg:border-l border-[var(--border-subtle)] bg-[var(--bg-primary)] flex flex-col overflow-hidden">
       {/* Header */}
       <div className="px-3.5 py-2.5 border-b border-[var(--border-subtle)] flex items-center justify-between gap-2 bg-[var(--bg-secondary)]/50 shrink-0">
-        <div className="flex items-center gap-2 min-w-0">
-          <BookOpenCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-          <span className="text-xs font-bold text-[var(--text-primary)] truncate">
-            Reference Solution
-          </span>
-        </div>
+        <span className="text-xs font-bold text-[var(--text-primary)] truncate">
+          Reference Solution
+        </span>
 
         <div className="flex items-center gap-1.5 shrink-0">
           <button
             type="button"
             onClick={onLoadIntoCanvas}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold border border-[var(--border-subtle)] bg-[var(--bg-primary)] text-[var(--text-primary)] hover:bg-[var(--hover-bg)] transition-colors"
+            className="px-2.5 py-1 rounded-lg text-[11px] font-semibold border border-[var(--border-subtle)] bg-[var(--bg-primary)] text-[var(--text-primary)] hover:bg-[var(--hover-bg)] transition-colors"
             title="Copy this reference diagram onto your editable canvas"
           >
-            <Download className="w-3 h-3" />
-            <span>Load into Canvas</span>
+            Load into Canvas
           </button>
           <button
             type="button"

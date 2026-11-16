@@ -4,9 +4,6 @@ import type { Edge, Node } from '@xyflow/react'
 import confetti from 'canvas-confetti'
 import {
   ArrowLeft,
-  RotateCcw,
-  ClipboardCheck,
-  Columns2,
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-react'
@@ -234,36 +231,31 @@ function CaseStudyWorkspacePage() {
         <button
           type="button"
           onClick={handleResetCanvas}
-          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] transition-colors"
+          className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] transition-colors"
           title="Clear canvas"
         >
-          <RotateCcw className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Reset</span>
+          Reset
         </button>
 
         {!isCustom && (
           <button
             type="button"
             onClick={handleToggleReference}
-            className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${showReference
+            className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${showReference
                 ? 'border-emerald-500/40 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'
                 : 'border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)]'
               }`}
           >
-            <Columns2 className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">
-              {showReference ? 'Hide Reference' : 'Reference'}
-            </span>
+            {showReference ? 'Hide Reference' : 'Reference'}
           </button>
         )}
 
         <button
           type="button"
           onClick={handleSubmitModel}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-900 text-white dark:bg-white dark:text-neutral-900 hover:opacity-90 transition-opacity shadow-xs"
+          className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-900 text-white dark:bg-white dark:text-neutral-900 hover:opacity-90 transition-opacity shadow-xs"
         >
-          <ClipboardCheck className="w-3.5 h-3.5" />
-          <span>Submit</span>
+          Submit Model
         </button>
       </div>
     </div>

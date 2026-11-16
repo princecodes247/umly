@@ -1,11 +1,5 @@
 import { useState } from 'react'
-import {
-  Lightbulb,
-  ChevronDown,
-  ChevronUp,
-  FileText,
-  ClipboardCheck,
-} from 'lucide-react'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 import type { CaseStudy } from '../../types/caseStudy'
 
 interface CaseStudyBriefPanelProps {
@@ -62,9 +56,8 @@ export function CaseStudyBriefPanel({
 
         {/* System Statement */}
         <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-secondary)]/60 p-3.5 space-y-2">
-          <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
-            <FileText className="w-3.5 h-3.5" />
-            <span>System Statement</span>
+          <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+            System Statement
           </div>
           <p className="text-[13px] leading-relaxed text-[var(--text-primary)] whitespace-pre-line">
             {caseStudy.statement}
@@ -102,8 +95,7 @@ export function CaseStudyBriefPanel({
               }}
               className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--hover-bg)] transition-colors"
             >
-              <span className="flex items-center gap-1.5">
-                <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
+              <span className="text-[var(--text-primary)]">
                 Hints ({revealedHints}/{caseStudy.hints.length})
               </span>
               {hintsOpen ? (
@@ -142,10 +134,9 @@ export function CaseStudyBriefPanel({
         <button
           type="button"
           onClick={onSubmitModel}
-          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-gray-900 text-white dark:bg-white dark:text-neutral-900 hover:opacity-90 transition-opacity shadow-xs"
+          className="w-full px-3 py-2 rounded-xl text-xs font-semibold bg-gray-900 text-white dark:bg-white dark:text-neutral-900 hover:opacity-90 transition-opacity shadow-xs"
         >
-          <ClipboardCheck className="w-3.5 h-3.5" />
-          Submit
+          Submit Model
         </button>
 
         {!isCustom && onToggleReference && (
