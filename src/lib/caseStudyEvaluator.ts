@@ -32,20 +32,6 @@ function singularize(word: string): string {
   return word
 }
 
-function tokenize(value: string): string[] {
-  const norm = normalizeText(value)
-  if (!norm) return []
-  const words = norm.split(' ')
-  const out = new Set<string>()
-  for (const w of words) {
-    out.add(w)
-    out.add(singularize(w))
-  }
-  out.add(norm)
-  out.add(words.map(singularize).join(' '))
-  return Array.from(out)
-}
-
 function getNodeSearchableText(node: Node): string {
   const data = (node.data || {}) as Partial<UmlNodeData>
   const parts: string[] = [data.label || '']
@@ -83,21 +69,37 @@ function getNodeMemberCount(node: Node): number {
 
 function nodeMatchesAlias(node: Node, aliases: string[]): boolean {
   const data = (node.data || {}) as Partial<UmlNodeData>
-  const labelTokens = tokenize(data.label || '')
-  const fullTextNorm = normalizeText(getNodeSearchableText(node))
   const labelNorm = normalizeText(data.label || '')
+  const labelSingular = labelNorm.split(' ').map(singularize).join(' ')
+  const labelWordSet = new Set(labelNorm ? labelNorm.split(' ') : [])
+  const labelSingularSet = new Set(
+    labelSingular ? labelSingular.split(' ') : []
+  )
+  const fullTextNorm = normalizeText(getNodeSearchableText(node))
 
   for (const rawAlias of aliases) {
     const aliasNorm = normalizeText(rawAlias)
     if (!aliasNorm) continue
-    const aliasTokens = tokenize(aliasNorm)
+    const aliasSingular = aliasNorm.split(' ').map(singularize).join(' ')
 
-    if (labelNorm === aliasNorm) return true
-    if (labelNorm.includes(aliasNorm) || aliasNorm.includes(labelNorm)) {
-      if (labelNorm.length >= 3) return true
+    if (labelNorm === aliasNorm || labelSingular === aliasSingular) return true
+    if (
+      labelNorm.length >= 3 &&
+      (labelNorm.includes(aliasNorm) ||
+        labelSingular.includes(aliasSingular) ||
+        aliasNorm.includes(labelNorm))
+    ) {
+      return true
     }
-    if (aliasTokens.some((t) => labelTokens.includes(t))) return true
-    if (aliasNorm.includes(' ') && fullTextNorm.includes(aliasNorm)) return true
+
+    // Only match single-word aliases against individual label words
+    if (!aliasNorm.includes(' ')) {
+      if (labelWordSet.has(aliasNorm) || labelSingularSet.has(aliasSingular)) {
+        return true
+      }
+    } else if (fullTextNorm.includes(aliasNorm)) {
+      return true
+    }
   }
 
   return false
