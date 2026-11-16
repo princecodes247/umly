@@ -64,7 +64,7 @@ function PuzzlesPage() {
   const [selectedDiagramType, setSelectedDiagramType] = useState<
     'all' | PuzzleDiagramType
   >('all')
-  const [viewMode, setViewMode] = useState<'gallery' | 'table'>('gallery')
+  const [viewMode, setViewMode] = useState<'gallery' | 'table'>('table')
   const [searchQuery, setSearchQuery] = useState('')
   const [showResetConfirm, setShowResetConfirm] = useState(false)
 

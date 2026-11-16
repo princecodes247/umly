@@ -1,14 +1,18 @@
-import { useMemo } from 'react'
+import { useEffect } from 'react'
 import {
   ReactFlow,
+  ReactFlowProvider,
   Background,
   Controls,
   BackgroundVariant,
+  useNodesState,
+  useEdgesState,
   type Node,
   type Edge,
   type NodeTypes,
   type EdgeTypes,
 } from '@xyflow/react'
+import '@xyflow/react/dist/style.css'
 import { X, Download, BookOpenCheck } from 'lucide-react'
 import type { CaseStudy } from '../../types/caseStudy'
 import { ActorNode } from '../canvas/nodes/ActorNode'
@@ -38,7 +42,7 @@ const NODE_TYPES: NodeTypes = {
 }
 
 const EDGE_TYPES: EdgeTypes = {
-  uml: UmlEdge,
+  umlEdge: UmlEdge,
 }
 
 interface ReferenceSolutionSplitProps {
@@ -52,33 +56,34 @@ export function ReferenceSolutionSplit({
   onClose,
   onLoadIntoCanvas,
 }: ReferenceSolutionSplitProps) {
-  const refNodes = useMemo<Node[]>(
-    () =>
+  const [refNodes, setRefNodes, onNodesChange] = useNodesState<Node>([])
+  const [refEdges, setRefEdges, onEdgesChange] = useEdgesState<Edge>([])
+
+  useEffect(() => {
+    setRefNodes(
       caseStudy.referenceSolution.nodes.map((n) => ({
         id: n.id,
         type: n.type,
         position: n.position,
+        zIndex: n.type === 'boundary' ? -1 : undefined,
         data: n.data as unknown as Record<string, unknown>,
-      })),
-    [caseStudy]
-  )
-
-  const refEdges = useMemo<Edge[]>(
-    () =>
+      }))
+    )
+    setRefEdges(
       caseStudy.referenceSolution.edges.map((e) => ({
         id: e.id,
         source: e.source,
         target: e.target,
-        type: 'uml',
+        type: 'umlEdge',
         data: e.data,
-      })),
-    [caseStudy]
-  )
+      }))
+    )
+  }, [caseStudy, setRefNodes, setRefEdges])
 
   return (
     <section className="w-full lg:w-[44%] xl:w-[42%] shrink-0 h-[420px] lg:h-full border-t lg:border-t-0 lg:border-l border-[var(--border-subtle)] bg-[var(--bg-primary)] flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="px-3.5 py-2.5 border-b border-[var(--border-subtle)] flex items-center justify-between gap-2 bg-[var(--bg-secondary)]/50">
+      <div className="px-3.5 py-2.5 border-b border-[var(--border-subtle)] flex items-center justify-between gap-2 bg-[var(--bg-secondary)]/50 shrink-0">
         <div className="flex items-center gap-2 min-w-0">
           <BookOpenCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
           <span className="text-xs font-bold text-[var(--text-primary)] truncate">
@@ -108,30 +113,38 @@ export function ReferenceSolutionSplit({
       </div>
 
       {/* Explanation */}
-      <div className="px-3.5 py-2.5 border-b border-[var(--border-subtle)] bg-emerald-50/40 dark:bg-emerald-950/20 text-xs text-[var(--text-secondary)] leading-relaxed">
+      <div className="px-3.5 py-2.5 border-b border-[var(--border-subtle)] bg-emerald-50/40 dark:bg-emerald-950/20 text-xs text-[var(--text-secondary)] leading-relaxed shrink-0">
         {caseStudy.referenceSolution.explanation}
       </div>
 
       {/* Read-only ReactFlow Preview */}
-      <div className="flex-1 relative min-h-0 bg-[var(--bg-canvas)]">
-        <UmlMarkers />
-        <ReactFlow
-          nodes={refNodes}
-          edges={refEdges}
-          nodeTypes={NODE_TYPES}
-          edgeTypes={EDGE_TYPES}
-          fitView
-          fitViewOptions={{ padding: 0.2 }}
-          nodesDraggable={false}
-          nodesConnectable={false}
-          elementsSelectable={false}
-          proOptions={{ hideAttribution: true }}
-        >
-          <Background variant={BackgroundVariant.Dots} gap={18} size={1} />
-          <Controls showInteractive={false} />
-        </ReactFlow>
+      <div className="flex-1 relative min-h-[280px] w-full bg-[var(--bg-secondary)]">
+        <div className="absolute inset-0">
+          <ReactFlowProvider>
+            <UmlMarkers />
+            <ReactFlow
+              nodes={refNodes}
+              edges={refEdges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              nodeTypes={NODE_TYPES}
+              edgeTypes={EDGE_TYPES}
+              fitView
+              fitViewOptions={{ padding: 0.22 }}
+              onInit={(instance) => {
+                setTimeout(() => instance.fitView({ padding: 0.22 }), 80)
+              }}
+              nodesDraggable={false}
+              nodesConnectable={false}
+              elementsSelectable={false}
+              proOptions={{ hideAttribution: true }}
+            >
+              <Background variant={BackgroundVariant.Dots} gap={18} size={1} />
+              <Controls showInteractive={false} />
+            </ReactFlow>
+          </ReactFlowProvider>
+        </div>
       </div>
     </section>
   )
 }
-

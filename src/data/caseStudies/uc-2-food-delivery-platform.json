@@ -139,6 +139,7 @@
   "referenceSolution": {
     "explanation": "Customer initiates Browse Restaurants and Place Order. Place Order «include»s Process Payment (linked to Payment Gateway) and is optionally extended by Apply Promo Code. Courier handles Accept Delivery and Update Delivery Status, while Restaurant Partner handles Confirm Order Preparation.",
     "nodes": [
+      { "id": "n-boundary", "type": "boundary", "position": { "x": 220, "y": 0 }, "data": { "label": "System Boundary", "nodeType": "boundary", "boundaryTitle": "Food Delivery Platform", "width": 510, "height": 500 } },
       { "id": "n-cust", "type": "actor", "position": { "x": 60, "y": 110 }, "data": { "label": "Customer", "nodeType": "actor", "actorType": "primary" } },
       { "id": "n-browse", "type": "useCase", "position": { "x": 270, "y": 40 }, "data": { "label": "Browse Restaurants", "nodeType": "useCase" } },
       { "id": "n-order", "type": "useCase", "position": { "x": 270, "y": 170 }, "data": { "label": "Place Order", "nodeType": "useCase" } },

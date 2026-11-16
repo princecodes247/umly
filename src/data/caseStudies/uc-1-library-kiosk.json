@@ -114,6 +114,12 @@
     "explanation": "Library Member associates with Borrow Book and Return Book. Both base use cases «include» Scan Library Card because scanning is mandatory. Pay Late Fee «extend»s Return Book only when overdue. Librarian associates with Restock Books.",
     "nodes": [
       {
+        "id": "ref-boundary",
+        "type": "boundary",
+        "position": { "x": 230, "y": 15 },
+        "data": { "label": "System Boundary", "nodeType": "boundary", "boundaryTitle": "Library Kiosk System", "width": 480, "height": 430 }
+      },
+      {
         "id": "ref-member",
         "type": "actor",
         "position": { "x": 60, "y": 140 },

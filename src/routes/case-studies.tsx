@@ -8,6 +8,8 @@ import {
   Plus,
   X,
   Sparkles,
+  LayoutGrid,
+  Table as TableIcon,
 } from 'lucide-react'
 import { CASE_STUDIES } from '../data/caseStudies'
 import { getAllCaseStudyProgress } from '../lib/caseStudyStorage'
@@ -62,6 +64,7 @@ function CaseStudiesPage() {
   const [selectedDifficulty, setSelectedDifficulty] = useState<
     'all' | CaseStudy['difficulty']
   >('all')
+  const [viewMode, setViewMode] = useState<'gallery' | 'table'>('table')
   const [searchQuery, setSearchQuery] = useState('')
   const [showCustomModal, setShowCustomModal] = useState(false)
   const [customTitle, setCustomTitle] = useState('')
@@ -190,20 +193,136 @@ function CaseStudiesPage() {
             ))}
           </div>
 
-          <div className="relative w-full lg:w-64">
-            <Search className="w-3.5 h-3.5 text-[var(--text-tertiary)] absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search domains or topics..."
-              className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-secondary)]/50 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-            />
+          <div className="flex items-center gap-2 w-full lg:w-auto">
+            <div className="relative flex-1 lg:w-64">
+              <Search className="w-3.5 h-3.5 text-[var(--text-tertiary)] absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search domains or topics..."
+                className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-secondary)]/50 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+              />
+            </div>
+
+            <div className="inline-flex items-center rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-secondary)]/60 p-0.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setViewMode('table')}
+                className={`p-1.5 rounded-lg transition-colors ${
+                  viewMode === 'table'
+                    ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-xs'
+                    : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'
+                }`}
+                title="Table view"
+                aria-label="Table view"
+              >
+                <TableIcon className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('gallery')}
+                className={`p-1.5 rounded-lg transition-colors ${
+                  viewMode === 'gallery'
+                    ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-xs'
+                    : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'
+                }`}
+                title="Gallery view"
+                aria-label="Gallery view"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Table or Gallery */}
+        {viewMode === 'table' ? (
+          <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-[var(--border-subtle)] bg-[var(--bg-secondary)]/60 text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                    <th className="py-3 px-4 w-12">#</th>
+                    <th className="py-3 px-4">Case Study</th>
+                    <th className="py-3 px-4">Type</th>
+                    <th className="py-3 px-4">Difficulty</th>
+                    <th className="py-3 px-4 hidden md:table-cell">Domain</th>
+                    <th className="py-3 px-4 hidden sm:table-cell">Scope</th>
+                    <th className="py-3 px-4 text-right">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--border-subtle)] text-xs">
+                  {filtered.map((cs) => {
+                    const typeMeta = DIAGRAM_TYPE_META[cs.diagramType]
+                    const prog = progress[cs.id]
+                    return (
+                      <tr
+                        key={cs.id}
+                        onClick={() =>
+                          navigate({
+                            to: '/case-study/$caseStudyId',
+                            params: { caseStudyId: cs.id },
+                          })
+                        }
+                        className="group cursor-pointer hover:bg-[var(--hover-bg)] transition-colors"
+                      >
+                        <td className="py-3.5 px-4 font-mono text-[var(--text-tertiary)]">
+                          {cs.number}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <div className="font-bold text-[var(--text-primary)] group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                            {cs.title}
+                          </div>
+                          <div className="text-[11px] text-[var(--text-secondary)] line-clamp-1 max-w-md mt-0.5">
+                            {cs.statement}
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${typeMeta.pillClass}`}
+                          >
+                            {typeMeta.label}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${DIFFICULTY_STYLES[cs.difficulty]}`}
+                          >
+                            {cs.difficulty}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-[var(--text-secondary)] hidden md:table-cell whitespace-nowrap">
+                          {cs.domain}
+                        </td>
+                        <td className="py-3.5 px-4 text-[var(--text-secondary)] hidden sm:table-cell whitespace-nowrap">
+                          {cs.concepts.length} concepts · {cs.relationships.length} links
+                        </td>
+                        <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                          {prog?.completed ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              {prog.bestScore}%
+                            </span>
+                          ) : prog ? (
+                            <span className="text-[11px] font-semibold text-[var(--text-tertiary)]">
+                              Best {prog.bestScore}%
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 font-semibold text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]">
+                              Model <ArrowUpRight className="w-3.5 h-3.5" />
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((cs) => {
             const typeMeta = DIAGRAM_TYPE_META[cs.diagramType]
             const prog = progress[cs.id]
@@ -267,6 +386,7 @@ function CaseStudiesPage() {
             )
           })}
         </div>
+        )}
       </div>
 
       {/* Custom Statement Modal */}

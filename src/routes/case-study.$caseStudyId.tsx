@@ -133,13 +133,14 @@ function CaseStudyWorkspacePage() {
       id: n.id,
       type: n.type,
       position: n.position,
+      zIndex: n.type === 'boundary' ? -1 : undefined,
       data: n.data as unknown as Record<string, unknown>,
     }))
     const refEdges: Edge[] = caseStudy.referenceSolution.edges.map((e) => ({
       id: e.id,
       source: e.source,
       target: e.target,
-      type: 'uml',
+      type: 'umlEdge',
       data: e.data,
     }))
     latestNodesRef.current = refNodes
@@ -234,7 +235,7 @@ function CaseStudyWorkspacePage() {
   )
 
   return (
-    <main className="flex-1 w-full h-[calc(100vh-3.5rem)] min-h-[520px] flex flex-col lg:flex-row overflow-hidden bg-[var(--bg-primary)]">
+    <main className="flex-1 w-full lg:h-[calc(100vh-3.5rem)] min-h-[calc(100vh-3.5rem)] flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden bg-[var(--bg-primary)]">
       {showBrief && (
         <div className="max-h-[42vh] lg:max-h-none lg:h-full overflow-hidden flex">
           <CaseStudyBriefPanel
