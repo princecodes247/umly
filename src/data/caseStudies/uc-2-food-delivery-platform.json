@@ -1,0 +1,166 @@
+{
+  "id": "cs-uc-2-food-delivery-platform",
+  "number": 2,
+  "title": "Multi-Role Food Delivery App",
+  "diagramType": "use_case",
+  "difficulty": "Intermediate",
+  "domain": "Food Delivery",
+  "statement": "In an on-demand food delivery platform, a Customer can Browse Restaurants and Place Order. Placing an order always requires Process Payment via an external Payment Gateway. Optionally, the Customer may Apply Promo Code while placing an order. A Courier can Accept Delivery and Update Delivery Status, while a Restaurant Partner can Confirm Order Preparation.",
+  "deliverables": [
+    "Model all four actors (Customer, Courier, Restaurant Partner, Payment Gateway).",
+    "Capture browsing, ordering, payment processing, promo codes, delivery acceptance, status updates, and order confirmation.",
+    "Distinguish mandatory «include» behavior from optional «extend» behavior."
+  ],
+  "hints": [
+    "Place Order «include»s Process Payment, and Process Payment associates with the secondary Payment Gateway actor.",
+    "Apply Promo Code is optional, so it «extend»s Place Order.",
+    "Group Courier actions (Accept Delivery, Update Delivery Status) and Restaurant Partner actions cleanly."
+  ],
+  "concepts": [
+    {
+      "id": "customer",
+      "label": "Customer actor",
+      "acceptedNodeTypes": ["actor"],
+      "aliases": ["customer", "buyer", "diner", "user"]
+    },
+    {
+      "id": "courier",
+      "label": "Courier actor",
+      "acceptedNodeTypes": ["actor"],
+      "aliases": ["courier", "driver", "rider", "delivery person"]
+    },
+    {
+      "id": "restaurant",
+      "label": "Restaurant Partner actor",
+      "acceptedNodeTypes": ["actor"],
+      "aliases": ["restaurant", "restaurant partner", "merchant", "kitchen"]
+    },
+    {
+      "id": "gateway",
+      "label": "Payment Gateway actor",
+      "acceptedNodeTypes": ["actor"],
+      "aliases": ["payment gateway", "stripe", "gateway", "payment provider"]
+    },
+    {
+      "id": "browse",
+      "label": "Browse Restaurants use case",
+      "acceptedNodeTypes": ["useCase"],
+      "aliases": ["browse", "browse restaurants", "search menu", "view restaurants"]
+    },
+    {
+      "id": "place-order",
+      "label": "Place Order use case",
+      "acceptedNodeTypes": ["useCase"],
+      "aliases": ["place order", "create order", "order food", "checkout"]
+    },
+    {
+      "id": "payment",
+      "label": "Process Payment use case",
+      "acceptedNodeTypes": ["useCase"],
+      "aliases": ["process payment", "pay", "payment", "charge card"]
+    },
+    {
+      "id": "promo",
+      "label": "Apply Promo Code use case",
+      "acceptedNodeTypes": ["useCase"],
+      "aliases": ["promo", "promo code", "apply promo", "coupon", "discount"]
+    },
+    {
+      "id": "accept-delivery",
+      "label": "Accept Delivery use case",
+      "acceptedNodeTypes": ["useCase"],
+      "aliases": ["accept delivery", "claim delivery", "accept job"]
+    },
+    {
+      "id": "confirm-prep",
+      "label": "Confirm Order Preparation use case",
+      "acceptedNodeTypes": ["useCase"],
+      "aliases": ["confirm order", "confirm preparation", "prepare order", "accept order"]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "r-cust-browse",
+      "label": "Customer associates with Browse Restaurants",
+      "fromConceptId": "customer",
+      "toConceptId": "browse",
+      "acceptedTypes": ["association"],
+      "directed": false
+    },
+    {
+      "id": "r-cust-order",
+      "label": "Customer associates with Place Order",
+      "fromConceptId": "customer",
+      "toConceptId": "place-order",
+      "acceptedTypes": ["association"],
+      "directed": false
+    },
+    {
+      "id": "r-order-pay",
+      "label": "Place Order «include»s Process Payment",
+      "fromConceptId": "place-order",
+      "toConceptId": "payment",
+      "acceptedTypes": ["include"],
+      "directed": true
+    },
+    {
+      "id": "r-promo-order",
+      "label": "Apply Promo Code «extend»s Place Order",
+      "fromConceptId": "promo",
+      "toConceptId": "place-order",
+      "acceptedTypes": ["extend"],
+      "directed": true
+    },
+    {
+      "id": "r-pay-gw",
+      "label": "Process Payment communicates with Payment Gateway",
+      "fromConceptId": "payment",
+      "toConceptId": "gateway",
+      "acceptedTypes": ["association"],
+      "directed": false
+    },
+    {
+      "id": "r-courier-accept",
+      "label": "Courier associates with Accept Delivery",
+      "fromConceptId": "courier",
+      "toConceptId": "accept-delivery",
+      "acceptedTypes": ["association"],
+      "directed": false
+    },
+    {
+      "id": "r-rest-confirm",
+      "label": "Restaurant Partner associates with Confirm Order Preparation",
+      "fromConceptId": "restaurant",
+      "toConceptId": "confirm-prep",
+      "acceptedTypes": ["association"],
+      "directed": false
+    }
+  ],
+  "referenceSolution": {
+    "explanation": "Customer initiates Browse Restaurants and Place Order. Place Order «include»s Process Payment (linked to Payment Gateway) and is optionally extended by Apply Promo Code. Courier handles Accept Delivery and Update Delivery Status, while Restaurant Partner handles Confirm Order Preparation.",
+    "nodes": [
+      { "id": "n-cust", "type": "actor", "position": { "x": 60, "y": 110 }, "data": { "label": "Customer", "nodeType": "actor", "actorType": "primary" } },
+      { "id": "n-browse", "type": "useCase", "position": { "x": 270, "y": 40 }, "data": { "label": "Browse Restaurants", "nodeType": "useCase" } },
+      { "id": "n-order", "type": "useCase", "position": { "x": 270, "y": 170 }, "data": { "label": "Place Order", "nodeType": "useCase" } },
+      { "id": "n-pay", "type": "useCase", "position": { "x": 540, "y": 100 }, "data": { "label": "Process Payment", "nodeType": "useCase" } },
+      { "id": "n-promo", "type": "useCase", "position": { "x": 540, "y": 230 }, "data": { "label": "Apply Promo Code", "nodeType": "useCase" } },
+      { "id": "n-gw", "type": "actor", "position": { "x": 780, "y": 95 }, "data": { "label": "Payment Gateway", "nodeType": "actor", "actorType": "system" } },
+      { "id": "n-courier", "type": "actor", "position": { "x": 60, "y": 330 }, "data": { "label": "Courier", "nodeType": "actor", "actorType": "primary" } },
+      { "id": "n-accept", "type": "useCase", "position": { "x": 270, "y": 310 }, "data": { "label": "Accept Delivery", "nodeType": "useCase" } },
+      { "id": "n-status", "type": "useCase", "position": { "x": 270, "y": 420 }, "data": { "label": "Update Delivery Status", "nodeType": "useCase" } },
+      { "id": "n-rest", "type": "actor", "position": { "x": 780, "y": 360 }, "data": { "label": "Restaurant Partner", "nodeType": "actor", "actorType": "secondary" } },
+      { "id": "n-confirm", "type": "useCase", "position": { "x": 540, "y": 365 }, "data": { "label": "Confirm Order Preparation", "nodeType": "useCase" } }
+    ],
+    "edges": [
+      { "id": "e1", "source": "n-cust", "target": "n-browse", "data": { "relationshipType": "association" } },
+      { "id": "e2", "source": "n-cust", "target": "n-order", "data": { "relationshipType": "association" } },
+      { "id": "e3", "source": "n-order", "target": "n-pay", "data": { "relationshipType": "include" } },
+      { "id": "e4", "source": "n-promo", "target": "n-order", "data": { "relationshipType": "extend" } },
+      { "id": "e5", "source": "n-pay", "target": "n-gw", "data": { "relationshipType": "association" } },
+      { "id": "e6", "source": "n-courier", "target": "n-accept", "data": { "relationshipType": "association" } },
+      { "id": "e7", "source": "n-courier", "target": "n-status", "data": { "relationshipType": "association" } },
+      { "id": "e8", "source": "n-rest", "target": "n-confirm", "data": { "relationshipType": "association" } }
+    ]
+  }
+}
+

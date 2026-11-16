@@ -1,0 +1,169 @@
+{
+  "id": "cs-uc-1-library-kiosk",
+  "number": 1,
+  "title": "Self-Service Library Kiosk",
+  "diagramType": "use_case",
+  "difficulty": "Easy",
+  "domain": "Public Library",
+  "statement": "A public library wants a self-service kiosk where a Library Member can Borrow Book or Return Book. Both actions always require the system to Scan Library Card first. If a returned book is past its due date, the kiosk may optionally Pay Late Fee. A Librarian can also Restock Returned Books.",
+  "deliverables": [
+    "Identify the primary and supporting actors (Member, Librarian).",
+    "Create the core use cases for borrowing, returning, card scanning, late fees, and restocking.",
+    "Use «include» for mandatory card scanning and «extend» for optional late fee payment."
+  ],
+  "hints": [
+    "Library Member interacts with Borrow Book and Return Book via plain associations.",
+    "Since both Borrow Book and Return Book always require Scan Library Card, draw «include» from each toward Scan Library Card.",
+    "Pay Late Fee only happens conditionally during Return Book, so Pay Late Fee «extend»s Return Book."
+  ],
+  "concepts": [
+    {
+      "id": "member",
+      "label": "Library Member actor",
+      "acceptedNodeTypes": ["actor"],
+      "aliases": ["member", "library member", "borrower", "patron", "reader", "user"]
+    },
+    {
+      "id": "librarian",
+      "label": "Librarian actor",
+      "acceptedNodeTypes": ["actor"],
+      "aliases": ["librarian", "staff", "clerk", "admin"]
+    },
+    {
+      "id": "borrow",
+      "label": "Borrow Book use case",
+      "acceptedNodeTypes": ["useCase"],
+      "aliases": ["borrow", "borrow book", "checkout", "check out", "loan book"]
+    },
+    {
+      "id": "return",
+      "label": "Return Book use case",
+      "acceptedNodeTypes": ["useCase"],
+      "aliases": ["return", "return book", "check in"]
+    },
+    {
+      "id": "scan",
+      "label": "Scan Library Card use case",
+      "acceptedNodeTypes": ["useCase"],
+      "aliases": ["scan", "scan card", "scan library card", "verify card", "authenticate"]
+    },
+    {
+      "id": "late-fee",
+      "label": "Pay Late Fee use case",
+      "acceptedNodeTypes": ["useCase"],
+      "aliases": ["late fee", "pay late fee", "fine", "pay fine", "overdue fee"]
+    },
+    {
+      "id": "restock",
+      "label": "Restock Books use case",
+      "acceptedNodeTypes": ["useCase"],
+      "aliases": ["restock", "restock books", "shelve", "inventory"]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "r-member-borrow",
+      "label": "Member initiates Borrow Book",
+      "fromConceptId": "member",
+      "toConceptId": "borrow",
+      "acceptedTypes": ["association"],
+      "directed": false
+    },
+    {
+      "id": "r-member-return",
+      "label": "Member initiates Return Book",
+      "fromConceptId": "member",
+      "toConceptId": "return",
+      "acceptedTypes": ["association"],
+      "directed": false
+    },
+    {
+      "id": "r-borrow-scan",
+      "label": "Borrow Book «include»s Scan Library Card",
+      "fromConceptId": "borrow",
+      "toConceptId": "scan",
+      "acceptedTypes": ["include"],
+      "directed": true
+    },
+    {
+      "id": "r-return-scan",
+      "label": "Return Book «include»s Scan Library Card",
+      "fromConceptId": "return",
+      "toConceptId": "scan",
+      "acceptedTypes": ["include"],
+      "directed": true
+    },
+    {
+      "id": "r-fee-return",
+      "label": "Pay Late Fee «extend»s Return Book",
+      "fromConceptId": "late-fee",
+      "toConceptId": "return",
+      "acceptedTypes": ["extend"],
+      "directed": true
+    },
+    {
+      "id": "r-librarian-restock",
+      "label": "Librarian performs Restock Books",
+      "fromConceptId": "librarian",
+      "toConceptId": "restock",
+      "acceptedTypes": ["association"],
+      "directed": false
+    }
+  ],
+  "referenceSolution": {
+    "explanation": "Library Member associates with Borrow Book and Return Book. Both base use cases «include» Scan Library Card because scanning is mandatory. Pay Late Fee «extend»s Return Book only when overdue. Librarian associates with Restock Books.",
+    "nodes": [
+      {
+        "id": "ref-member",
+        "type": "actor",
+        "position": { "x": 60, "y": 140 },
+        "data": { "label": "Library Member", "nodeType": "actor", "actorType": "primary" }
+      },
+      {
+        "id": "ref-borrow",
+        "type": "useCase",
+        "position": { "x": 280, "y": 60 },
+        "data": { "label": "Borrow Book", "nodeType": "useCase" }
+      },
+      {
+        "id": "ref-return",
+        "type": "useCase",
+        "position": { "x": 280, "y": 210 },
+        "data": { "label": "Return Book", "nodeType": "useCase" }
+      },
+      {
+        "id": "ref-scan",
+        "type": "useCase",
+        "position": { "x": 540, "y": 120 },
+        "data": { "label": "Scan Library Card", "nodeType": "useCase" }
+      },
+      {
+        "id": "ref-fee",
+        "type": "useCase",
+        "position": { "x": 540, "y": 270 },
+        "data": { "label": "Pay Late Fee", "nodeType": "useCase" }
+      },
+      {
+        "id": "ref-restock",
+        "type": "useCase",
+        "position": { "x": 280, "y": 360 },
+        "data": { "label": "Restock Books", "nodeType": "useCase" }
+      },
+      {
+        "id": "ref-librarian",
+        "type": "actor",
+        "position": { "x": 60, "y": 350 },
+        "data": { "label": "Librarian", "nodeType": "actor", "actorType": "secondary" }
+      }
+    ],
+    "edges": [
+      { "id": "re1", "source": "ref-member", "target": "ref-borrow", "data": { "relationshipType": "association" } },
+      { "id": "re2", "source": "ref-member", "target": "ref-return", "data": { "relationshipType": "association" } },
+      { "id": "re3", "source": "ref-borrow", "target": "ref-scan", "data": { "relationshipType": "include" } },
+      { "id": "re4", "source": "ref-return", "target": "ref-scan", "data": { "relationshipType": "include" } },
+      { "id": "re5", "source": "ref-fee", "target": "ref-return", "data": { "relationshipType": "extend" } },
+      { "id": "re6", "source": "ref-librarian", "target": "ref-restock", "data": { "relationshipType": "association" } }
+    ]
+  }
+}
+

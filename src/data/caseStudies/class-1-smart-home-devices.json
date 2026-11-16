@@ -1,0 +1,89 @@
+{
+  "id": "cs-class-1-smart-home-devices",
+  "number": 7,
+  "title": "Smart Home Controller & Devices",
+  "diagramType": "class",
+  "difficulty": "Easy",
+  "domain": "IoT / Smart Home",
+  "statement": "Design an object-oriented model for a smart home hub. A SmartHub manages a collection of independent SmartDevice objects (which can be paired or unpaired without destroying the devices). Both Thermostat and SmartLock inherit from the abstract SmartDevice class, which declares a turnOn() / getStatus() contract.",
+  "deliverables": [
+    "Model SmartHub, an abstract SmartDevice class, Thermostat, and SmartLock.",
+    "Use Generalization for Thermostat and SmartLock inheriting from SmartDevice.",
+    "Use Aggregation from SmartHub to SmartDevice since devices exist independently of the hub."
+  ],
+  "hints": [
+    "Mark SmartDevice as an abstract class in the Inspector.",
+    "Thermostat -> SmartDevice and SmartLock -> SmartDevice use Generalization.",
+    "SmartHub -> SmartDevice uses Aggregation (hollow diamond) because devices survive if the hub is replaced."
+  ],
+  "concepts": [
+    { "id": "hub", "label": "SmartHub class", "acceptedNodeTypes": ["umlClass"], "aliases": ["smarthub", "smart hub", "hub", "controller"], "minMembers": 1 },
+    { "id": "device", "label": "SmartDevice abstract class", "acceptedNodeTypes": ["umlClass"], "aliases": ["smartdevice", "smart device", "device"], "minMembers": 1 },
+    { "id": "thermostat", "label": "Thermostat subclass", "acceptedNodeTypes": ["umlClass"], "aliases": ["thermostat"], "minMembers": 1 },
+    { "id": "lock", "label": "SmartLock subclass", "acceptedNodeTypes": ["umlClass"], "aliases": ["smartlock", "smart lock", "lock"], "minMembers": 1 }
+  ],
+  "relationships": [
+    { "id": "r-hub-dev", "label": "SmartHub aggregates SmartDevice", "fromConceptId": "hub", "toConceptId": "device", "acceptedTypes": ["aggregation"], "directed": true },
+    { "id": "r-therm-dev", "label": "Thermostat generalizes SmartDevice", "fromConceptId": "thermostat", "toConceptId": "device", "acceptedTypes": ["generalization"], "directed": true },
+    { "id": "r-lock-dev", "label": "SmartLock generalizes SmartDevice", "fromConceptId": "lock", "toConceptId": "device", "acceptedTypes": ["generalization"], "directed": true }
+  ],
+  "referenceSolution": {
+    "explanation": "SmartHub aggregates SmartDevice because paired devices can outlive or move between hubs. Thermostat and SmartLock inherit common identity and status behavior from abstract SmartDevice via Generalization.",
+    "nodes": [
+      {
+        "id": "c-hub",
+        "type": "umlClass",
+        "position": { "x": 60, "y": 100 },
+        "data": {
+          "label": "SmartHub",
+          "nodeType": "umlClass",
+          "classKind": "class",
+          "classAttributes": [{ "id": "a1", "visibility": "-", "name": "devices", "type": "SmartDevice[]" }],
+          "classMethods": [{ "id": "m1", "visibility": "+", "name": "pairDevice", "params": "d: SmartDevice", "returnType": "void" }]
+        }
+      },
+      {
+        "id": "c-device",
+        "type": "umlClass",
+        "position": { "x": 380, "y": 100 },
+        "data": {
+          "label": "SmartDevice",
+          "nodeType": "umlClass",
+          "classKind": "abstract",
+          "classAttributes": [{ "id": "a1", "visibility": "#", "name": "deviceId", "type": "string" }],
+          "classMethods": [{ "id": "m1", "visibility": "+", "name": "getStatus", "params": "", "returnType": "string", "isAbstract": true }]
+        }
+      },
+      {
+        "id": "c-therm",
+        "type": "umlClass",
+        "position": { "x": 240, "y": 320 },
+        "data": {
+          "label": "Thermostat",
+          "nodeType": "umlClass",
+          "classKind": "class",
+          "classAttributes": [{ "id": "a1", "visibility": "-", "name": "targetTemp", "type": "number" }],
+          "classMethods": [{ "id": "m1", "visibility": "+", "name": "getStatus", "params": "", "returnType": "string" }]
+        }
+      },
+      {
+        "id": "c-lock",
+        "type": "umlClass",
+        "position": { "x": 520, "y": 320 },
+        "data": {
+          "label": "SmartLock",
+          "nodeType": "umlClass",
+          "classKind": "class",
+          "classAttributes": [{ "id": "a1", "visibility": "-", "name": "isLocked", "type": "boolean" }],
+          "classMethods": [{ "id": "m1", "visibility": "+", "name": "getStatus", "params": "", "returnType": "string" }]
+        }
+      }
+    ],
+    "edges": [
+      { "id": "e1", "source": "c-hub", "target": "c-device", "data": { "relationshipType": "aggregation" } },
+      { "id": "e2", "source": "c-therm", "target": "c-device", "data": { "relationshipType": "generalization" } },
+      { "id": "e3", "source": "c-lock", "target": "c-device", "data": { "relationshipType": "generalization" } }
+    ]
+  }
+}
+

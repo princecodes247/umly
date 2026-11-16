@@ -1,0 +1,61 @@
+{
+  "id": "cs-class-3-notification-pipeline",
+  "number": 9,
+  "title": "Pluggable Notification Service",
+  "diagramType": "class",
+  "difficulty": "Advanced",
+  "domain": "Platform Architecture",
+  "statement": "Architect an extensible notification service. NotificationDispatcher dispatches NotificationMessage objects (each tagged with a ChannelType enum) through a NotificationChannel interface. EmailChannel and PushChannel implement NotificationChannel. To ensure reliability, NotificationDispatcher also owns a RetryPolicy configuration object and logs delivery outcomes via a Logger interface.",
+  "deliverables": [
+    "Include NotificationDispatcher, NotificationMessage, ChannelType (enum), NotificationChannel (interface), EmailChannel, PushChannel, RetryPolicy, and Logger (interface).",
+    "Enforce Dependency Inversion: NotificationDispatcher depends on NotificationChannel and Logger interfaces.",
+    "Use Composition for NotificationDispatcher -> RetryPolicy and Association for NotificationMessage -> ChannelType."
+  ],
+  "hints": [
+    "Set classKind to 'interface' for NotificationChannel and Logger, and 'enum' for ChannelType.",
+    "EmailChannel -> NotificationChannel and PushChannel -> NotificationChannel use Realization.",
+    "NotificationDispatcher -> RetryPolicy is Composition because the policy belongs strictly to that dispatcher."
+  ],
+  "concepts": [
+    { "id": "dispatcher", "label": "NotificationDispatcher class", "acceptedNodeTypes": ["umlClass"], "aliases": ["notificationdispatcher", "dispatcher", "notificationservice"], "minMembers": 1 },
+    { "id": "message", "label": "NotificationMessage class", "acceptedNodeTypes": ["umlClass"], "aliases": ["notificationmessage", "message", "notification"], "minMembers": 1 },
+    { "id": "channel-type", "label": "ChannelType enum", "acceptedNodeTypes": ["umlClass"], "aliases": ["channeltype", "channel type"], "minMembers": 1 },
+    { "id": "channel-if", "label": "NotificationChannel interface", "acceptedNodeTypes": ["umlClass"], "aliases": ["notificationchannel", "channel"], "minMembers": 1 },
+    { "id": "email", "label": "EmailChannel class", "acceptedNodeTypes": ["umlClass"], "aliases": ["emailchannel", "email channel", "emailsender"], "minMembers": 1 },
+    { "id": "push", "label": "PushChannel class", "acceptedNodeTypes": ["umlClass"], "aliases": ["pushchannel", "push channel", "pushsender"], "minMembers": 1 },
+    { "id": "retry", "label": "RetryPolicy class", "acceptedNodeTypes": ["umlClass"], "aliases": ["retrypolicy", "retry policy"], "minMembers": 1 },
+    { "id": "logger", "label": "Logger interface", "acceptedNodeTypes": ["umlClass"], "aliases": ["logger", "log"], "minMembers": 1 }
+  ],
+  "relationships": [
+    { "id": "r-disp-msg", "label": "Dispatcher depends on NotificationMessage", "fromConceptId": "dispatcher", "toConceptId": "message", "acceptedTypes": ["dependency"], "directed": true },
+    { "id": "r-msg-enum", "label": "NotificationMessage associates with ChannelType", "fromConceptId": "message", "toConceptId": "channel-type", "acceptedTypes": ["association"], "directed": false },
+    { "id": "r-disp-chan", "label": "Dispatcher depends on NotificationChannel", "fromConceptId": "dispatcher", "toConceptId": "channel-if", "acceptedTypes": ["dependency"], "directed": true },
+    { "id": "r-email-chan", "label": "EmailChannel realizes NotificationChannel", "fromConceptId": "email", "toConceptId": "channel-if", "acceptedTypes": ["realization"], "directed": true },
+    { "id": "r-push-chan", "label": "PushChannel realizes NotificationChannel", "fromConceptId": "push", "toConceptId": "channel-if", "acceptedTypes": ["realization"], "directed": true },
+    { "id": "r-disp-retry", "label": "Dispatcher composes RetryPolicy", "fromConceptId": "dispatcher", "toConceptId": "retry", "acceptedTypes": ["composition"], "directed": true },
+    { "id": "r-disp-log", "label": "Dispatcher depends on Logger", "fromConceptId": "dispatcher", "toConceptId": "logger", "acceptedTypes": ["dependency"], "directed": true }
+  ],
+  "referenceSolution": {
+    "explanation": "NotificationDispatcher depends on abstractions (NotificationChannel and Logger), composes its RetryPolicy, and processes NotificationMessage instances linked to the ChannelType enum. EmailChannel and PushChannel realize NotificationChannel.",
+    "nodes": [
+      { "id": "c-disp", "type": "umlClass", "position": { "x": 320, "y": 80 }, "data": { "label": "NotificationDispatcher", "nodeType": "umlClass", "classKind": "class", "classAttributes": [], "classMethods": [{ "id": "m1", "visibility": "+", "name": "send", "params": "msg: NotificationMessage", "returnType": "void" }] } },
+      { "id": "c-msg", "type": "umlClass", "position": { "x": 40, "y": 80 }, "data": { "label": "NotificationMessage", "nodeType": "umlClass", "classKind": "class", "classAttributes": [{ "id": "a1", "visibility": "-", "name": "body", "type": "string" }], "classMethods": [] } },
+      { "id": "c-enum", "type": "umlClass", "position": { "x": 40, "y": 300 }, "data": { "label": "ChannelType", "nodeType": "umlClass", "classKind": "enum", "classAttributes": [{ "id": "a1", "visibility": "+", "name": "EMAIL", "type": "const" }, { "id": "a2", "visibility": "+", "name": "PUSH", "type": "const" }], "classMethods": [] } },
+      { "id": "c-retry", "type": "umlClass", "position": { "x": 320, "y": 300 }, "data": { "label": "RetryPolicy", "nodeType": "umlClass", "classKind": "class", "classAttributes": [{ "id": "a1", "visibility": "-", "name": "maxRetries", "type": "number" }], "classMethods": [] } },
+      { "id": "c-logger", "type": "umlClass", "position": { "x": 620, "y": 300 }, "data": { "label": "Logger", "nodeType": "umlClass", "classKind": "interface", "classAttributes": [], "classMethods": [{ "id": "m1", "visibility": "+", "name": "info", "params": "msg: string", "returnType": "void" }] } },
+      { "id": "c-chan", "type": "umlClass", "position": { "x": 620, "y": 80 }, "data": { "label": "NotificationChannel", "nodeType": "umlClass", "classKind": "interface", "classAttributes": [], "classMethods": [{ "id": "m1", "visibility": "+", "name": "deliver", "params": "msg: NotificationMessage", "returnType": "void" }] } },
+      { "id": "c-email", "type": "umlClass", "position": { "x": 880, "y": 20 }, "data": { "label": "EmailChannel", "nodeType": "umlClass", "classKind": "class", "classAttributes": [], "classMethods": [{ "id": "m1", "visibility": "+", "name": "deliver", "params": "msg: NotificationMessage", "returnType": "void" }] } },
+      { "id": "c-push", "type": "umlClass", "position": { "x": 880, "y": 200 }, "data": { "label": "PushChannel", "nodeType": "umlClass", "classKind": "class", "classAttributes": [], "classMethods": [{ "id": "m1", "visibility": "+", "name": "deliver", "params": "msg: NotificationMessage", "returnType": "void" }] } }
+    ],
+    "edges": [
+      { "id": "e1", "source": "c-disp", "target": "c-msg", "data": { "relationshipType": "dependency" } },
+      { "id": "e2", "source": "c-msg", "target": "c-enum", "data": { "relationshipType": "association" } },
+      { "id": "e3", "source": "c-disp", "target": "c-chan", "data": { "relationshipType": "dependency" } },
+      { "id": "e4", "source": "c-email", "target": "c-chan", "data": { "relationshipType": "realization" } },
+      { "id": "e5", "source": "c-push", "target": "c-chan", "data": { "relationshipType": "realization" } },
+      { "id": "e6", "source": "c-disp", "target": "c-retry", "data": { "relationshipType": "composition" } },
+      { "id": "e7", "source": "c-disp", "target": "c-logger", "data": { "relationshipType": "dependency" } }
+    ]
+  }
+}
+

@@ -1,0 +1,92 @@
+{
+  "id": "cs-er-3-hospital-ward-management",
+  "number": 6,
+  "title": "Hospital Wards, Doctors & Lab Orders",
+  "diagramType": "er",
+  "difficulty": "Advanced",
+  "domain": "Healthcare",
+  "statement": "Design a hospital clinical database. A Ward has many Beds, and a Patient is admitted to one Bed at a time. Each Patient can have multiple Encounters attended by a Doctor (a Doctor attends many Encounters). During an Encounter, a Doctor may place multiple Lab Orders, and each Lab Order references a Lab Test from the hospital catalog.",
+  "deliverables": [
+    "Model Ward, Bed, Patient, Doctor, Encounter, LabOrder, and LabTest entities.",
+    "Ensure every entity defines a Primary Key and appropriate Foreign Keys.",
+    "Connect the full clinical chain cleanly in 3NF."
+  ],
+  "hints": [
+    "Ward (1) -> Bed (N) -> Patient (1) models bed assignment.",
+    "Encounter acts as the central visit record linking Patient (1:N) and Doctor (1:N).",
+    "LabOrder links Encounter (1:N) with LabTest (1:N)."
+  ],
+  "concepts": [
+    { "id": "ward", "label": "Ward entity", "acceptedNodeTypes": ["erEntity"], "aliases": ["ward", "department", "unit"], "minMembers": 2 },
+    { "id": "bed", "label": "Bed entity", "acceptedNodeTypes": ["erEntity"], "aliases": ["bed", "room", "hospital bed"], "minMembers": 2 },
+    { "id": "patient", "label": "Patient entity", "acceptedNodeTypes": ["erEntity"], "aliases": ["patient", "patients"], "minMembers": 2 },
+    { "id": "doctor", "label": "Doctor entity", "acceptedNodeTypes": ["erEntity"], "aliases": ["doctor", "physician", "clinician"], "minMembers": 2 },
+    { "id": "encounter", "label": "Encounter / Visit entity", "acceptedNodeTypes": ["erEntity"], "aliases": ["encounter", "visit", "consultation", "appointment"], "minMembers": 2 },
+    { "id": "lab-order", "label": "LabOrder entity", "acceptedNodeTypes": ["erEntity"], "aliases": ["lab order", "laborder", "lab_order", "test order"], "minMembers": 2 },
+    { "id": "lab-test", "label": "LabTest catalog entity", "acceptedNodeTypes": ["erEntity"], "aliases": ["lab test", "labtest", "lab_test", "test catalog"], "minMembers": 2 }
+  ],
+  "relationships": [
+    { "id": "r-ward-bed", "label": "Ward linked to Bed", "fromConceptId": "ward", "toConceptId": "bed", "acceptedTypes": ["er"], "directed": false },
+    { "id": "r-bed-pat", "label": "Bed linked to Patient", "fromConceptId": "bed", "toConceptId": "patient", "acceptedTypes": ["er"], "directed": false },
+    { "id": "r-pat-enc", "label": "Patient linked to Encounter", "fromConceptId": "patient", "toConceptId": "encounter", "acceptedTypes": ["er"], "directed": false },
+    { "id": "r-doc-enc", "label": "Doctor linked to Encounter", "fromConceptId": "doctor", "toConceptId": "encounter", "acceptedTypes": ["er"], "directed": false },
+    { "id": "r-enc-lab", "label": "Encounter linked to LabOrder", "fromConceptId": "encounter", "toConceptId": "lab-order", "acceptedTypes": ["er"], "directed": false },
+    { "id": "r-test-lab", "label": "LabTest linked to LabOrder", "fromConceptId": "lab-test", "toConceptId": "lab-order", "acceptedTypes": ["er"], "directed": false }
+  ],
+  "referenceSolution": {
+    "explanation": "Ward contains Beds (1:N), each optionally occupied by a Patient (1:0..1). Encounter connects Patient and Doctor (each 1:N) and spawns LabOrders (1:N) referencing the LabTest catalog.",
+    "nodes": [
+      {
+        "id": "n-ward",
+        "type": "erEntity",
+        "position": { "x": 40, "y": 60 },
+        "data": { "label": "Ward", "nodeType": "erEntity", "erAttributes": [{ "id": "a1", "name": "ward_id", "type": "uuid", "isPrimaryKey": true }, { "id": "a2", "name": "name", "type": "varchar(80)" }] }
+      },
+      {
+        "id": "n-bed",
+        "type": "erEntity",
+        "position": { "x": 310, "y": 60 },
+        "data": { "label": "Bed", "nodeType": "erEntity", "erAttributes": [{ "id": "a1", "name": "bed_id", "type": "uuid", "isPrimaryKey": true }, { "id": "a2", "name": "ward_id", "type": "uuid", "isForeignKey": true }, { "id": "a3", "name": "bed_number", "type": "varchar(16)" }] }
+      },
+      {
+        "id": "n-pat",
+        "type": "erEntity",
+        "position": { "x": 580, "y": 60 },
+        "data": { "label": "Patient", "nodeType": "erEntity", "erAttributes": [{ "id": "a1", "name": "patient_id", "type": "uuid", "isPrimaryKey": true }, { "id": "a2", "name": "bed_id", "type": "uuid", "isForeignKey": true }, { "id": "a3", "name": "full_name", "type": "varchar(120)" }] }
+      },
+      {
+        "id": "n-enc",
+        "type": "erEntity",
+        "position": { "x": 580, "y": 290 },
+        "data": { "label": "Encounter", "nodeType": "erEntity", "erAttributes": [{ "id": "a1", "name": "encounter_id", "type": "uuid", "isPrimaryKey": true }, { "id": "a2", "name": "patient_id", "type": "uuid", "isForeignKey": true }, { "id": "a3", "name": "doctor_id", "type": "uuid", "isForeignKey": true }] }
+      },
+      {
+        "id": "n-doc",
+        "type": "erEntity",
+        "position": { "x": 310, "y": 290 },
+        "data": { "label": "Doctor", "nodeType": "erEntity", "erAttributes": [{ "id": "a1", "name": "doctor_id", "type": "uuid", "isPrimaryKey": true }, { "id": "a2", "name": "specialty", "type": "varchar(80)" }] }
+      },
+      {
+        "id": "n-order",
+        "type": "erEntity",
+        "position": { "x": 850, "y": 290 },
+        "data": { "label": "LabOrder", "nodeType": "erEntity", "erAttributes": [{ "id": "a1", "name": "lab_order_id", "type": "uuid", "isPrimaryKey": true }, { "id": "a2", "name": "encounter_id", "type": "uuid", "isForeignKey": true }, { "id": "a3", "name": "lab_test_id", "type": "uuid", "isForeignKey": true }] }
+      },
+      {
+        "id": "n-test",
+        "type": "erEntity",
+        "position": { "x": 850, "y": 60 },
+        "data": { "label": "LabTest", "nodeType": "erEntity", "erAttributes": [{ "id": "a1", "name": "lab_test_id", "type": "uuid", "isPrimaryKey": true }, { "id": "a2", "name": "code", "type": "varchar(32)" }] }
+      }
+    ],
+    "edges": [
+      { "id": "e1", "source": "n-ward", "target": "n-bed", "data": { "relationshipType": "er", "erSourceCardinality": "1", "erTargetCardinality": "N" } },
+      { "id": "e2", "source": "n-bed", "target": "n-pat", "data": { "relationshipType": "er", "erSourceCardinality": "1", "erTargetCardinality": "0..1" } },
+      { "id": "e3", "source": "n-pat", "target": "n-enc", "data": { "relationshipType": "er", "erSourceCardinality": "1", "erTargetCardinality": "N" } },
+      { "id": "e4", "source": "n-doc", "target": "n-enc", "data": { "relationshipType": "er", "erSourceCardinality": "1", "erTargetCardinality": "N" } },
+      { "id": "e5", "source": "n-enc", "target": "n-order", "data": { "relationshipType": "er", "erSourceCardinality": "1", "erTargetCardinality": "N" } },
+      { "id": "e6", "source": "n-test", "target": "n-order", "data": { "relationshipType": "er", "erSourceCardinality": "1", "erTargetCardinality": "N" } }
+    ]
+  }
+}
+

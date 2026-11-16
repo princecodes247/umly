@@ -11,8 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
+import { Route as CaseStudiesRouteImport } from './routes/case-studies'
 import { Route as PuzzlesRouteImport } from './routes/puzzles'
 import { Route as WorkspaceRouteImport } from './routes/workspace'
+import { Route as CaseStudyCaseStudyIdRouteImport } from './routes/case-study.$caseStudyId'
 import { Route as PlayLevelIdRouteImport } from './routes/play.$levelId'
 import { Route as StudioIndexRouteImport } from './routes/studio.index'
 import { Route as StudioDiagramIdRouteImport } from './routes/studio.$diagramId'
@@ -27,6 +29,11 @@ const AboutRoute = AboutRouteImport.update({
   path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CaseStudiesRoute = CaseStudiesRouteImport.update({
+  id: '/case-studies',
+  path: '/case-studies',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PuzzlesRoute = PuzzlesRouteImport.update({
   id: '/puzzles',
   path: '/puzzles',
@@ -35,6 +42,11 @@ const PuzzlesRoute = PuzzlesRouteImport.update({
 const WorkspaceRoute = WorkspaceRouteImport.update({
   id: '/workspace',
   path: '/workspace',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CaseStudyCaseStudyIdRoute = CaseStudyCaseStudyIdRouteImport.update({
+  id: '/case-study/$caseStudyId',
+  path: '/case-study/$caseStudyId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PlayLevelIdRoute = PlayLevelIdRouteImport.update({
@@ -56,8 +68,10 @@ const StudioDiagramIdRoute = StudioDiagramIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/case-studies': typeof CaseStudiesRoute
   '/puzzles': typeof PuzzlesRoute
   '/workspace': typeof WorkspaceRoute
+  '/case-study/$caseStudyId': typeof CaseStudyCaseStudyIdRoute
   '/play/$levelId': typeof PlayLevelIdRoute
   '/studio/$diagramId': typeof StudioDiagramIdRoute
   '/studio/': typeof StudioIndexRoute
@@ -65,8 +79,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/case-studies': typeof CaseStudiesRoute
   '/puzzles': typeof PuzzlesRoute
   '/workspace': typeof WorkspaceRoute
+  '/case-study/$caseStudyId': typeof CaseStudyCaseStudyIdRoute
   '/play/$levelId': typeof PlayLevelIdRoute
   '/studio/$diagramId': typeof StudioDiagramIdRoute
   '/studio': typeof StudioIndexRoute
@@ -75,8 +91,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/case-studies': typeof CaseStudiesRoute
   '/puzzles': typeof PuzzlesRoute
   '/workspace': typeof WorkspaceRoute
+  '/case-study/$caseStudyId': typeof CaseStudyCaseStudyIdRoute
   '/play/$levelId': typeof PlayLevelIdRoute
   '/studio/$diagramId': typeof StudioDiagramIdRoute
   '/studio/': typeof StudioIndexRoute
@@ -86,8 +104,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
+    | '/case-studies'
     | '/puzzles'
     | '/workspace'
+    | '/case-study/$caseStudyId'
     | '/play/$levelId'
     | '/studio/$diagramId'
     | '/studio/'
@@ -95,8 +115,10 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/case-studies'
     | '/puzzles'
     | '/workspace'
+    | '/case-study/$caseStudyId'
     | '/play/$levelId'
     | '/studio/$diagramId'
     | '/studio'
@@ -104,8 +126,10 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/about'
+    | '/case-studies'
     | '/puzzles'
     | '/workspace'
+    | '/case-study/$caseStudyId'
     | '/play/$levelId'
     | '/studio/$diagramId'
     | '/studio/'
@@ -114,8 +138,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  CaseStudiesRoute: typeof CaseStudiesRoute
   PuzzlesRoute: typeof PuzzlesRoute
   WorkspaceRoute: typeof WorkspaceRoute
+  CaseStudyCaseStudyIdRoute: typeof CaseStudyCaseStudyIdRoute
   PlayLevelIdRoute: typeof PlayLevelIdRoute
   StudioDiagramIdRoute: typeof StudioDiagramIdRoute
   StudioIndexRoute: typeof StudioIndexRoute
@@ -137,6 +163,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/case-studies': {
+      id: '/case-studies'
+      path: '/case-studies'
+      fullPath: '/case-studies'
+      preLoaderRoute: typeof CaseStudiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/puzzles': {
       id: '/puzzles'
       path: '/puzzles'
@@ -149,6 +182,13 @@ declare module '@tanstack/react-router' {
       path: '/workspace'
       fullPath: '/workspace'
       preLoaderRoute: typeof WorkspaceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/case-study/$caseStudyId': {
+      id: '/case-study/$caseStudyId'
+      path: '/case-study/$caseStudyId'
+      fullPath: '/case-study/$caseStudyId'
+      preLoaderRoute: typeof CaseStudyCaseStudyIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/play/$levelId': {
@@ -178,8 +218,10 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  CaseStudiesRoute: CaseStudiesRoute,
   PuzzlesRoute: PuzzlesRoute,
   WorkspaceRoute: WorkspaceRoute,
+  CaseStudyCaseStudyIdRoute: CaseStudyCaseStudyIdRoute,
   PlayLevelIdRoute: PlayLevelIdRoute,
   StudioDiagramIdRoute: StudioDiagramIdRoute,
   StudioIndexRoute: StudioIndexRoute,

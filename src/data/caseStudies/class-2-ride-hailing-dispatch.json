@@ -1,0 +1,61 @@
+{
+  "id": "cs-class-2-ride-hailing-dispatch",
+  "number": 8,
+  "title": "Ride-Hailing Trip & Pricing Engine",
+  "diagramType": "class",
+  "difficulty": "Intermediate",
+  "domain": "Mobility",
+  "statement": "Model the core classes of a ride-hailing app. A Trip is requested by a Rider and fulfilled by a Driver. Each Trip exclusively owns a RouteSnapshot (destroyed if the Trip is deleted). To support surge pricing, TripService depends on a PricingStrategy interface implemented by StandardPricing and SurgePricing.",
+  "deliverables": [
+    "Model Trip, Rider, Driver, RouteSnapshot, TripService, PricingStrategy, StandardPricing, and SurgePricing.",
+    "Use Composition for Trip -> RouteSnapshot and Associations for Rider/Driver.",
+    "Use Realization for PricingStrategy implementations and Dependency from TripService to PricingStrategy."
+  ],
+  "hints": [
+    "RouteSnapshot has no lifecycle outside its Trip -> use Composition.",
+    "StandardPricing and SurgePricing implement PricingStrategy -> use Realization.",
+    "TripService depends on the PricingStrategy interface rather than concrete pricing classes."
+  ],
+  "concepts": [
+    { "id": "trip", "label": "Trip class", "acceptedNodeTypes": ["umlClass"], "aliases": ["trip", "ride"], "minMembers": 1 },
+    { "id": "rider", "label": "Rider class", "acceptedNodeTypes": ["umlClass"], "aliases": ["rider", "passenger", "customer"], "minMembers": 1 },
+    { "id": "driver", "label": "Driver class", "acceptedNodeTypes": ["umlClass"], "aliases": ["driver", "chauffeur"], "minMembers": 1 },
+    { "id": "route", "label": "RouteSnapshot class", "acceptedNodeTypes": ["umlClass"], "aliases": ["routesnapshot", "route snapshot", "route", "waypoint"], "minMembers": 1 },
+    { "id": "service", "label": "TripService class", "acceptedNodeTypes": ["umlClass"], "aliases": ["tripservice", "trip service", "dispatchservice"], "minMembers": 1 },
+    { "id": "strategy", "label": "PricingStrategy interface", "acceptedNodeTypes": ["umlClass"], "aliases": ["pricingstrategy", "pricing strategy", "farestrategy"], "minMembers": 1 },
+    { "id": "standard", "label": "StandardPricing class", "acceptedNodeTypes": ["umlClass"], "aliases": ["standardpricing", "standard pricing", "basepricing"], "minMembers": 1 },
+    { "id": "surge", "label": "SurgePricing class", "acceptedNodeTypes": ["umlClass"], "aliases": ["surgepricing", "surge pricing", "dynamicpricing"], "minMembers": 1 }
+  ],
+  "relationships": [
+    { "id": "r-rider-trip", "label": "Rider associates with Trip", "fromConceptId": "rider", "toConceptId": "trip", "acceptedTypes": ["association"], "directed": false },
+    { "id": "r-driver-trip", "label": "Driver associates with Trip", "fromConceptId": "driver", "toConceptId": "trip", "acceptedTypes": ["association"], "directed": false },
+    { "id": "r-trip-route", "label": "Trip composes RouteSnapshot", "fromConceptId": "trip", "toConceptId": "route", "acceptedTypes": ["composition"], "directed": true },
+    { "id": "r-svc-trip", "label": "TripService depends on Trip", "fromConceptId": "service", "toConceptId": "trip", "acceptedTypes": ["dependency"], "directed": true },
+    { "id": "r-svc-strat", "label": "TripService depends on PricingStrategy", "fromConceptId": "service", "toConceptId": "strategy", "acceptedTypes": ["dependency"], "directed": true },
+    { "id": "r-std-strat", "label": "StandardPricing realizes PricingStrategy", "fromConceptId": "standard", "toConceptId": "strategy", "acceptedTypes": ["realization"], "directed": true },
+    { "id": "r-surge-strat", "label": "SurgePricing realizes PricingStrategy", "fromConceptId": "surge", "toConceptId": "strategy", "acceptedTypes": ["realization"], "directed": true }
+  ],
+  "referenceSolution": {
+    "explanation": "Trip associates with Rider and Driver and strictly composes RouteSnapshot. TripService depends on Trip and the PricingStrategy interface, keeping concrete StandardPricing and SurgePricing implementations decoupled.",
+    "nodes": [
+      { "id": "c-rider", "type": "umlClass", "position": { "x": 40, "y": 60 }, "data": { "label": "Rider", "nodeType": "umlClass", "classKind": "class", "classAttributes": [{ "id": "a1", "visibility": "-", "name": "riderId", "type": "string" }], "classMethods": [] } },
+      { "id": "c-trip", "type": "umlClass", "position": { "x": 300, "y": 60 }, "data": { "label": "Trip", "nodeType": "umlClass", "classKind": "class", "classAttributes": [{ "id": "a1", "visibility": "-", "name": "fare", "type": "number" }], "classMethods": [{ "id": "m1", "visibility": "+", "name": "complete", "params": "", "returnType": "void" }] } },
+      { "id": "c-driver", "type": "umlClass", "position": { "x": 40, "y": 270 }, "data": { "label": "Driver", "nodeType": "umlClass", "classKind": "class", "classAttributes": [{ "id": "a1", "visibility": "-", "name": "licenseNo", "type": "string" }], "classMethods": [] } },
+      { "id": "c-route", "type": "umlClass", "position": { "x": 300, "y": 290 }, "data": { "label": "RouteSnapshot", "nodeType": "umlClass", "classKind": "class", "classAttributes": [{ "id": "a1", "visibility": "-", "name": "polyline", "type": "string" }], "classMethods": [] } },
+      { "id": "c-svc", "type": "umlClass", "position": { "x": 580, "y": 60 }, "data": { "label": "TripService", "nodeType": "umlClass", "classKind": "class", "classAttributes": [], "classMethods": [{ "id": "m1", "visibility": "+", "name": "quote", "params": "trip: Trip, p: PricingStrategy", "returnType": "number" }] } },
+      { "id": "c-strat", "type": "umlClass", "position": { "x": 850, "y": 60 }, "data": { "label": "PricingStrategy", "nodeType": "umlClass", "classKind": "interface", "classAttributes": [], "classMethods": [{ "id": "m1", "visibility": "+", "name": "calculate", "params": "km: number", "returnType": "number" }] } },
+      { "id": "c-std", "type": "umlClass", "position": { "x": 740, "y": 290 }, "data": { "label": "StandardPricing", "nodeType": "umlClass", "classKind": "class", "classAttributes": [], "classMethods": [{ "id": "m1", "visibility": "+", "name": "calculate", "params": "km: number", "returnType": "number" }] } },
+      { "id": "c-surge", "type": "umlClass", "position": { "x": 980, "y": 290 }, "data": { "label": "SurgePricing", "nodeType": "umlClass", "classKind": "class", "classAttributes": [{ "id": "a1", "visibility": "-", "name": "multiplier", "type": "number" }], "classMethods": [{ "id": "m1", "visibility": "+", "name": "calculate", "params": "km: number", "returnType": "number" }] } }
+    ],
+    "edges": [
+      { "id": "e1", "source": "c-rider", "target": "c-trip", "data": { "relationshipType": "association" } },
+      { "id": "e2", "source": "c-driver", "target": "c-trip", "data": { "relationshipType": "association" } },
+      { "id": "e3", "source": "c-trip", "target": "c-route", "data": { "relationshipType": "composition" } },
+      { "id": "e4", "source": "c-svc", "target": "c-trip", "data": { "relationshipType": "dependency" } },
+      { "id": "e5", "source": "c-svc", "target": "c-strat", "data": { "relationshipType": "dependency" } },
+      { "id": "e6", "source": "c-std", "target": "c-strat", "data": { "relationshipType": "realization" } },
+      { "id": "e7", "source": "c-surge", "target": "c-strat", "data": { "relationshipType": "realization" } }
+    ]
+  }
+}
+

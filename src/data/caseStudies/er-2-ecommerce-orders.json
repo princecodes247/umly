@@ -1,0 +1,174 @@
+{
+  "id": "cs-er-2-ecommerce-orders",
+  "number": 5,
+  "title": "Online Storefront & Order Fulfillment",
+  "diagramType": "er",
+  "difficulty": "Intermediate",
+  "domain": "E-Commerce",
+  "statement": "Model the relational schema for an online store. A Customer can place many Orders, and each Order contains one or more Order Items referencing a Product (storing quantity and unit_price at purchase time). Each Order has at most one Payment record tracking amount, method, and status.",
+  "deliverables": [
+    "Create Customer, Order, OrderItem, Product, and Payment entities with PKs and FKs.",
+    "Capture 1:N relationships from Customer to Order and Order/Product to OrderItem.",
+    "Model the 1:1 relationship between Order and Payment."
+  ],
+  "hints": [
+    "OrderItem resolves the many-to-many relationship between Order and Product and stores unit_price.",
+    "Use 1:1 Crow's Foot cardinality between Order and Payment.",
+    "Ensure every entity has a Primary Key."
+  ],
+  "concepts": [
+    {
+      "id": "customer",
+      "label": "Customer entity",
+      "acceptedNodeTypes": ["erEntity"],
+      "aliases": ["customer", "buyer", "user", "shopper"],
+      "minMembers": 2
+    },
+    {
+      "id": "order",
+      "label": "Order entity",
+      "acceptedNodeTypes": ["erEntity"],
+      "aliases": ["order", "orders", "purchase"],
+      "minMembers": 2
+    },
+    {
+      "id": "order-item",
+      "label": "OrderItem line-item entity",
+      "acceptedNodeTypes": ["erEntity"],
+      "aliases": ["order item", "order_item", "orderitem", "line item", "order line"],
+      "minMembers": 2
+    },
+    {
+      "id": "product",
+      "label": "Product entity",
+      "acceptedNodeTypes": ["erEntity"],
+      "aliases": ["product", "products", "item", "sku"],
+      "minMembers": 2
+    },
+    {
+      "id": "payment",
+      "label": "Payment entity",
+      "acceptedNodeTypes": ["erEntity"],
+      "aliases": ["payment", "payments", "transaction", "charge"],
+      "minMembers": 2
+    }
+  ],
+  "relationships": [
+    {
+      "id": "r-cust-order",
+      "label": "Customer linked to Order",
+      "fromConceptId": "customer",
+      "toConceptId": "order",
+      "acceptedTypes": ["er"],
+      "directed": false
+    },
+    {
+      "id": "r-order-item",
+      "label": "Order linked to OrderItem",
+      "fromConceptId": "order",
+      "toConceptId": "order-item",
+      "acceptedTypes": ["er"],
+      "directed": false
+    },
+    {
+      "id": "r-prod-item",
+      "label": "Product linked to OrderItem",
+      "fromConceptId": "product",
+      "toConceptId": "order-item",
+      "acceptedTypes": ["er"],
+      "directed": false
+    },
+    {
+      "id": "r-order-pay",
+      "label": "Order linked to Payment",
+      "fromConceptId": "order",
+      "toConceptId": "payment",
+      "acceptedTypes": ["er"],
+      "directed": false
+    }
+  ],
+  "referenceSolution": {
+    "explanation": "Customer has a 1:N relationship with Order. OrderItem links Order (1:N) and Product (1:N) while snapshotting unit_price. Order has a 1:1 relationship with Payment.",
+    "nodes": [
+      {
+        "id": "er-cust",
+        "type": "erEntity",
+        "position": { "x": 60, "y": 80 },
+        "data": {
+          "label": "Customer",
+          "nodeType": "erEntity",
+          "erAttributes": [
+            { "id": "a1", "name": "customer_id", "type": "uuid", "isPrimaryKey": true },
+            { "id": "a2", "name": "email", "type": "varchar(180)" }
+          ]
+        }
+      },
+      {
+        "id": "er-order",
+        "type": "erEntity",
+        "position": { "x": 340, "y": 80 },
+        "data": {
+          "label": "Order",
+          "nodeType": "erEntity",
+          "erAttributes": [
+            { "id": "a1", "name": "order_id", "type": "uuid", "isPrimaryKey": true },
+            { "id": "a2", "name": "customer_id", "type": "uuid", "isForeignKey": true },
+            { "id": "a3", "name": "created_at", "type": "timestamp" }
+          ]
+        }
+      },
+      {
+        "id": "er-item",
+        "type": "erEntity",
+        "position": { "x": 640, "y": 80 },
+        "data": {
+          "label": "OrderItem",
+          "nodeType": "erEntity",
+          "erAttributes": [
+            { "id": "a1", "name": "order_item_id", "type": "uuid", "isPrimaryKey": true },
+            { "id": "a2", "name": "order_id", "type": "uuid", "isForeignKey": true },
+            { "id": "a3", "name": "product_id", "type": "uuid", "isForeignKey": true },
+            { "id": "a4", "name": "quantity", "type": "int" },
+            { "id": "a5", "name": "unit_price", "type": "decimal(10,2)" }
+          ]
+        }
+      },
+      {
+        "id": "er-prod",
+        "type": "erEntity",
+        "position": { "x": 640, "y": 320 },
+        "data": {
+          "label": "Product",
+          "nodeType": "erEntity",
+          "erAttributes": [
+            { "id": "a1", "name": "product_id", "type": "uuid", "isPrimaryKey": true },
+            { "id": "a2", "name": "name", "type": "varchar(140)" },
+            { "id": "a3", "name": "price", "type": "decimal(10,2)" }
+          ]
+        }
+      },
+      {
+        "id": "er-pay",
+        "type": "erEntity",
+        "position": { "x": 340, "y": 320 },
+        "data": {
+          "label": "Payment",
+          "nodeType": "erEntity",
+          "erAttributes": [
+            { "id": "a1", "name": "payment_id", "type": "uuid", "isPrimaryKey": true },
+            { "id": "a2", "name": "order_id", "type": "uuid", "isForeignKey": true },
+            { "id": "a3", "name": "amount", "type": "decimal(10,2)" },
+            { "id": "a4", "name": "status", "type": "varchar(24)" }
+          ]
+        }
+      }
+    ],
+    "edges": [
+      { "id": "e1", "source": "er-cust", "target": "er-order", "data": { "relationshipType": "er", "erSourceCardinality": "1", "erTargetCardinality": "N" } },
+      { "id": "e2", "source": "er-order", "target": "er-item", "data": { "relationshipType": "er", "erSourceCardinality": "1", "erTargetCardinality": "N" } },
+      { "id": "e3", "source": "er-prod", "target": "er-item", "data": { "relationshipType": "er", "erSourceCardinality": "1", "erTargetCardinality": "N" } },
+      { "id": "e4", "source": "er-order", "target": "er-pay", "data": { "relationshipType": "er", "erSourceCardinality": "1", "erTargetCardinality": "0..1" } }
+    ]
+  }
+}
+

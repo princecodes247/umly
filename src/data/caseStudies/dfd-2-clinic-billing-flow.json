@@ -1,0 +1,56 @@
+{
+  "id": "cs-dfd-2-clinic-billing-flow",
+  "number": 11,
+  "title": "Clinic Visit & Insurance Claim Flow",
+  "diagramType": "dfd",
+  "difficulty": "Intermediate",
+  "domain": "Healthcare",
+  "statement": "Model a clinic billing DFD. A Patient checks in at \"1.0 Register Visit\", which reads patient demographics from \"D1 Patients\" and creates a visit record in \"D2 Visits\". \"2.0 Submit Insurance Claim\" reads from \"D2 Visits\", sends the claim to the Insurer external entity, and stores the claim status in \"D3 Claims\".",
+  "deliverables": [
+    "Model Patient, Insurer, two numbered processes (1.0, 2.0), and three data stores (D1, D2, D3).",
+    "Distinguish Data Store reads (Store -> Process) from writes (Process -> Store).",
+    "Avoid illegal direct Entity-to-Store or Store-to-Store flows."
+  ],
+  "hints": [
+    "1.0 Register Visit receives check-in from Patient, reads D1 Patients, and writes to D2 Visits.",
+    "2.0 Submit Insurance Claim reads D2 Visits, writes to D3 Claims, and transmits to Insurer."
+  ],
+  "concepts": [
+    { "id": "patient", "label": "Patient external entity", "acceptedNodeTypes": ["dfdExternalEntity"], "aliases": ["patient"] },
+    { "id": "insurer", "label": "Insurer external entity", "acceptedNodeTypes": ["dfdExternalEntity"], "aliases": ["insurer", "insurance", "payer"] },
+    { "id": "register", "label": "Register Visit process", "acceptedNodeTypes": ["dfdProcess"], "aliases": ["register", "register visit", "check in"] },
+    { "id": "claim-proc", "label": "Submit Insurance Claim process", "acceptedNodeTypes": ["dfdProcess"], "aliases": ["submit claim", "insurance claim", "billing", "claim"] },
+    { "id": "patients-ds", "label": "Patients data store", "acceptedNodeTypes": ["dfdDataStore"], "aliases": ["patients", "patient"] },
+    { "id": "visits-ds", "label": "Visits data store", "acceptedNodeTypes": ["dfdDataStore"], "aliases": ["visits", "visit", "encounters"] },
+    { "id": "claims-ds", "label": "Claims data store", "acceptedNodeTypes": ["dfdDataStore"], "aliases": ["claims", "claim"] }
+  ],
+  "relationships": [
+    { "id": "r-pat-reg", "label": "Patient checks in at Register Visit", "fromConceptId": "patient", "toConceptId": "register", "acceptedTypes": ["data_flow"], "directed": true },
+    { "id": "r-pds-reg", "label": "Patients store feeds Register Visit", "fromConceptId": "patients-ds", "toConceptId": "register", "acceptedTypes": ["data_flow"], "directed": true },
+    { "id": "r-reg-vds", "label": "Register Visit writes to Visits store", "fromConceptId": "register", "toConceptId": "visits-ds", "acceptedTypes": ["data_flow"], "directed": true },
+    { "id": "r-vds-claim", "label": "Visits store feeds Submit Claim", "fromConceptId": "visits-ds", "toConceptId": "claim-proc", "acceptedTypes": ["data_flow"], "directed": true },
+    { "id": "r-claim-ins", "label": "Submit Claim sends claim to Insurer", "fromConceptId": "claim-proc", "toConceptId": "insurer", "acceptedTypes": ["data_flow"], "directed": true },
+    { "id": "r-claim-cds", "label": "Submit Claim writes to Claims store", "fromConceptId": "claim-proc", "toConceptId": "claims-ds", "acceptedTypes": ["data_flow"], "directed": true }
+  ],
+  "referenceSolution": {
+    "explanation": "1.0 Register Visit reads D1 Patients and records visits in D2 Visits. 2.0 Submit Insurance Claim reads D2 Visits, transmits the claim to Insurer, and logs status in D3 Claims.",
+    "nodes": [
+      { "id": "d-pat", "type": "dfdExternalEntity", "position": { "x": 60, "y": 90 }, "data": { "label": "Patient", "nodeType": "dfdExternalEntity" } },
+      { "id": "d-reg", "type": "dfdProcess", "position": { "x": 320, "y": 80 }, "data": { "label": "Register Visit", "nodeType": "dfdProcess", "processNumber": "1.0" } },
+      { "id": "d-pds", "type": "dfdDataStore", "position": { "x": 320, "y": 280 }, "data": { "label": "Patients", "nodeType": "dfdDataStore", "dataStoreId": "D1" } },
+      { "id": "d-vds", "type": "dfdDataStore", "position": { "x": 600, "y": 90 }, "data": { "label": "Visits", "nodeType": "dfdDataStore", "dataStoreId": "D2" } },
+      { "id": "d-claim", "type": "dfdProcess", "position": { "x": 600, "y": 270 }, "data": { "label": "Submit Insurance Claim", "nodeType": "dfdProcess", "processNumber": "2.0" } },
+      { "id": "d-cds", "type": "dfdDataStore", "position": { "x": 880, "y": 280 }, "data": { "label": "Claims", "nodeType": "dfdDataStore", "dataStoreId": "D3" } },
+      { "id": "d-ins", "type": "dfdExternalEntity", "position": { "x": 880, "y": 90 }, "data": { "label": "Insurer", "nodeType": "dfdExternalEntity" } }
+    ],
+    "edges": [
+      { "id": "e1", "source": "d-pat", "target": "d-reg", "data": { "relationshipType": "data_flow", "label": "Check-in Details" } },
+      { "id": "e2", "source": "d-pds", "target": "d-reg", "data": { "relationshipType": "data_flow", "label": "Demographics" } },
+      { "id": "e3", "source": "d-reg", "target": "d-vds", "data": { "relationshipType": "data_flow", "label": "Visit Record" } },
+      { "id": "e4", "source": "d-vds", "target": "d-claim", "data": { "relationshipType": "data_flow", "label": "Billable Visit" } },
+      { "id": "e5", "source": "d-claim", "target": "d-ins", "data": { "relationshipType": "data_flow", "label": "EDI Claim" } },
+      { "id": "e6", "source": "d-claim", "target": "d-cds", "data": { "relationshipType": "data_flow", "label": "Claim Status" } }
+    ]
+  }
+}
+

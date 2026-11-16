@@ -1,0 +1,61 @@
+{
+  "id": "cs-dfd-3-iot-telemetry-pipeline",
+  "number": 12,
+  "title": "Smart Grid Telemetry & Alerting",
+  "diagramType": "dfd",
+  "difficulty": "Advanced",
+  "domain": "Energy / IoT",
+  "statement": "Design a Level-1 DFD for a smart-grid monitoring platform. Smart Meter devices stream voltage readings to \"1.0 Ingest Telemetry\", which stores raw readings in \"D1 TimeSeries Logs\" and forwards cleaned readings to \"2.0 Detect Anomalies\". \"2.0 Detect Anomalies\" reads threshold rules from \"D2 Thresholds\", writes detected incidents to \"D3 Incidents\", and dispatches alerts to \"3.0 Notify Operator\", which alerts the Grid Operator.",
+  "deliverables": [
+    "Model Smart Meter, Grid Operator, three processes (1.0, 2.0, 3.0), and three data stores (D1, D2, D3).",
+    "Ensure all data store reads/writes and inter-process streams are properly directed.",
+    "Maintain balanced inputs and outputs on every process."
+  ],
+  "hints": [
+    "1.0 Ingest Telemetry writes to D1 TimeSeries Logs and streams cleaned data to 2.0 Detect Anomalies.",
+    "2.0 Detect Anomalies reads D2 Thresholds, writes to D3 Incidents, and triggers 3.0 Notify Operator.",
+    "3.0 Notify Operator sends the final alert to Grid Operator."
+  ],
+  "concepts": [
+    { "id": "meter", "label": "Smart Meter external entity", "acceptedNodeTypes": ["dfdExternalEntity"], "aliases": ["smart meter", "meter", "sensor", "iot device"] },
+    { "id": "operator", "label": "Grid Operator external entity", "acceptedNodeTypes": ["dfdExternalEntity"], "aliases": ["grid operator", "operator", "engineer", "oncall"] },
+    { "id": "ingest", "label": "Ingest Telemetry process", "acceptedNodeTypes": ["dfdProcess"], "aliases": ["ingest", "ingest telemetry", "collect telemetry"] },
+    { "id": "detect", "label": "Detect Anomalies process", "acceptedNodeTypes": ["dfdProcess"], "aliases": ["detect", "detect anomalies", "anomaly", "analyze"] },
+    { "id": "notify", "label": "Notify Operator process", "acceptedNodeTypes": ["dfdProcess"], "aliases": ["notify", "notify operator", "alert", "dispatch alert"] },
+    { "id": "logs-ds", "label": "TimeSeries Logs data store", "acceptedNodeTypes": ["dfdDataStore"], "aliases": ["timeseries", "time series", "logs", "readings"] },
+    { "id": "thresh-ds", "label": "Thresholds data store", "acceptedNodeTypes": ["dfdDataStore"], "aliases": ["thresholds", "threshold", "rules"] },
+    { "id": "incidents-ds", "label": "Incidents data store", "acceptedNodeTypes": ["dfdDataStore"], "aliases": ["incidents", "incident", "alerts"] }
+  ],
+  "relationships": [
+    { "id": "r-meter-ing", "label": "Smart Meter streams to Ingest Telemetry", "fromConceptId": "meter", "toConceptId": "ingest", "acceptedTypes": ["data_flow"], "directed": true },
+    { "id": "r-ing-logs", "label": "Ingest writes to TimeSeries Logs", "fromConceptId": "ingest", "toConceptId": "logs-ds", "acceptedTypes": ["data_flow"], "directed": true },
+    { "id": "r-ing-det", "label": "Ingest forwards cleaned readings to Detect Anomalies", "fromConceptId": "ingest", "toConceptId": "detect", "acceptedTypes": ["data_flow"], "directed": true },
+    { "id": "r-thr-det", "label": "Thresholds feeds Detect Anomalies", "fromConceptId": "thresh-ds", "toConceptId": "detect", "acceptedTypes": ["data_flow"], "directed": true },
+    { "id": "r-det-inc", "label": "Detect Anomalies writes to Incidents", "fromConceptId": "detect", "toConceptId": "incidents-ds", "acceptedTypes": ["data_flow"], "directed": true },
+    { "id": "r-det-not", "label": "Detect Anomalies triggers Notify Operator", "fromConceptId": "detect", "toConceptId": "notify", "acceptedTypes": ["data_flow"], "directed": true },
+    { "id": "r-not-op", "label": "Notify Operator alerts Grid Operator", "fromConceptId": "notify", "toConceptId": "operator", "acceptedTypes": ["data_flow"], "directed": true }
+  ],
+  "referenceSolution": {
+    "explanation": "Smart Meter feeds 1.0 Ingest Telemetry (archiving to D1 TimeSeries Logs and streaming to 2.0 Detect Anomalies). 2.0 Detect Anomalies reads D2 Thresholds, logs to D3 Incidents, and triggers 3.0 Notify Operator -> Grid Operator.",
+    "nodes": [
+      { "id": "d-meter", "type": "dfdExternalEntity", "position": { "x": 40, "y": 140 }, "data": { "label": "Smart Meter", "nodeType": "dfdExternalEntity" } },
+      { "id": "d-ing", "type": "dfdProcess", "position": { "x": 290, "y": 130 }, "data": { "label": "Ingest Telemetry", "nodeType": "dfdProcess", "processNumber": "1.0" } },
+      { "id": "d-logs", "type": "dfdDataStore", "position": { "x": 290, "y": 330 }, "data": { "label": "TimeSeries Logs", "nodeType": "dfdDataStore", "dataStoreId": "D1" } },
+      { "id": "d-det", "type": "dfdProcess", "position": { "x": 560, "y": 130 }, "data": { "label": "Detect Anomalies", "nodeType": "dfdProcess", "processNumber": "2.0" } },
+      { "id": "d-thr", "type": "dfdDataStore", "position": { "x": 560, "y": -40 }, "data": { "label": "Thresholds", "nodeType": "dfdDataStore", "dataStoreId": "D2" } },
+      { "id": "d-inc", "type": "dfdDataStore", "position": { "x": 560, "y": 330 }, "data": { "label": "Incidents", "nodeType": "dfdDataStore", "dataStoreId": "D3" } },
+      { "id": "d-not", "type": "dfdProcess", "position": { "x": 830, "y": 130 }, "data": { "label": "Notify Operator", "nodeType": "dfdProcess", "processNumber": "3.0" } },
+      { "id": "d-op", "type": "dfdExternalEntity", "position": { "x": 1080, "y": 140 }, "data": { "label": "Grid Operator", "nodeType": "dfdExternalEntity" } }
+    ],
+    "edges": [
+      { "id": "e1", "source": "d-meter", "target": "d-ing", "data": { "relationshipType": "data_flow", "label": "Voltage Stream" } },
+      { "id": "e2", "source": "d-ing", "target": "d-logs", "data": { "relationshipType": "data_flow", "label": "Raw Readings" } },
+      { "id": "e3", "source": "d-ing", "target": "d-det", "data": { "relationshipType": "data_flow", "label": "Cleaned Readings" } },
+      { "id": "e4", "source": "d-thr", "target": "d-det", "data": { "relationshipType": "data_flow", "label": "Rule Limits" } },
+      { "id": "e5", "source": "d-det", "target": "d-inc", "data": { "relationshipType": "data_flow", "label": "Incident Record" } },
+      { "id": "e6", "source": "d-det", "target": "d-not", "data": { "relationshipType": "data_flow", "label": "Anomaly Event" } },
+      { "id": "e7", "source": "d-not", "target": "d-op", "data": { "relationshipType": "data_flow", "label": "Pager Alert" } }
+    ]
+  }
+}
+

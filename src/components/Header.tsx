@@ -3,6 +3,7 @@ import { Link, useRouterState } from '@tanstack/react-router'
 import {
   Star,
   BookOpen,
+  BookOpenText,
   ChevronRight,
   LayoutDashboard,
   Puzzle,
@@ -20,6 +21,8 @@ export default function Header() {
   const pathname = routerState.location.pathname
   const isWorkspace = pathname.startsWith('/workspace')
   const isPuzzles = pathname.startsWith('/puzzles')
+  const isCaseStudies =
+    pathname.startsWith('/case-studies') || pathname.startsWith('/case-study/')
   const matchPlay = pathname.match(/\/play\/([^/]+)/)
   const currentLevelId = matchPlay ? matchPlay[1] : null
   const currentLevel = currentLevelId
@@ -85,6 +88,19 @@ export default function Header() {
               >
                 <Puzzle className="w-3.5 h-3.5 shrink-0" />
                 <span>Puzzles</span>
+              </Link>
+
+              <Link
+                to="/case-studies"
+                className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-semibold transition-all whitespace-nowrap ${
+                  isCaseStudies
+                    ? 'bg-gray-900 text-white dark:bg-white dark:text-neutral-900 shadow-xs'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)]'
+                }`}
+              >
+                <BookOpenText className="w-3.5 h-3.5 shrink-0" />
+                <span className="hidden xs:inline sm:inline">Case Studies</span>
+                <span className="xs:hidden sm:hidden">Cases</span>
               </Link>
             </nav>
 

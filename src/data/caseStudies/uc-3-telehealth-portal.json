@@ -1,0 +1,175 @@
+{
+  "id": "cs-uc-3-telehealth-portal",
+  "number": 3,
+  "title": "Telehealth Consultation Portal",
+  "diagramType": "use_case",
+  "difficulty": "Advanced",
+  "domain": "Healthcare",
+  "statement": "A telehealth platform serves Patients and Doctors, both of whom are specialized User actors who must Log In. A Patient can Book Consultation (which always includes Verify Insurance via an external Insurance API). Both Patient and Doctor participate in Conduct Video Visit. During a visit, a Doctor may optionally Issue E-Prescription, which must be transmitted to an external Pharmacy Network.",
+  "deliverables": [
+    "Model actor generalization (Patient and Doctor inheriting from User).",
+    "Capture login, booking, insurance verification, video visit, and optional e-prescribing.",
+    "Include external system actors (Insurance API, Pharmacy Network)."
+  ],
+  "hints": [
+    "Use Generalization arrows from Patient -> User and Doctor -> User so both inherit Log In.",
+    "Book Consultation «include»s Verify Insurance (linked to Insurance API).",
+    "Issue E-Prescription «extend»s Conduct Video Visit and associates with Pharmacy Network."
+  ],
+  "concepts": [
+    {
+      "id": "user",
+      "label": "Base User actor",
+      "acceptedNodeTypes": ["actor"],
+      "aliases": ["user", "portal user", "account holder"]
+    },
+    {
+      "id": "patient",
+      "label": "Patient actor",
+      "acceptedNodeTypes": ["actor"],
+      "aliases": ["patient"]
+    },
+    {
+      "id": "doctor",
+      "label": "Doctor actor",
+      "acceptedNodeTypes": ["actor"],
+      "aliases": ["doctor", "physician", "clinician", "provider"]
+    },
+    {
+      "id": "insurance-api",
+      "label": "Insurance API actor",
+      "acceptedNodeTypes": ["actor"],
+      "aliases": ["insurance", "insurance api", "insurer", "payer"]
+    },
+    {
+      "id": "pharmacy",
+      "label": "Pharmacy Network actor",
+      "acceptedNodeTypes": ["actor"],
+      "aliases": ["pharmacy", "pharmacy network", "dispensary"]
+    },
+    {
+      "id": "login",
+      "label": "Log In use case",
+      "acceptedNodeTypes": ["useCase"],
+      "aliases": ["log in", "login", "sign in", "authenticate"]
+    },
+    {
+      "id": "book",
+      "label": "Book Consultation use case",
+      "acceptedNodeTypes": ["useCase"],
+      "aliases": ["book consultation", "book appointment", "schedule visit", "book"]
+    },
+    {
+      "id": "verify-ins",
+      "label": "Verify Insurance use case",
+      "acceptedNodeTypes": ["useCase"],
+      "aliases": ["verify insurance", "check coverage", "insurance verification"]
+    },
+    {
+      "id": "video",
+      "label": "Conduct Video Visit use case",
+      "acceptedNodeTypes": ["useCase"],
+      "aliases": ["video visit", "conduct video visit", "telehealth visit", "consultation"]
+    },
+    {
+      "id": "rx",
+      "label": "Issue E-Prescription use case",
+      "acceptedNodeTypes": ["useCase"],
+      "aliases": ["prescription", "e-prescription", "issue prescription", "prescribe"]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "r-pat-user",
+      "label": "Patient generalizes to User",
+      "fromConceptId": "patient",
+      "toConceptId": "user",
+      "acceptedTypes": ["generalization"],
+      "directed": true
+    },
+    {
+      "id": "r-doc-user",
+      "label": "Doctor generalizes to User",
+      "fromConceptId": "doctor",
+      "toConceptId": "user",
+      "acceptedTypes": ["generalization"],
+      "directed": true
+    },
+    {
+      "id": "r-user-login",
+      "label": "User associates with Log In",
+      "fromConceptId": "user",
+      "toConceptId": "login",
+      "acceptedTypes": ["association"],
+      "directed": false
+    },
+    {
+      "id": "r-pat-book",
+      "label": "Patient associates with Book Consultation",
+      "fromConceptId": "patient",
+      "toConceptId": "book",
+      "acceptedTypes": ["association"],
+      "directed": false
+    },
+    {
+      "id": "r-book-ins",
+      "label": "Book Consultation «include»s Verify Insurance",
+      "fromConceptId": "book",
+      "toConceptId": "verify-ins",
+      "acceptedTypes": ["include"],
+      "directed": true
+    },
+    {
+      "id": "r-ins-api",
+      "label": "Verify Insurance communicates with Insurance API",
+      "fromConceptId": "verify-ins",
+      "toConceptId": "insurance-api",
+      "acceptedTypes": ["association"],
+      "directed": false
+    },
+    {
+      "id": "r-rx-video",
+      "label": "Issue E-Prescription «extend»s Conduct Video Visit",
+      "fromConceptId": "rx",
+      "toConceptId": "video",
+      "acceptedTypes": ["extend"],
+      "directed": true
+    },
+    {
+      "id": "r-rx-pharm",
+      "label": "Issue E-Prescription communicates with Pharmacy Network",
+      "fromConceptId": "rx",
+      "toConceptId": "pharmacy",
+      "acceptedTypes": ["association"],
+      "directed": false
+    }
+  ],
+  "referenceSolution": {
+    "explanation": "Patient and Doctor inherit Log In from the abstract User actor via Generalization. Book Consultation «include»s Verify Insurance (Insurance API), while Issue E-Prescription «extend»s Conduct Video Visit and notifies Pharmacy Network.",
+    "nodes": [
+      { "id": "n-user", "type": "actor", "position": { "x": 60, "y": 50 }, "data": { "label": "User", "nodeType": "actor", "actorType": "primary" } },
+      { "id": "n-login", "type": "useCase", "position": { "x": 300, "y": 45 }, "data": { "label": "Log In", "nodeType": "useCase" } },
+      { "id": "n-pat", "type": "actor", "position": { "x": 40, "y": 210 }, "data": { "label": "Patient", "nodeType": "actor", "actorType": "primary" } },
+      { "id": "n-doc", "type": "actor", "position": { "x": 150, "y": 370 }, "data": { "label": "Doctor", "nodeType": "actor", "actorType": "primary" } },
+      { "id": "n-book", "type": "useCase", "position": { "x": 300, "y": 170 }, "data": { "label": "Book Consultation", "nodeType": "useCase" } },
+      { "id": "n-ins", "type": "useCase", "position": { "x": 570, "y": 170 }, "data": { "label": "Verify Insurance", "nodeType": "useCase" } },
+      { "id": "n-ins-api", "type": "actor", "position": { "x": 810, "y": 165 }, "data": { "label": "Insurance API", "nodeType": "actor", "actorType": "system" } },
+      { "id": "n-video", "type": "useCase", "position": { "x": 320, "y": 330 }, "data": { "label": "Conduct Video Visit", "nodeType": "useCase" } },
+      { "id": "n-rx", "type": "useCase", "position": { "x": 570, "y": 330 }, "data": { "label": "Issue E-Prescription", "nodeType": "useCase" } },
+      { "id": "n-pharm", "type": "actor", "position": { "x": 810, "y": 325 }, "data": { "label": "Pharmacy Network", "nodeType": "actor", "actorType": "system" } }
+    ],
+    "edges": [
+      { "id": "e1", "source": "n-pat", "target": "n-user", "data": { "relationshipType": "generalization" } },
+      { "id": "e2", "source": "n-doc", "target": "n-user", "data": { "relationshipType": "generalization" } },
+      { "id": "e3", "source": "n-user", "target": "n-login", "data": { "relationshipType": "association" } },
+      { "id": "e4", "source": "n-pat", "target": "n-book", "data": { "relationshipType": "association" } },
+      { "id": "e5", "source": "n-pat", "target": "n-video", "data": { "relationshipType": "association" } },
+      { "id": "e6", "source": "n-doc", "target": "n-video", "data": { "relationshipType": "association" } },
+      { "id": "e7", "source": "n-book", "target": "n-ins", "data": { "relationshipType": "include" } },
+      { "id": "e8", "source": "n-ins", "target": "n-ins-api", "data": { "relationshipType": "association" } },
+      { "id": "e9", "source": "n-rx", "target": "n-video", "data": { "relationshipType": "extend" } },
+      { "id": "e10", "source": "n-rx", "target": "n-pharm", "data": { "relationshipType": "association" } }
+    ]
+  }
+}
+

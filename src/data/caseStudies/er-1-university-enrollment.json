@@ -1,0 +1,142 @@
+{
+  "id": "cs-er-1-university-enrollment",
+  "number": 4,
+  "title": "University Course Enrollment",
+  "diagramType": "er",
+  "difficulty": "Easy",
+  "domain": "Education",
+  "statement": "Design a database schema for a university registration system. Each Student has an ID, name, and email, and can enroll in many Courses; each Course can have many enrolled Students. Resolve this many-to-many relationship using an Enrollment table that tracks the enrolled_at date and grade. Every Course is taught by one Instructor, while an Instructor can teach many Courses.",
+  "deliverables": [
+    "Create entities for Student, Course, Enrollment, and Instructor with Primary Keys.",
+    "Resolve Student ↔ Course using Enrollment as a join/associative entity.",
+    "Connect Instructor to Course with a 1-to-Many ER relationship."
+  ],
+  "hints": [
+    "Remember to add a Primary Key (PK) attribute to every entity.",
+    "Enrollment sits between Student and Course: Student (1) -> Enrollment (N) and Course (1) -> Enrollment (N).",
+    "Instructor (1) -> Course (N) models the teaching assignment."
+  ],
+  "concepts": [
+    {
+      "id": "student",
+      "label": "Student entity with attributes",
+      "acceptedNodeTypes": ["erEntity"],
+      "aliases": ["student", "students", "learner"],
+      "minMembers": 2
+    },
+    {
+      "id": "course",
+      "label": "Course entity with attributes",
+      "acceptedNodeTypes": ["erEntity"],
+      "aliases": ["course", "courses", "class", "subject"],
+      "minMembers": 2
+    },
+    {
+      "id": "enrollment",
+      "label": "Enrollment join entity",
+      "acceptedNodeTypes": ["erEntity"],
+      "aliases": ["enrollment", "enrollments", "registration"],
+      "minMembers": 2
+    },
+    {
+      "id": "instructor",
+      "label": "Instructor entity",
+      "acceptedNodeTypes": ["erEntity"],
+      "aliases": ["instructor", "professor", "lecturer", "teacher"],
+      "minMembers": 2
+    }
+  ],
+  "relationships": [
+    {
+      "id": "r-stu-enr",
+      "label": "Student linked to Enrollment",
+      "fromConceptId": "student",
+      "toConceptId": "enrollment",
+      "acceptedTypes": ["er"],
+      "directed": false
+    },
+    {
+      "id": "r-crs-enr",
+      "label": "Course linked to Enrollment",
+      "fromConceptId": "course",
+      "toConceptId": "enrollment",
+      "acceptedTypes": ["er"],
+      "directed": false
+    },
+    {
+      "id": "r-inst-crs",
+      "label": "Instructor linked to Course",
+      "fromConceptId": "instructor",
+      "toConceptId": "course",
+      "acceptedTypes": ["er"],
+      "directed": false
+    }
+  ],
+  "referenceSolution": {
+    "explanation": "Student and Course are joined via Enrollment (holding student_id, course_id, and grade) to resolve the M:N relationship in 3NF. Instructor has a 1:N relationship with Course.",
+    "nodes": [
+      {
+        "id": "er-student",
+        "type": "erEntity",
+        "position": { "x": 60, "y": 80 },
+        "data": {
+          "label": "Student",
+          "nodeType": "erEntity",
+          "erAttributes": [
+            { "id": "a1", "name": "student_id", "type": "uuid", "isPrimaryKey": true },
+            { "id": "a2", "name": "full_name", "type": "varchar(120)" },
+            { "id": "a3", "name": "email", "type": "varchar(180)" }
+          ]
+        }
+      },
+      {
+        "id": "er-enrollment",
+        "type": "erEntity",
+        "position": { "x": 360, "y": 80 },
+        "data": {
+          "label": "Enrollment",
+          "nodeType": "erEntity",
+          "erAttributes": [
+            { "id": "a1", "name": "enrollment_id", "type": "uuid", "isPrimaryKey": true },
+            { "id": "a2", "name": "student_id", "type": "uuid", "isForeignKey": true },
+            { "id": "a3", "name": "course_id", "type": "uuid", "isForeignKey": true },
+            { "id": "a4", "name": "grade", "type": "varchar(4)" }
+          ]
+        }
+      },
+      {
+        "id": "er-course",
+        "type": "erEntity",
+        "position": { "x": 660, "y": 80 },
+        "data": {
+          "label": "Course",
+          "nodeType": "erEntity",
+          "erAttributes": [
+            { "id": "a1", "name": "course_id", "type": "uuid", "isPrimaryKey": true },
+            { "id": "a2", "name": "instructor_id", "type": "uuid", "isForeignKey": true },
+            { "id": "a3", "name": "title", "type": "varchar(120)" }
+          ]
+        }
+      },
+      {
+        "id": "er-instructor",
+        "type": "erEntity",
+        "position": { "x": 660, "y": 300 },
+        "data": {
+          "label": "Instructor",
+          "nodeType": "erEntity",
+          "erAttributes": [
+            { "id": "a1", "name": "instructor_id", "type": "uuid", "isPrimaryKey": true },
+            { "id": "a2", "name": "name", "type": "varchar(120)" }
+          ]
+        }
+      }
+    ],
+    "edges": [
+      { "id": "e1", "source": "er-student", "target": "er-enrollment", "data": { "relationshipType": "er", "erSourceCardinality": "1", "erTargetCardinality": "N" } },
+      { "id": "e2", "source": "er-course", "target": "er-enrollment", "data": { "relationshipType": "er", "erSourceCardinality": "1", "erTargetCardinality": "N" } },
+      { "id": "e3", "source": "er-instructor", "target": "er-course", "data": { "relationshipType": "er", "erSourceCardinality": "1", "erTargetCardinality": "N" } }
+    ]
+  }
+}
+

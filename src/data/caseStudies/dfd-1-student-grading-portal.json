@@ -1,0 +1,55 @@
+{
+  "id": "cs-dfd-1-student-grading-portal",
+  "number": 10,
+  "title": "Assignment Submission & Grading",
+  "diagramType": "dfd",
+  "difficulty": "Easy",
+  "domain": "EdTech",
+  "statement": "Model a Level-1 Data Flow Diagram for an assignment portal. A Student uploads an assignment to \"1.0 Submit Assignment\", which stores the submission in \"D1 Submissions\". Later, an Instructor triggers \"2.0 Grade Submission\", which reads the submission from \"D1 Submissions\", records the score in \"D2 Grades\", and sends grade feedback back to the Student.",
+  "deliverables": [
+    "Include External Entities (Student, Instructor), Processes (1.0 Submit Assignment, 2.0 Grade Submission), and Data Stores (D1 Submissions, D2 Grades).",
+    "Follow strict DFD rules: never connect External Entities directly to Data Stores.",
+    "Ensure every process has both incoming and outgoing data flows."
+  ],
+  "hints": [
+    "Student -> 1.0 Submit Assignment -> D1 Submissions.",
+    "Instructor and D1 Submissions both feed into 2.0 Grade Submission.",
+    "2.0 Grade Submission writes to D2 Grades and sends feedback to Student."
+  ],
+  "concepts": [
+    { "id": "student", "label": "Student external entity", "acceptedNodeTypes": ["dfdExternalEntity"], "aliases": ["student", "learner"] },
+    { "id": "instructor", "label": "Instructor external entity", "acceptedNodeTypes": ["dfdExternalEntity"], "aliases": ["instructor", "teacher", "professor", "grader"] },
+    { "id": "submit", "label": "Submit Assignment process", "acceptedNodeTypes": ["dfdProcess"], "aliases": ["submit", "submit assignment", "upload assignment"] },
+    { "id": "grade", "label": "Grade Submission process", "acceptedNodeTypes": ["dfdProcess"], "aliases": ["grade", "grade submission", "evaluate"] },
+    { "id": "submissions", "label": "Submissions data store", "acceptedNodeTypes": ["dfdDataStore"], "aliases": ["submissions", "submission"] },
+    { "id": "grades", "label": "Grades data store", "acceptedNodeTypes": ["dfdDataStore"], "aliases": ["grades", "grade", "scores"] }
+  ],
+  "relationships": [
+    { "id": "r-stu-sub", "label": "Student sends assignment to Submit process", "fromConceptId": "student", "toConceptId": "submit", "acceptedTypes": ["data_flow"], "directed": true },
+    { "id": "r-sub-store", "label": "Submit process writes to Submissions store", "fromConceptId": "submit", "toConceptId": "submissions", "acceptedTypes": ["data_flow"], "directed": true },
+    { "id": "r-inst-grade", "label": "Instructor sends rubric/grade to Grade process", "fromConceptId": "instructor", "toConceptId": "grade", "acceptedTypes": ["data_flow"], "directed": true },
+    { "id": "r-sub-grade", "label": "Submissions store feeds Grade process", "fromConceptId": "submissions", "toConceptId": "grade", "acceptedTypes": ["data_flow"], "directed": true },
+    { "id": "r-grade-store", "label": "Grade process writes to Grades store", "fromConceptId": "grade", "toConceptId": "grades", "acceptedTypes": ["data_flow"], "directed": true },
+    { "id": "r-grade-stu", "label": "Grade process returns feedback to Student", "fromConceptId": "grade", "toConceptId": "student", "acceptedTypes": ["data_flow"], "directed": true }
+  ],
+  "referenceSolution": {
+    "explanation": "Student submits work through 1.0 Submit Assignment into D1 Submissions. 2.0 Grade Submission reads D1 Submissions alongside Instructor input, saves scores to D2 Grades, and sends feedback to Student.",
+    "nodes": [
+      { "id": "d-stu", "type": "dfdExternalEntity", "position": { "x": 60, "y": 140 }, "data": { "label": "Student", "nodeType": "dfdExternalEntity" } },
+      { "id": "d-sub", "type": "dfdProcess", "position": { "x": 320, "y": 60 }, "data": { "label": "Submit Assignment", "nodeType": "dfdProcess", "processNumber": "1.0" } },
+      { "id": "d-subs", "type": "dfdDataStore", "position": { "x": 600, "y": 70 }, "data": { "label": "Submissions", "nodeType": "dfdDataStore", "dataStoreId": "D1" } },
+      { "id": "d-grade", "type": "dfdProcess", "position": { "x": 320, "y": 270 }, "data": { "label": "Grade Submission", "nodeType": "dfdProcess", "processNumber": "2.0" } },
+      { "id": "d-inst", "type": "dfdExternalEntity", "position": { "x": 60, "y": 330 }, "data": { "label": "Instructor", "nodeType": "dfdExternalEntity" } },
+      { "id": "d-grades", "type": "dfdDataStore", "position": { "x": 600, "y": 280 }, "data": { "label": "Grades", "nodeType": "dfdDataStore", "dataStoreId": "D2" } }
+    ],
+    "edges": [
+      { "id": "e1", "source": "d-stu", "target": "d-sub", "data": { "relationshipType": "data_flow", "label": "Assignment File" } },
+      { "id": "e2", "source": "d-sub", "target": "d-subs", "data": { "relationshipType": "data_flow", "label": "Saved Submission" } },
+      { "id": "e3", "source": "d-inst", "target": "d-grade", "data": { "relationshipType": "data_flow", "label": "Score & Comments" } },
+      { "id": "e4", "source": "d-subs", "target": "d-grade", "data": { "relationshipType": "data_flow", "label": "Submission Record" } },
+      { "id": "e5", "source": "d-grade", "target": "d-grades", "data": { "relationshipType": "data_flow", "label": "Final Score" } },
+      { "id": "e6", "source": "d-grade", "target": "d-stu", "data": { "relationshipType": "data_flow", "label": "Grade Feedback" } }
+    ]
+  }
+}
+
