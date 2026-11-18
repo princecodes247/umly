@@ -19,12 +19,12 @@ export const Route = createRootRoute({
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: 'UMLy — Hands-On UML Use Case Puzzle Game',
+        title: 'UMLy | Interactive Diagramming Studio, Puzzles & Case Studies',
       },
       {
         name: 'description',
         content:
-          'Learn UML use case diagrams through interactive, auto-graded browser puzzle levels. No login, instant feedback.',
+          'Design Use Case, ER, Class, and Data Flow diagrams in an interactive browser studio. Practice with 49 auto-graded puzzles and 12 system modeling case studies with instant feedback.',
       },
     ],
     links: [
