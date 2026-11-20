@@ -12,6 +12,7 @@ import { CASE_STUDIES } from '../data/caseStudies'
 import { getAllCaseStudyProgress } from '../lib/caseStudyStorage'
 import type { PuzzleDiagramType } from '../types/game'
 import type { CaseStudy, CaseStudyProgress } from '../types/caseStudy'
+import { DIFFICULTY_STYLES } from '../components/case-studies/constants'
 
 const DIAGRAM_TYPE_META: Record<
   PuzzleDiagramType,
@@ -36,16 +37,6 @@ const DIAGRAM_TYPE_META: Record<
     pillClass:
       'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300',
   },
-}
-
-const DIFFICULTY_STYLES: Record<CaseStudy['difficulty'], string> = {
-  Beginner:
-    'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300',
-  Easy: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300',
-  Intermediate:
-    'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300',
-  Advanced:
-    'bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300',
 }
 
 export const CUSTOM_CASE_STUDY_KEY = 'umly_custom_case_study_v1'
