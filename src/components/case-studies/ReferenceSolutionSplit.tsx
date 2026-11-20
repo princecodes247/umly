@@ -9,41 +9,12 @@ import {
   useEdgesState,
   type Node,
   type Edge,
-  type NodeTypes,
-  type EdgeTypes,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { X } from 'lucide-react'
 import type { CaseStudy } from '../../types/caseStudy'
-import { ActorNode } from '../canvas/nodes/ActorNode'
-import { UseCaseNode } from '../canvas/nodes/UseCaseNode'
-import { BoundaryNode } from '../canvas/nodes/BoundaryNode'
-import { NoteNode } from '../canvas/nodes/NoteNode'
-import { ErEntityNode } from '../canvas/nodes/ErEntityNode'
-import { ClassNode } from '../canvas/nodes/ClassNode'
-import {
-  DfdProcessNode,
-  DfdDataStoreNode,
-  DfdExternalEntityNode,
-} from '../canvas/nodes/DfdNodes'
-import { UmlEdge } from '../canvas/edges/UmlEdge'
 import { UmlMarkers } from '../canvas/UmlMarkers'
-
-const NODE_TYPES: NodeTypes = {
-  actor: ActorNode,
-  useCase: UseCaseNode,
-  boundary: BoundaryNode,
-  note: NoteNode,
-  erEntity: ErEntityNode,
-  umlClass: ClassNode,
-  dfdProcess: DfdProcessNode,
-  dfdDataStore: DfdDataStoreNode,
-  dfdExternalEntity: DfdExternalEntityNode,
-}
-
-const EDGE_TYPES: EdgeTypes = {
-  umlEdge: UmlEdge,
-}
+import { UML_NODE_TYPES, UML_EDGE_TYPES } from '../canvas/nodeRegistry'
 
 interface ReferenceSolutionSplitProps {
   caseStudy: CaseStudy
@@ -123,8 +94,8 @@ export function ReferenceSolutionSplit({
               edges={refEdges}
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
-              nodeTypes={NODE_TYPES}
-              edgeTypes={EDGE_TYPES}
+              nodeTypes={UML_NODE_TYPES}
+              edgeTypes={UML_EDGE_TYPES}
               fitView
               fitViewOptions={{ padding: 0.22 }}
               onInit={(instance) => {

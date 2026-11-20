@@ -23,8 +23,6 @@ import {
   type Edge,
   type Node,
   type NodeChange,
-  type NodeTypes,
-  type EdgeTypes,
   type OnSelectionChangeParams,
   type OnNodeDrag,
   type FinalConnectionState,
@@ -47,19 +45,8 @@ import {
   SquareUser,
 } from 'lucide-react'
 
-import { ActorNode } from '../canvas/nodes/ActorNode'
-import { UseCaseNode } from '../canvas/nodes/UseCaseNode'
-import { BoundaryNode } from '../canvas/nodes/BoundaryNode'
-import { NoteNode } from '../canvas/nodes/NoteNode'
-import { ErEntityNode } from '../canvas/nodes/ErEntityNode'
-import { ClassNode } from '../canvas/nodes/ClassNode'
-import {
-  DfdProcessNode,
-  DfdDataStoreNode,
-  DfdExternalEntityNode,
-} from '../canvas/nodes/DfdNodes'
-import { UmlEdge } from '../canvas/edges/UmlEdge'
 import { UmlMarkers } from '../canvas/UmlMarkers'
+import { UML_NODE_TYPES, UML_EDGE_TYPES } from '../canvas/nodeRegistry'
 import { StudioToolbar } from './StudioToolbar'
 import { StudioBottomDock } from './StudioBottomDock'
 import { StudioInspector } from './StudioInspector'
@@ -102,22 +89,6 @@ import type {
   UmlNodeData,
   UmlEdgeData,
 } from '../../types/game'
-
-const nodeTypes: NodeTypes = {
-  actor: ActorNode,
-  useCase: UseCaseNode,
-  boundary: BoundaryNode,
-  note: NoteNode,
-  erEntity: ErEntityNode,
-  umlClass: ClassNode,
-  dfdProcess: DfdProcessNode,
-  dfdDataStore: DfdDataStoreNode,
-  dfdExternalEntity: DfdExternalEntityNode,
-}
-
-const edgeTypes: EdgeTypes = {
-  umlEdge: UmlEdge,
-}
 
 interface HistorySnapshot {
   nodes: Node[]
@@ -3342,8 +3313,8 @@ function StudioCanvasInner({ diagramId, puzzle }: StudioCanvasProps) {
                 : nodes
             }
             edges={edges}
-            nodeTypes={nodeTypes}
-            edgeTypes={edgeTypes}
+            nodeTypes={UML_NODE_TYPES}
+            edgeTypes={UML_EDGE_TYPES}
             onNodesChange={handleNodesChange}
             onEdgesChange={onEdgesChange}
             onNodeDragStart={onNodeDragStart}

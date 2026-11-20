@@ -8,38 +8,9 @@ import {
   type NodeProps,
 } from '@xyflow/react'
 import { Trash2, Copy, Pencil } from 'lucide-react'
-import type { UmlNodeData, NodeAccentColor } from '../../../types/game'
+import type { UmlNodeData } from '../../../types/game'
 import { useAutoFocusEdit } from './useAutoFocusEdit'
-
-const ACCENT_STYLES: Record<
-  NodeAccentColor,
-  { border: string; bg: string }
-> = {
-  default: {
-    border: 'var(--border-strong)',
-    bg: 'var(--bg-primary)',
-  },
-  blue: {
-    border: 'var(--notion-blue-text)',
-    bg: 'var(--notion-blue-bg)',
-  },
-  green: {
-    border: 'var(--notion-green-text)',
-    bg: 'var(--notion-green-bg)',
-  },
-  amber: {
-    border: 'var(--notion-yellow-text)',
-    bg: 'var(--notion-yellow-bg)',
-  },
-  purple: {
-    border: 'var(--notion-purple-text)',
-    bg: 'var(--notion-purple-bg)',
-  },
-  rose: {
-    border: 'var(--notion-pink-text)',
-    bg: 'var(--notion-pink-bg)',
-  },
-}
+import { NODE_ACCENT_STYLES } from './constants'
 
 export const UseCaseNode = memo(({ id, data, selected }: NodeProps) => {
   const nodeData = data as unknown as UmlNodeData
@@ -134,7 +105,7 @@ export const UseCaseNode = memo(({ id, data, selected }: NodeProps) => {
     deleteElements({ nodes: [{ id }] })
   }
 
-  const accent = ACCENT_STYLES[nodeData.accentColor || 'default'] || ACCENT_STYLES.default
+  const accent = NODE_ACCENT_STYLES[nodeData.accentColor || 'default'] || NODE_ACCENT_STYLES.default
   const handleVisibility = selected
     ? 'opacity-100'
     : 'opacity-0 group-hover:opacity-100'

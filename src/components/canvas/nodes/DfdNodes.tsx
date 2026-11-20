@@ -8,52 +8,11 @@ import {
   type NodeProps,
 } from '@xyflow/react'
 import { Trash2, Copy, Pencil } from 'lucide-react'
-import type { UmlNodeData, NodeAccentColor } from '../../../types/game'
+import type { UmlNodeData } from '../../../types/game'
 import { useAutoFocusEdit } from './useAutoFocusEdit'
+import { NODE_ACCENT_STYLES } from './constants'
 
 type DfdKind = 'dfdProcess' | 'dfdDataStore' | 'dfdExternalEntity'
-
-const ACCENT_STYLES: Record<
-  NodeAccentColor,
-  { border: string; bg: string; bandBg: string; text: string }
-> = {
-  default: {
-    border: 'var(--border-strong)',
-    bg: 'var(--bg-primary)',
-    bandBg: 'var(--bg-secondary)',
-    text: 'var(--text-primary)',
-  },
-  blue: {
-    border: 'var(--notion-blue-text)',
-    bg: 'var(--notion-blue-bg)',
-    bandBg: 'var(--notion-blue-bg)',
-    text: 'var(--notion-blue-text)',
-  },
-  green: {
-    border: 'var(--notion-green-text)',
-    bg: 'var(--notion-green-bg)',
-    bandBg: 'var(--notion-green-bg)',
-    text: 'var(--notion-green-text)',
-  },
-  amber: {
-    border: 'var(--notion-yellow-text)',
-    bg: 'var(--notion-yellow-bg)',
-    bandBg: 'var(--notion-yellow-bg)',
-    text: 'var(--notion-yellow-text)',
-  },
-  purple: {
-    border: 'var(--notion-purple-text)',
-    bg: 'var(--notion-purple-bg)',
-    bandBg: 'var(--notion-purple-bg)',
-    text: 'var(--notion-purple-text)',
-  },
-  rose: {
-    border: 'var(--notion-pink-text)',
-    bg: 'var(--notion-pink-bg)',
-    bandBg: 'var(--notion-pink-bg)',
-    text: 'var(--notion-pink-text)',
-  },
-}
 
 const DEFAULT_DIMS: Record<DfdKind, { w: number; h: number; minW: number; minH: number }> = {
   dfdProcess: { w: 160, h: 84, minW: 110, minH: 60 },
@@ -70,7 +29,9 @@ const DfdBaseNode = memo(
   }: NodeProps & { kind: DfdKind }) => {
     const nodeData = data as unknown as UmlNodeData
     const isLocked = Boolean(nodeData.isLocked)
-    const accent = ACCENT_STYLES[nodeData.accentColor || 'default']
+    const accent =
+      NODE_ACCENT_STYLES[nodeData.accentColor || 'default'] ||
+      NODE_ACCENT_STYLES.default
     const dims = DEFAULT_DIMS[kind]
 
     const { updateNodeData, updateNode, deleteElements, getNodes, addNodes } =

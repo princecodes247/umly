@@ -8,32 +8,15 @@ import {
   type Connection,
   type Edge,
   type Node,
-  type NodeTypes,
-  type EdgeTypes,
   BackgroundVariant,
   ConnectionLineType,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 
-import { ActorNode } from './nodes/ActorNode'
-import { UseCaseNode } from './nodes/UseCaseNode'
-import { BoundaryNode } from './nodes/BoundaryNode'
-import { NoteNode } from './nodes/NoteNode'
-import { UmlEdge } from './edges/UmlEdge'
 import { UmlMarkers } from './UmlMarkers'
+import { UML_NODE_TYPES, UML_EDGE_TYPES } from './nodeRegistry'
 import { toSourceHandleId, toTargetHandleId } from '../../lib/floatingEdges'
 import type { UmlRelationshipType } from '../../types/game'
-
-const nodeTypes: NodeTypes = {
-  actor: ActorNode,
-  useCase: UseCaseNode,
-  boundary: BoundaryNode,
-  note: NoteNode,
-}
-
-const edgeTypes: EdgeTypes = {
-  umlEdge: UmlEdge,
-}
 
 interface UmlCanvasProps {
   initialNodes: Node[]
@@ -237,8 +220,8 @@ export const UmlCanvas: React.FC<UmlCanvasProps> = ({
       <ReactFlow
         nodes={nodes}
         edges={edges}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
+        nodeTypes={UML_NODE_TYPES}
+        edgeTypes={UML_EDGE_TYPES}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnectStart={onConnectStart}

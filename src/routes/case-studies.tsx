@@ -13,31 +13,7 @@ import { getAllCaseStudyProgress } from '../lib/caseStudyStorage'
 import type { PuzzleDiagramType } from '../types/game'
 import type { CaseStudy, CaseStudyProgress } from '../types/caseStudy'
 import { DIFFICULTY_STYLES } from '../components/case-studies/constants'
-
-const DIAGRAM_TYPE_META: Record<
-  PuzzleDiagramType,
-  { label: string; pillClass: string }
-> = {
-  use_case: {
-    label: 'Use Case',
-    pillClass: 'bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300',
-  },
-  er: {
-    label: 'ER Diagram',
-    pillClass:
-      'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300',
-  },
-  class: {
-    label: 'Class Diagram',
-    pillClass:
-      'bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300',
-  },
-  dfd: {
-    label: 'Data Flow',
-    pillClass:
-      'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300',
-  },
-}
+import { DIAGRAM_TYPE_META } from '../lib/diagramMeta'
 
 export const CUSTOM_CASE_STUDY_KEY = 'umly_custom_case_study_v1'
 

@@ -21,45 +21,9 @@ import {
 } from 'lucide-react'
 import type {
   UmlNodeData,
-  NodeAccentColor,
   ErAttribute,
 } from '../../../types/game'
-
-const ACCENT_STYLES: Record<
-  NodeAccentColor,
-  { border: string; headerBg: string; headerText: string }
-> = {
-  default: {
-    border: 'var(--border-strong)',
-    headerBg: 'var(--bg-secondary)',
-    headerText: 'var(--text-primary)',
-  },
-  blue: {
-    border: 'var(--notion-blue-text)',
-    headerBg: 'var(--notion-blue-bg)',
-    headerText: 'var(--notion-blue-text)',
-  },
-  green: {
-    border: 'var(--notion-green-text)',
-    headerBg: 'var(--notion-green-bg)',
-    headerText: 'var(--notion-green-text)',
-  },
-  amber: {
-    border: 'var(--notion-yellow-text)',
-    headerBg: 'var(--notion-yellow-bg)',
-    headerText: 'var(--notion-yellow-text)',
-  },
-  purple: {
-    border: 'var(--notion-purple-text)',
-    headerBg: 'var(--notion-purple-bg)',
-    headerText: 'var(--notion-purple-text)',
-  },
-  rose: {
-    border: 'var(--notion-pink-text)',
-    headerBg: 'var(--notion-pink-bg)',
-    headerText: 'var(--notion-pink-text)',
-  },
-}
+import { NODE_ACCENT_STYLES } from './constants'
 
 export const ErEntityNode = memo(({ id, data, selected }: NodeProps) => {
   const nodeData = data as unknown as UmlNodeData
@@ -331,8 +295,14 @@ export const ErEntityNode = memo(({ id, data, selected }: NodeProps) => {
     deleteElements({ nodes: [{ id }] })
   }
 
-  const accent =
-    ACCENT_STYLES[nodeData.accentColor || 'default'] || ACCENT_STYLES.default
+  const rawAccent =
+    NODE_ACCENT_STYLES[nodeData.accentColor || 'default'] ||
+    NODE_ACCENT_STYLES.default
+  const accent = {
+    ...rawAccent,
+    headerBg: rawAccent.bandBg,
+    headerText: rawAccent.text,
+  }
   const handleVisibility = selected
     ? 'opacity-100'
     : 'opacity-0 group-hover:opacity-100'
