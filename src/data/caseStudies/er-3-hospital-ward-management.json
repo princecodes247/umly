@@ -6,11 +6,7 @@
   "difficulty": "Advanced",
   "domain": "Healthcare",
   "statement": "Design a hospital clinical database. A Ward has many Beds, and a Patient is admitted to one Bed at a time. Each Patient can have multiple Encounters attended by a Doctor (a Doctor attends many Encounters). During an Encounter, a Doctor may place multiple Lab Orders, and each Lab Order references a Lab Test from the hospital catalog.",
-  "deliverables": [
-    "Model Ward, Bed, Patient, Doctor, Encounter, LabOrder, and LabTest entities.",
-    "Ensure every entity defines a Primary Key and appropriate Foreign Keys.",
-    "Connect the full clinical chain cleanly in 3NF."
-  ],
+  "deliverables": [],
   "hints": [
     "Ward (1) -> Bed (N) -> Patient (1) models bed assignment.",
     "Encounter acts as the central visit record linking Patient (1:N) and Doctor (1:N).",

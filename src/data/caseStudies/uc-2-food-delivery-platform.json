@@ -7,9 +7,8 @@
   "domain": "Food Delivery",
   "statement": "In an on-demand food delivery platform, a Customer can Browse Restaurants and Place Order. Placing an order always requires Process Payment via an external Payment Gateway. Optionally, the Customer may Apply Promo Code while placing an order. A Courier can Accept Delivery and Update Delivery Status, while a Restaurant Partner can Confirm Order Preparation.",
   "deliverables": [
-    "Model all four actors (Customer, Courier, Restaurant Partner, Payment Gateway).",
-    "Capture browsing, ordering, payment processing, promo codes, delivery acceptance, status updates, and order confirmation.",
-    "Distinguish mandatory «include» behavior from optional «extend» behavior."
+    "Identify all human and external system actors.",
+    "Separate mandatory steps from optional add-on behavior."
   ],
   "hints": [
     "Place Order «include»s Process Payment, and Process Payment associates with the secondary Payment Gateway actor.",

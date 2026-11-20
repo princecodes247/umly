@@ -7,9 +7,8 @@
   "domain": "Mobility",
   "statement": "Model the core classes of a ride-hailing app. A Trip is requested by a Rider and fulfilled by a Driver. Each Trip exclusively owns a RouteSnapshot (destroyed if the Trip is deleted). To support surge pricing, TripService depends on a PricingStrategy interface implemented by StandardPricing and SurgePricing.",
   "deliverables": [
-    "Model Trip, Rider, Driver, RouteSnapshot, TripService, PricingStrategy, StandardPricing, and SurgePricing.",
-    "Use Composition for Trip -> RouteSnapshot and Associations for Rider/Driver.",
-    "Use Realization for PricingStrategy implementations and Dependency from TripService to PricingStrategy."
+    "Separate strict ownership from loose associations.",
+    "Decouple pricing rules behind an interface abstraction."
   ],
   "hints": [
     "RouteSnapshot has no lifecycle outside its Trip -> use Composition.",

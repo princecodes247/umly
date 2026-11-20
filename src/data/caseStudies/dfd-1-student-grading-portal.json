@@ -7,9 +7,9 @@
   "domain": "EdTech",
   "statement": "Model a Level-1 Data Flow Diagram for an assignment portal. A Student uploads an assignment to \"1.0 Submit Assignment\", which stores the submission in \"D1 Submissions\". Later, an Instructor triggers \"2.0 Grade Submission\", which reads the submission from \"D1 Submissions\", records the score in \"D2 Grades\", and sends grade feedback back to the Student.",
   "deliverables": [
-    "Include External Entities (Student, Instructor), Processes (1.0 Submit Assignment, 2.0 Grade Submission), and Data Stores (D1 Submissions, D2 Grades).",
-    "Follow strict DFD rules: never connect External Entities directly to Data Stores.",
-    "Ensure every process has both incoming and outgoing data flows."
+    "Separate external entities, numbered processes, and data stores.",
+    "Ensure all data store access passes through a process.",
+    "Verify every process has both input and output flows."
   ],
   "hints": [
     "Student -> 1.0 Submit Assignment -> D1 Submissions.",

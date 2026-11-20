@@ -7,9 +7,9 @@
   "domain": "IoT / Smart Home",
   "statement": "Design an object-oriented model for a smart home hub. A SmartHub manages a collection of independent SmartDevice objects (which can be paired or unpaired without destroying the devices). Both Thermostat and SmartLock inherit from the abstract SmartDevice class, which declares a turnOn() / getStatus() contract.",
   "deliverables": [
-    "Model SmartHub, an abstract SmartDevice class, Thermostat, and SmartLock.",
-    "Use Generalization for Thermostat and SmartLock inheriting from SmartDevice.",
-    "Use Aggregation from SmartHub to SmartDevice since devices exist independently of the hub."
+    "Identify the abstract base type and concrete subclasses.",
+    "Distinguish shared container ownership from inheritance.",
+    "Add key attributes or methods to each class."
   ],
   "hints": [
     "Mark SmartDevice as an abstract class in the Inspector.",

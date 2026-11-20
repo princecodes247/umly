@@ -6,11 +6,7 @@
   "difficulty": "Advanced",
   "domain": "Healthcare",
   "statement": "A telehealth platform serves Patients and Doctors, both of whom are specialized User actors who must Log In. A Patient can Book Consultation (which always includes Verify Insurance via an external Insurance API). Both Patient and Doctor participate in Conduct Video Visit. During a visit, a Doctor may optionally Issue E-Prescription, which must be transmitted to an external Pharmacy Network.",
-  "deliverables": [
-    "Model actor generalization (Patient and Doctor inheriting from User).",
-    "Capture login, booking, insurance verification, video visit, and optional e-prescribing.",
-    "Include external system actors (Insurance API, Pharmacy Network)."
-  ],
+  "deliverables": [],
   "hints": [
     "Use Generalization arrows from Patient -> User and Doctor -> User so both inherit Log In.",
     "Book Consultation «include»s Verify Insurance (linked to Insurance API).",

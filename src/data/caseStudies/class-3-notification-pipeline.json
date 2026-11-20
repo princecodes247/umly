@@ -6,11 +6,7 @@
   "difficulty": "Advanced",
   "domain": "Platform Architecture",
   "statement": "Architect an extensible notification service. NotificationDispatcher dispatches NotificationMessage objects (each tagged with a ChannelType enum) through a NotificationChannel interface. EmailChannel and PushChannel implement NotificationChannel. To ensure reliability, NotificationDispatcher also owns a RetryPolicy configuration object and logs delivery outcomes via a Logger interface.",
-  "deliverables": [
-    "Include NotificationDispatcher, NotificationMessage, ChannelType (enum), NotificationChannel (interface), EmailChannel, PushChannel, RetryPolicy, and Logger (interface).",
-    "Enforce Dependency Inversion: NotificationDispatcher depends on NotificationChannel and Logger interfaces.",
-    "Use Composition for NotificationDispatcher -> RetryPolicy and Association for NotificationMessage -> ChannelType."
-  ],
+  "deliverables": [],
   "hints": [
     "Set classKind to 'interface' for NotificationChannel and Logger, and 'enum' for ChannelType.",
     "EmailChannel -> NotificationChannel and PushChannel -> NotificationChannel use Realization.",

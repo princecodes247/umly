@@ -7,7 +7,6 @@
   "domain": "Healthcare",
   "statement": "Model a clinic billing DFD. A Patient checks in at \"1.0 Register Visit\", which reads patient demographics from \"D1 Patients\" and creates a visit record in \"D2 Visits\". \"2.0 Submit Insurance Claim\" reads from \"D2 Visits\", sends the claim to the Insurer external entity, and stores the claim status in \"D3 Claims\".",
   "deliverables": [
-    "Model Patient, Insurer, two numbered processes (1.0, 2.0), and three data stores (D1, D2, D3).",
     "Distinguish Data Store reads (Store -> Process) from writes (Process -> Store).",
     "Avoid illegal direct Entity-to-Store or Store-to-Store flows."
   ],

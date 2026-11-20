@@ -7,9 +7,9 @@
   "domain": "Public Library",
   "statement": "A public library wants a self-service kiosk where a Library Member can Borrow Book or Return Book. Both actions always require the system to Scan Library Card first. If a returned book is past its due date, the kiosk may optionally Pay Late Fee. A Librarian can also Restock Returned Books.",
   "deliverables": [
-    "Identify the primary and supporting actors (Member, Librarian).",
-    "Create the core use cases for borrowing, returning, card scanning, late fees, and restocking.",
-    "Use «include» for mandatory card scanning and «extend» for optional late fee payment."
+    "Identify the primary and supporting actors.",
+    "Model the core user goals inside the system boundary.",
+    "Distinguish mandatory sub-flows from optional extensions."
   ],
   "hints": [
     "Library Member interacts with Borrow Book and Return Book via plain associations.",

@@ -7,9 +7,8 @@
   "domain": "E-Commerce",
   "statement": "Model the relational schema for an online store. A Customer can place many Orders, and each Order contains one or more Order Items referencing a Product (storing quantity and unit_price at purchase time). Each Order has at most one Payment record tracking amount, method, and status.",
   "deliverables": [
-    "Create Customer, Order, OrderItem, Product, and Payment entities with PKs and FKs.",
-    "Capture 1:N relationships from Customer to Order and Order/Product to OrderItem.",
-    "Model the 1:1 relationship between Order and Payment."
+    "Normalize line items and historical pricing into 3NF.",
+    "Distinguish 1:N relationships from optional 1:1 links."
   ],
   "hints": [
     "OrderItem resolves the many-to-many relationship between Order and Product and stores unit_price.",

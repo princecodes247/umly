@@ -6,11 +6,7 @@
   "difficulty": "Advanced",
   "domain": "Energy / IoT",
   "statement": "Design a Level-1 DFD for a smart-grid monitoring platform. Smart Meter devices stream voltage readings to \"1.0 Ingest Telemetry\", which stores raw readings in \"D1 TimeSeries Logs\" and forwards cleaned readings to \"2.0 Detect Anomalies\". \"2.0 Detect Anomalies\" reads threshold rules from \"D2 Thresholds\", writes detected incidents to \"D3 Incidents\", and dispatches alerts to \"3.0 Notify Operator\", which alerts the Grid Operator.",
-  "deliverables": [
-    "Model Smart Meter, Grid Operator, three processes (1.0, 2.0, 3.0), and three data stores (D1, D2, D3).",
-    "Ensure all data store reads/writes and inter-process streams are properly directed.",
-    "Maintain balanced inputs and outputs on every process."
-  ],
+  "deliverables": [],
   "hints": [
     "1.0 Ingest Telemetry writes to D1 TimeSeries Logs and streams cleaned data to 2.0 Detect Anomalies.",
     "2.0 Detect Anomalies reads D2 Thresholds, writes to D3 Incidents, and triggers 3.0 Notify Operator.",

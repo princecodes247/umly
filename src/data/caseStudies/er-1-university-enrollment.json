@@ -7,9 +7,9 @@
   "domain": "Education",
   "statement": "Design a database schema for a university registration system. Each Student has an ID, name, and email, and can enroll in many Courses; each Course can have many enrolled Students. Resolve this many-to-many relationship using an Enrollment table that tracks the enrolled_at date and grade. Every Course is taught by one Instructor, while an Instructor can teach many Courses.",
   "deliverables": [
-    "Create entities for Student, Course, Enrollment, and Instructor with Primary Keys.",
-    "Resolve Student ↔ Course using Enrollment as a join/associative entity.",
-    "Connect Instructor to Course with a 1-to-Many ER relationship."
+    "Identify the core tables and assign Primary Keys.",
+    "Resolve any many-to-many relationships with a join table.",
+    "Set Crow's Foot cardinalities on each link."
   ],
   "hints": [
     "Remember to add a Primary Key (PK) attribute to every entity.",
