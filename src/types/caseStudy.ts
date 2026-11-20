@@ -74,13 +74,16 @@ export interface SyntaxWarning {
   id: string
   severity: 'error' | 'warning'
   message: string
+  nodeId?: string
 }
 
 export interface CaseStudyEvaluation {
   score: number // 0-100
+  stars: number // 0-3
   conceptResults: ConceptCheckResult[]
   relationshipResults: RelationshipCheckResult[]
   syntaxWarnings: SyntaxWarning[]
+  offendingNodeIds: string[]
   summary: string
 }
 
@@ -88,6 +91,7 @@ export interface CaseStudyProgress {
   caseStudyId: string
   completed: boolean
   bestScore: number
+  stars: number
   attempts: number
   lastUpdatedAt: string
 }

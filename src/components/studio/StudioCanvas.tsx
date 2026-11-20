@@ -246,6 +246,9 @@ export interface StudioCanvasPuzzleProps {
   customHeader?: React.ReactNode
   leftSidebar?: React.ReactNode
   hideInspector?: boolean
+  collapseInspectorByDefault?: boolean
+  emptyStateHint?: React.ReactNode
+  highlightedNodeIds?: string[]
 }
 
 interface StudioCanvasProps {
@@ -308,10 +311,17 @@ function StudioCanvasInner({ diagramId, puzzle }: StudioCanvasProps) {
   // Selection states
   const [selectedNodes, setSelectedNodes] = useState<Node[]>([])
   const [selectedEdges, setSelectedEdges] = useState<Edge[]>([])
-  const [isInspectorOpen, setIsInspectorOpen] = useState(() =>
-    typeof window !== 'undefined' ? window.innerWidth >= 768 : true
-  )
+  const [isInspectorOpen, setIsInspectorOpen] = useState(() => {
+    if (puzzle?.collapseInspectorByDefault) return false
+    return typeof window !== 'undefined' ? window.innerWidth >= 768 : true
+  })
   const [isSaved, setIsSaved] = useState(true)
+
+  useEffect(() => {
+    if (!puzzle?.collapseInspectorByDefault) return
+    const hasSelection = selectedNodes.length > 0 || selectedEdges.length > 0
+    setIsInspectorOpen(hasSelection)
+  }, [puzzle?.collapseInspectorByDefault, selectedNodes.length, selectedEdges.length])
 
   // Robust Undo / Redo history refs
   const pastRef = useRef<HistorySnapshot[]>([])
@@ -946,6 +956,7 @@ function StudioCanvasInner({ diagramId, puzzle }: StudioCanvasProps) {
         actorType?: 'primary' | 'secondary' | 'system'
         position?: { x: number; y: number }
         autoFocusEdit?: boolean
+        label?: string
       }
     ) => {
       pushSnapshot()
@@ -1165,6 +1176,11 @@ function StudioCanvasInner({ diagramId, puzzle }: StudioCanvasProps) {
             autoFocusEdit: options?.autoFocusEdit ?? true,
           }
           break
+      }
+
+      if (options?.label) {
+        initialData.label = options.label
+        initialData.autoFocusEdit = false
       }
 
       const newNode: Node = {
@@ -2738,9 +2754,11 @@ function StudioCanvasInner({ diagramId, puzzle }: StudioCanvasProps) {
                       ? -32
                       : -50
 
+      const customLabel = event.dataTransfer.getData('application/umly-node-label')
       handleAddNode(rawType, {
         position: { x: flowPos.x + offsetX, y: flowPos.y + offsetY },
-        autoFocusEdit: true,
+        autoFocusEdit: !customLabel,
+        label: customLabel || undefined,
       })
     },
     [reactFlowInstance, handleAddNode]
@@ -3309,8 +3327,20 @@ function StudioCanvasInner({ diagramId, puzzle }: StudioCanvasProps) {
           </AnimatePresence>
 
           <UmlMarkers />
+          {puzzle?.emptyStateHint}
           <ReactFlow
-            nodes={nodes}
+            nodes={
+              puzzle?.highlightedNodeIds && puzzle.highlightedNodeIds.length > 0
+                ? nodes.map((n) =>
+                    puzzle.highlightedNodeIds!.includes(n.id)
+                      ? {
+                          ...n,
+                          className: `${n.className || ''} ring-2 ring-rose-500/85 ring-offset-2 rounded-xl`,
+                        }
+                      : n
+                  )
+                : nodes
+            }
             edges={edges}
             nodeTypes={nodeTypes}
             edgeTypes={edgeTypes}

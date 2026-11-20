@@ -4,9 +4,18 @@ import type { CaseStudyProgress } from '../types/caseStudy'
 const PROGRESS_KEY = 'umly_case_studies_progress_v1'
 const DRAFT_PREFIX = 'umly_case_study_draft_v1_'
 
+export interface HighlightedTerm {
+  text: string
+  kind: string
+}
+
 export interface CaseStudyDraft {
   nodes: Node[]
   edges: Edge[]
+  checkedDeliverables?: number[]
+  highlightedTerms?: HighlightedTerm[]
+  hintsUsed?: number
+  hasSubmitted?: boolean
   updatedAt: string
 }
 
@@ -23,14 +32,14 @@ export function getCaseStudyDraft(caseStudyId: string): CaseStudyDraft | null {
 
 export function saveCaseStudyDraft(
   caseStudyId: string,
-  nodes: Node[],
-  edges: Edge[]
+  partial: Partial<CaseStudyDraft> & { nodes: Node[]; edges: Edge[] }
 ): void {
   if (typeof window === 'undefined') return
   try {
+    const existing = getCaseStudyDraft(caseStudyId)
     const payload: CaseStudyDraft = {
-      nodes,
-      edges,
+      ...existing,
+      ...partial,
       updatedAt: new Date().toISOString(),
     }
     localStorage.setItem(`${DRAFT_PREFIX}${caseStudyId}`, JSON.stringify(payload))
@@ -61,7 +70,8 @@ export function getAllCaseStudyProgress(): Record<string, CaseStudyProgress> {
 
 export function saveCaseStudyProgress(
   caseStudyId: string,
-  score: number
+  score: number,
+  stars = 0
 ): CaseStudyProgress {
   const completed = score >= 80
   if (typeof window === 'undefined') {
@@ -69,6 +79,7 @@ export function saveCaseStudyProgress(
       caseStudyId,
       completed,
       bestScore: score,
+      stars,
       attempts: 1,
       lastUpdatedAt: new Date().toISOString(),
     }
@@ -80,6 +91,7 @@ export function saveCaseStudyProgress(
     caseStudyId,
     completed: Boolean(existing?.completed || completed),
     bestScore: Math.max(existing?.bestScore ?? 0, score),
+    stars: Math.max(existing?.stars ?? 0, stars),
     attempts: (existing?.attempts ?? 0) + 1,
     lastUpdatedAt: new Date().toISOString(),
   }
@@ -93,4 +105,3 @@ export function saveCaseStudyProgress(
 
   return next
 }
-

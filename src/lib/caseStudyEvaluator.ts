@@ -152,6 +152,7 @@ export function auditDiagramSyntax(
           id: `invalid-edge-${edge.id}`,
           severity: 'error',
           message: `${srcLabel} → ${tgtLabel}: ${check.reason || 'Invalid relationship.'}`,
+          nodeId: src.id,
         })
       }
     }
@@ -165,6 +166,7 @@ export function auditDiagramSyntax(
         id: `self-inheritance-${edge.id}`,
         severity: 'error',
         message: `${srcLabel} cannot inherit from or realize itself.`,
+        nodeId: src.id,
       })
     }
   }
@@ -180,6 +182,7 @@ export function auditDiagramSyntax(
           id: `disconnected-${node.id}`,
           severity: 'warning',
           message: `"${label}" is disconnected from the rest of the diagram.`,
+          nodeId: node.id,
         })
       }
     }
@@ -196,12 +199,14 @@ export function auditDiagramSyntax(
           id: `er-no-attrs-${node.id}`,
           severity: 'warning',
           message: `Entity "${label}" has no attributes yet.`,
+          nodeId: node.id,
         })
       } else if (!attrs.some((a) => a.isPrimaryKey)) {
         warnings.push({
           id: `er-no-pk-${node.id}`,
           severity: 'warning',
           message: `Entity "${label}" is missing a Primary Key (PK).`,
+          nodeId: node.id,
         })
       }
     }
@@ -219,6 +224,7 @@ export function auditDiagramSyntax(
           id: `class-empty-${node.id}`,
           severity: 'warning',
           message: `"${data.label || 'Class'}" has no attributes or methods defined.`,
+          nodeId: node.id,
         })
       }
     }
@@ -239,12 +245,14 @@ export function auditDiagramSyntax(
           id: `dfd-blackhole-${node.id}`,
           severity: 'warning',
           message: `Process "${label}" is a black hole (receives data but produces no output).`,
+          nodeId: node.id,
         })
       } else if (inc === 0 && out > 0) {
         warnings.push({
           id: `dfd-miracle-${node.id}`,
           severity: 'warning',
           message: `Process "${label}" is a miracle (produces output with no input flow).`,
+          nodeId: node.id,
         })
       }
     }
@@ -256,7 +264,8 @@ export function auditDiagramSyntax(
 export function evaluateCaseStudy(
   caseStudy: CaseStudy,
   nodes: Node[],
-  edges: Edge[]
+  edges: Edge[],
+  hintsUsed = 0
 ): CaseStudyEvaluation {
   const syntaxWarnings = auditDiagramSyntax(caseStudy.diagramType, nodes, edges)
 
@@ -368,11 +377,30 @@ export function evaluateCaseStudy(
     summary = 'Keep building—use the checklist below to add missing domain elements and links.'
   }
 
+  const clampedScore = Math.max(0, Math.min(100, score))
+  const stars =
+    clampedScore >= 80
+      ? hintsUsed === 0
+        ? 3
+        : hintsUsed === 1
+          ? 2
+          : 1
+      : 0
+  const offendingNodeIds = Array.from(
+    new Set(
+      syntaxWarnings
+        .map((w) => w.nodeId)
+        .filter((id): id is string => Boolean(id))
+    )
+  )
+
   return {
-    score: Math.max(0, Math.min(100, score)),
+    score: clampedScore,
+    stars,
     conceptResults,
     relationshipResults,
     syntaxWarnings,
+    offendingNodeIds,
     summary,
   }
 }

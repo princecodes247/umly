@@ -41,7 +41,7 @@ const DIAGRAM_TYPE_META: Record<
 const DIFFICULTY_STYLES: Record<CaseStudy['difficulty'], string> = {
   Beginner:
     'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300',
-  Easy: 'bg-sky-50 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300',
+  Easy: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300',
   Intermediate:
     'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300',
   Advanced:
