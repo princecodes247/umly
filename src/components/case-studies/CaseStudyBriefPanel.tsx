@@ -61,6 +61,53 @@ const KIND_LABELS: Record<string, string> = {
   dfdExternalEntity: 'External',
 }
 
+const KIND_HIGHLIGHT_STYLES: Record<
+  string,
+  { mark: string; chipBorder: string; badge: string }
+> = {
+  actor: {
+    mark: 'bg-purple-200/75 dark:bg-purple-500/30 decoration-purple-500/75',
+    chipBorder: 'border-purple-300/80 dark:border-purple-700/60',
+    badge: 'bg-purple-100 text-purple-700 dark:bg-purple-950/70 dark:text-purple-300',
+  },
+  dfdExternalEntity: {
+    mark: 'bg-purple-200/75 dark:bg-purple-500/30 decoration-purple-500/75',
+    chipBorder: 'border-purple-300/80 dark:border-purple-700/60',
+    badge: 'bg-purple-100 text-purple-700 dark:bg-purple-950/70 dark:text-purple-300',
+  },
+  useCase: {
+    mark: 'bg-blue-200/75 dark:bg-blue-500/30 decoration-blue-500/75',
+    chipBorder: 'border-blue-300/80 dark:border-blue-700/60',
+    badge: 'bg-blue-100 text-blue-700 dark:bg-blue-950/70 dark:text-blue-300',
+  },
+  umlClass: {
+    mark: 'bg-blue-200/75 dark:bg-blue-500/30 decoration-blue-500/75',
+    chipBorder: 'border-blue-300/80 dark:border-blue-700/60',
+    badge: 'bg-blue-100 text-blue-700 dark:bg-blue-950/70 dark:text-blue-300',
+  },
+  dfdProcess: {
+    mark: 'bg-blue-200/75 dark:bg-blue-500/30 decoration-blue-500/75',
+    chipBorder: 'border-blue-300/80 dark:border-blue-700/60',
+    badge: 'bg-blue-100 text-blue-700 dark:bg-blue-950/70 dark:text-blue-300',
+  },
+  erEntity: {
+    mark: 'bg-emerald-200/75 dark:bg-emerald-500/30 decoration-emerald-500/75',
+    chipBorder: 'border-emerald-300/80 dark:border-emerald-700/60',
+    badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300',
+  },
+  dfdDataStore: {
+    mark: 'bg-emerald-200/75 dark:bg-emerald-500/30 decoration-emerald-500/75',
+    chipBorder: 'border-emerald-300/80 dark:border-emerald-700/60',
+    badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300',
+  },
+}
+
+const DEFAULT_HIGHLIGHT_STYLE = {
+  mark: 'bg-amber-200/80 dark:bg-amber-500/30 decoration-amber-500/70',
+  chipBorder: 'border-[var(--border-subtle)]',
+  badge: 'bg-[var(--bg-secondary)] text-[var(--text-secondary)]',
+}
+
 export function getDefaultKindForDiagram(
   diagramType: CaseStudy['diagramType']
 ): StudioElementKind {
@@ -112,27 +159,31 @@ export function CaseStudyBriefPanel({
   const statementSegments = useMemo(() => {
     const text = caseStudy.statement
     if (highlightedTerms.length === 0) {
-      return [{ text, highlighted: false }]
+      return [{ text, kind: null as string | null }]
     }
     const sorted = [...highlightedTerms]
-      .map((t) => t.text.trim())
-      .filter((t) => t.length >= 2)
-      .sort((a, b) => b.length - a.length)
+      .map((t) => ({ text: t.text.trim(), kind: t.kind }))
+      .filter((t) => t.text.length >= 2)
+      .sort((a, b) => b.text.length - a.text.length)
 
     if (sorted.length === 0) {
-      return [{ text, highlighted: false }]
+      return [{ text, kind: null as string | null }]
     }
 
-    const escaped = sorted.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    const escaped = sorted.map((t) =>
+      t.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    )
     const regex = new RegExp(`(${escaped.join('|')})`, 'gi')
     const parts = text.split(regex)
-    const termSet = new Set(sorted.map((t) => t.toLowerCase()))
+    const termKindMap = new Map(
+      sorted.map((t) => [t.text.toLowerCase(), t.kind])
+    )
 
     return parts
       .filter((p) => p.length > 0)
       .map((part) => ({
         text: part,
-        highlighted: termSet.has(part.toLowerCase()),
+        kind: termKindMap.get(part.toLowerCase()) ?? null,
       }))
   }, [caseStudy.statement, highlightedTerms])
 
@@ -216,20 +267,21 @@ export function CaseStudyBriefPanel({
             onMouseUp={handleStatementMouseUp}
             className="text-[13px] leading-relaxed text-[var(--text-primary)] select-text cursor-text"
           >
-            {statementSegments.map((seg, idx) =>
-              seg.highlighted ? (
+            {statementSegments.map((seg, idx) => {
+              if (!seg.kind) return <span key={idx}>{seg.text}</span>
+              const style =
+                KIND_HIGHLIGHT_STYLES[seg.kind] || DEFAULT_HIGHLIGHT_STYLE
+              return (
                 <mark
                   key={idx}
                   onClick={() => onRemoveHighlightedTerm(seg.text)}
                   title="Click to remove highlight"
-                  className="bg-amber-200/80 dark:bg-amber-500/30 text-[var(--text-primary)] underline decoration-amber-500/70 underline-offset-2 rounded px-0.5 cursor-pointer"
+                  className={`${style.mark} text-[var(--text-primary)] underline underline-offset-2 rounded px-0.5 cursor-pointer`}
                 >
                   {seg.text}
                 </mark>
-              ) : (
-                <span key={idx}>{seg.text}</span>
               )
-            )}
+            })}
           </p>
 
           {/* Draggable Tagged Chips */}
@@ -239,39 +291,43 @@ export function CaseStudyBriefPanel({
                 Drag onto canvas
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {highlightedTerms.map((term) => (
-                  <div
-                    key={term.text}
-                    draggable
-                    onDragStart={(e) => {
-                      e.dataTransfer.setData('application/umly-node-type', term.kind)
-                      e.dataTransfer.setData('application/umly-node-label', term.text)
-                      e.dataTransfer.effectAllowed = 'copyMove'
-                    }}
-                    className="inline-flex items-center gap-1 pl-1.5 pr-1 py-0.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] text-[11px] shadow-2xs cursor-grab active:cursor-grabbing"
-                  >
-                    <GripVertical className="w-3 h-3 text-[var(--text-tertiary)]" />
-                    <span className="font-medium text-[var(--text-primary)]">
-                      {term.text}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => onCycleHighlightedTermKind(term.text)}
-                      className="px-1.5 py-0.2 rounded bg-[var(--bg-secondary)] text-[10px] font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                      title="Click to switch element type"
+                {highlightedTerms.map((term) => {
+                  const style =
+                    KIND_HIGHLIGHT_STYLES[term.kind] || DEFAULT_HIGHLIGHT_STYLE
+                  return (
+                    <div
+                      key={term.text}
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('application/umly-node-type', term.kind)
+                        e.dataTransfer.setData('application/umly-node-label', term.text)
+                        e.dataTransfer.effectAllowed = 'copyMove'
+                      }}
+                      className={`inline-flex items-center gap-1 pl-1.5 pr-1 py-0.5 rounded-lg border ${style.chipBorder} bg-[var(--bg-primary)] text-[11px] shadow-2xs cursor-grab active:cursor-grabbing`}
                     >
-                      {KIND_LABELS[term.kind] || term.kind}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onRemoveHighlightedTerm(term.text)}
-                      className="p-0.5 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-                      aria-label={`Remove ${term.text}`}
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
+                      <GripVertical className="w-3 h-3 text-[var(--text-tertiary)]" />
+                      <span className="font-medium text-[var(--text-primary)]">
+                        {term.text}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => onCycleHighlightedTermKind(term.text)}
+                        className={`px-1.5 py-0.2 rounded text-[10px] font-semibold ${style.badge} hover:opacity-85`}
+                        title="Click to switch element type"
+                      >
+                        {KIND_LABELS[term.kind] || term.kind}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onRemoveHighlightedTerm(term.text)}
+                        className="p-0.5 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+                        aria-label={`Remove ${term.text}`}
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           )}
